@@ -15,7 +15,6 @@ import { useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
-import { FormInput } from '@/components/forms/form-input';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Enter a valid email address' }),
@@ -43,7 +42,7 @@ export default function UserAuthForm() {
   const onSubmit = async (data: UserFormValue) => {
     startTransition(() => {
       // TODO: Supabase authentication will be implemented here
-      console.log('Sign in attempt with:', { email: data.email });
+      // console.log('Sign in attempt with:', { email: data.email });
       
       // Dummy authentication - always succeeds
       toast.success('Signed In Successfully! (Dummy Mode)');
@@ -57,54 +56,52 @@ export default function UserAuthForm() {
 
   return (
     <>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className='w-full space-y-4'>
-          <FormField
-            control={form.control}
-            name='email'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input
-                    type='email'
-                    placeholder='Enter your email...'
-                    disabled={loading}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name='password'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password</FormLabel>
-                <FormControl>
-                  <Input
-                    type='password'
-                    placeholder='Enter your password...'
-                    disabled={loading}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <Button
-            disabled={loading}
-            className='w-full'
-            type='submit'
-          >
-            {loading ? 'Signing in...' : 'Sign In'}
-          </Button>
-        </form>
+      <Form form={form} onSubmit={form.handleSubmit(onSubmit)} className='w-full space-y-4'>
+        <FormField
+          control={form.control}
+          name='email'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input
+                  type='email'
+                  placeholder='Enter your email...'
+                  disabled={loading}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name='password'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input
+                  type='password'
+                  placeholder='Enter your password...'
+                  disabled={loading}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <Button
+          disabled={loading}
+          className='w-full'
+          type='submit'
+        >
+          {loading ? 'Signing in...' : 'Sign In'}
+        </Button>
       </Form>
       
       <div className='relative'>
