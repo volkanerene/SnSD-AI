@@ -1,6 +1,5 @@
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { SignUp as ClerkSignUpForm } from '@clerk/nextjs';
 import { GitHubLogoIcon } from '@radix-ui/react-icons';
 import { IconStar } from '@tabler/icons-react';
 import { Metadata } from 'next';
@@ -71,11 +70,31 @@ export default function SignUpViewPage({ stars }: { stars: number }) {
               <span className='font-display font-medium'>{stars}</span>
             </div>
           </Link>
-          <ClerkSignUpForm
-            initialValues={{
-              emailAddress: 'your_mail+clerk_test@example.com'
-            }}
-          />
+          
+          <div className='mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]'>
+            <div className='flex flex-col space-y-2 text-center'>
+              <h1 className='text-2xl font-semibold tracking-tight'>
+                Create an account
+              </h1>
+              <p className='text-muted-foreground text-sm'>
+                Sign up feature coming soon with Supabase
+              </p>
+            </div>
+            
+            <div className='rounded-lg border p-6 text-center'>
+              <p className='text-muted-foreground text-sm'>
+                Registration is currently disabled. Please contact an administrator.
+              </p>
+            </div>
+            
+            <div className='text-center text-sm'>
+              Already have an account?{' '}
+              <Link href='/auth/sign-in' className='hover:text-primary underline underline-offset-4'>
+                Sign in
+              </Link>
+            </div>
+          </div>
+
           <p className='text-muted-foreground px-8 text-center text-sm'>
             By clicking continue, you agree to our{' '}
             <Link
