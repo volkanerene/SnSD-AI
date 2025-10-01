@@ -15,8 +15,8 @@ frontend:
         - pnpm install --frozen-lockfile
     build:
       commands:
-        - env | grep -e NEXTAUTH_ -e AUTH_ -e CONTROL_WORKS_ >> .env.production
-        - env | grep -e NEXT_PUBLIC_ >> .env.production
+        - env | grep -e NEXTAUTH_ -e AUTH_ -e CONTROL_WORKS_ >> .env.production || true
+        - env | grep -e NEXT_PUBLIC_ >> .env.production || true
         - pnpm run build
   artifacts:
     baseDirectory: .next
