@@ -153,6 +153,13 @@ export const tenantsColumns: ColumnDef<Tenant>[] = [
                 Activate tenant
               </DropdownMenuItem>
             )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => meta?.onDelete?.(tenant.id)}
+              className='text-red-600'
+            >
+              Delete tenant
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );

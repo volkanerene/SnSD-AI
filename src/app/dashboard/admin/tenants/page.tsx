@@ -8,8 +8,14 @@ import { Building2, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function TenantsManagementPage() {
-  const { tenants, isLoading, error, activateTenant, suspendTenant } =
-    useTenants();
+  const {
+    tenants,
+    isLoading,
+    error,
+    activateTenant,
+    suspendTenant,
+    deleteTenant
+  } = useTenants();
 
   const handleActivate = (tenantId: string) => {
     activateTenant(tenantId, {
@@ -24,6 +30,21 @@ export default function TenantsManagementPage() {
       onSuccess: () => toast.success('Tenant suspended'),
       onError: (error: any) =>
         toast.error(error.message || 'Failed to suspend tenant')
+    });
+  };
+
+  const handleDelete = (tenantId: string) => {
+    if (
+      !confirm(
+        'Are you sure you want to delete this tenant? This will set its status to inactive.'
+      )
+    ) {
+      return;
+    }
+    deleteTenant(tenantId, {
+      onSuccess: () => toast.success('Tenant deleted successfully'),
+      onError: (error: any) =>
+        toast.error(error.message || 'Failed to delete tenant')
     });
   };
 
@@ -127,6 +148,7 @@ export default function TenantsManagementPage() {
         meta={{
           onActivate: handleActivate,
           onSuspend: handleSuspend,
+          onDelete: handleDelete,
           onEdit: (tenant: any) => console.log('Edit:', tenant),
           onViewDetails: (tenant: any) => console.log('View:', tenant)
         }}

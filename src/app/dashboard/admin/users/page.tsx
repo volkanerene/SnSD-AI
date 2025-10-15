@@ -175,7 +175,8 @@ export default function UsersManagementPage() {
         meta={{
           onEdit: handleEdit,
           onActivate: handleActivate,
-          onDeactivate: handleDeactivate
+          onDeactivate: handleDeactivate,
+          onDelete: handleDelete
         }}
       />
 
