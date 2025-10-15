@@ -43,30 +43,20 @@ export default function UserAuthForm() {
 
   const onSubmit = async (data: UserFormValue) => {
     try {
-      console.log('🔐 [AUTH FORM] Starting sign in...');
-
       const result = await signInAsync({
         email: data.email,
         password: data.password
       });
 
-      console.log('✅ [AUTH FORM] Sign in successful!', result);
-      console.log('🍪 [AUTH FORM] Checking cookies...', document.cookie);
-
       toast.success('Signed in successfully!');
 
       // Wait for cookies to be set before redirecting
-      console.log('⏳ [AUTH FORM] Waiting 500ms for cookies to sync...');
       await new Promise((resolve) => setTimeout(resolve, 500));
-
-      console.log('🍪 [AUTH FORM] Cookies after wait:', document.cookie);
 
       // Force a full page reload to ensure cookies are set and middleware picks up the session
       const redirectUrl = callbackUrl || '/dashboard';
-      console.log('🔄 [AUTH FORM] Redirecting to:', redirectUrl);
       window.location.href = redirectUrl;
     } catch (error: any) {
-      console.error('❌ [AUTH FORM] Sign in failed:', error);
       toast.error(error.message || 'Failed to sign in');
     }
   };
@@ -131,7 +121,9 @@ export default function UserAuthForm() {
       </div>
 
       <div className='text-center text-sm'>
-        <span className='text-muted-foreground'>Don't have an account? </span>
+        <span className='text-muted-foreground'>
+          Don&apos;t have an account?{' '}
+        </span>
         <Link
           href='/auth/sign-up'
           className='hover:text-primary underline underline-offset-4'
