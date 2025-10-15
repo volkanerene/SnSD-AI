@@ -54,6 +54,27 @@ export const navItems: NavItem[] = [
     items: []
   },
   {
+    title: 'Administration',
+    url: '#',
+    icon: 'shield',
+    isActive: false,
+    adminOnly: true,
+    items: [
+      {
+        title: 'Users',
+        url: '/dashboard/admin/users',
+        icon: 'users',
+        shortcut: ['a', 'u']
+      },
+      {
+        title: 'Tenants',
+        url: '/dashboard/admin/tenants',
+        icon: 'building',
+        shortcut: ['a', 't']
+      }
+    ]
+  },
+  {
     title: 'Account',
     url: '#',
     icon: 'user',

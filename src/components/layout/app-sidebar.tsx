@@ -89,6 +89,11 @@ export default function AppSidebar() {
     if (!profile?.role_id) return navItems;
 
     return navItems.filter((item) => {
+      // Hide admin-only items for non-admins
+      if ((item as any).adminOnly && profile.role_id > 1) {
+        return false;
+      }
+
       if (!item.url || item.url === '#') return true;
       return canAccessRoute(profile.role_id, item.url);
     });
