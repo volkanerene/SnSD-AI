@@ -136,7 +136,7 @@ export function hasSpecificPermission(
  */
 export function getAccessibleRoutes(roleId: number): string[] {
   const baseRoutes = [
-    '/dashboard/overview',
+    '/dashboard',
     '/dashboard/profile',
     '/dashboard/settings'
   ];
@@ -204,8 +204,8 @@ export function canAccessRoute(userRoleId: number, route: string): boolean {
  */
 export function getDashboardRoute(roleId: number): string {
   const dashboardRoutes: Record<number, string> = {
-    1: '/dashboard/overview', // SNSD Admin
-    2: '/dashboard/overview', // Company Admin
+    1: '/dashboard', // SNSD Admin
+    2: '/dashboard', // Company Admin
     3: '/dashboard/evaluations', // HSE Specialist
     4: '/dashboard/my-evaluations', // Contractor Admin
     5: '/dashboard/evaluations', // Supervisor
