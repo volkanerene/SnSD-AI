@@ -40,24 +40,24 @@ export function ContractorDashboard() {
   const completedEvals =
     submissions?.filter((s) => s.status === 'completed').length || 0;
   const inProgressEvals =
-    submissions?.filter((s) => s.status === 'in_progress').length || 0;
+    submissions?.filter((s) => s.status === 'in_review').length || 0;
   const pendingEvals =
     submissions?.filter((s) => s.status === 'draft').length || 0;
 
   // Calculate average score
   const completedWithScores =
-    submissions?.filter((s) => s.status === 'completed' && s.total_score) || [];
+    submissions?.filter((s) => s.status === 'completed' && s.final_score) || [];
   const avgScore =
     completedWithScores.length > 0
-      ? completedWithScores.reduce((sum, s) => sum + (s.total_score || 0), 0) /
+      ? completedWithScores.reduce((sum, s) => sum + (s.final_score || 0), 0) /
         completedWithScores.length
       : 0;
 
   // Risk assessment
   const hasHighRisk =
-    submissions?.some((s) => s.risk_classification === 'high') || false;
+    submissions?.some((s) => s.risk_classification === 'red') || false;
   const hasMediumRisk =
-    submissions?.some((s) => s.risk_classification === 'medium') || false;
+    submissions?.some((s) => s.risk_classification === 'yellow') || false;
 
   return (
     <div className='space-y-6'>

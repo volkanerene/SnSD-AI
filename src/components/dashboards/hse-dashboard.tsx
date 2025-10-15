@@ -38,11 +38,11 @@ export function HSEDashboard() {
   const activeContractors =
     contractors?.filter((c) => c.status === 'active').length || 0;
   const highRiskContractors =
-    contractors?.filter((c) => c.risk_level === 'high').length || 0;
+    contractors?.filter((c) => c.risk_level === 'red').length || 0;
 
   const totalEvaluations = submissions?.length || 0;
   const inProgressEvals =
-    submissions?.filter((s) => s.status === 'in_progress').length || 0;
+    submissions?.filter((s) => s.status === 'in_review').length || 0;
   const completedEvals =
     submissions?.filter((s) => s.status === 'completed').length || 0;
   const draftEvals =
