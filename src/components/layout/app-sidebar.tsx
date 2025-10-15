@@ -127,7 +127,7 @@ export default function AppSidebar() {
 
         // If item has no URL or is a placeholder, keep it if it has accessible sub-items
         if (!item.url || item.url === '#') {
-          return item.items && item.items.length > 0;
+          return !!(item.items && item.items.length > 0);
         }
 
         // Check if user can access this route
