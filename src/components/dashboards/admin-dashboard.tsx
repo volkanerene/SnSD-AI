@@ -44,7 +44,7 @@ export function AdminDashboard() {
   const activeContractors =
     contractors?.filter((c) => c.status === 'active').length || 0;
   const pendingEvaluations =
-    submissions?.filter((s) => s.status === 'in_progress').length || 0;
+    submissions?.filter((s) => s.status === 'in_review').length || 0;
   const completedEvaluations =
     submissions?.filter((s) => s.status === 'completed').length || 0;
 
