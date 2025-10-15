@@ -27,7 +27,7 @@ export default function ContractorsPage() {
 
   if (isLoading) {
     return (
-      <div className='flex min-h-[calc(100vh-4rem)] items-center justify-center p-4'>
+      <div className='flex items-center justify-center p-8'>
         <div className='text-muted-foreground'>Loading contractors...</div>
       </div>
     );
@@ -35,7 +35,7 @@ export default function ContractorsPage() {
 
   if (error) {
     return (
-      <div className='flex min-h-[calc(100vh-4rem)] items-center justify-center p-4'>
+      <div className='flex items-center justify-center p-8'>
         <div className='text-destructive'>
           Error loading contractors: {error.message}
         </div>
@@ -44,7 +44,7 @@ export default function ContractorsPage() {
   }
 
   return (
-    <div className='flex-1 space-y-4 p-4 pt-6 md:p-8'>
+    <div className='space-y-4 p-4 pt-6 md:p-8'>
       <div className='flex items-center justify-between'>
         <div>
           <h2 className='text-3xl font-bold tracking-tight'>Contractors</h2>

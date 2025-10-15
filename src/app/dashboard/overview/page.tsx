@@ -44,7 +44,7 @@ export default async function OverviewPage() {
   const roleName = getRoleName(profile.role_id);
 
   return (
-    <div className='flex-1 space-y-4 p-4 pt-6 md:p-8'>
+    <div className='space-y-4 p-4 pt-6 md:p-8'>
       <div className='flex items-center justify-between space-y-2'>
         <h2 className='text-3xl font-bold tracking-tight'>
           Dashboard Overview
@@ -105,7 +105,7 @@ export default async function OverviewPage() {
             <div className='space-y-4'>
               {profile.role_id <= 1 && (
                 <div className='flex items-center space-x-4'>
-                  <div className='flex-1 space-y-1'>
+                  <div className='space-y-1'>
                     <p className='text-sm leading-none font-medium'>
                       Manage Contractors
                     </p>
@@ -124,7 +124,7 @@ export default async function OverviewPage() {
 
               {profile.role_id <= 3 && (
                 <div className='flex items-center space-x-4'>
-                  <div className='flex-1 space-y-1'>
+                  <div className='space-y-1'>
                     <p className='text-sm leading-none font-medium'>
                       FRM-32 Evaluations
                     </p>
@@ -143,7 +143,7 @@ export default async function OverviewPage() {
 
               {profile.role_id === 4 && (
                 <div className='flex items-center space-x-4'>
-                  <div className='flex-1 space-y-1'>
+                  <div className='space-y-1'>
                     <p className='text-sm leading-none font-medium'>
                       My Evaluations
                     </p>
@@ -162,7 +162,7 @@ export default async function OverviewPage() {
 
               {profile.role_id <= 1 && (
                 <div className='flex items-center space-x-4'>
-                  <div className='flex-1 space-y-1'>
+                  <div className='space-y-1'>
                     <p className='text-sm leading-none font-medium'>
                       Payments & Invoices
                     </p>

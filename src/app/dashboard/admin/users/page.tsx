@@ -59,7 +59,7 @@ export default function UsersManagementPage() {
 
   if (isLoading) {
     return (
-      <div className='flex min-h-[calc(100vh-4rem)] items-center justify-center p-4'>
+      <div className='flex min-h-0 items-center justify-center p-4'>
         <div className='text-muted-foreground'>Loading users...</div>
       </div>
     );
@@ -67,7 +67,7 @@ export default function UsersManagementPage() {
 
   if (error) {
     return (
-      <div className='flex min-h-[calc(100vh-4rem)] items-center justify-center p-4'>
+      <div className='flex min-h-0 items-center justify-center p-4'>
         <div className='text-destructive'>
           Error loading users: {error.message}
         </div>
@@ -80,7 +80,7 @@ export default function UsersManagementPage() {
   const adminUsers = users.filter((u) => u.role_id <= 1);
 
   return (
-    <div className='flex-1 space-y-6 p-4 pt-6 md:p-8'>
+    <div className='space-y-6 p-4 pt-6 md:p-8'>
       <div>
         <h2 className='text-3xl font-bold tracking-tight'>Users Management</h2>
         <p className='text-muted-foreground'>
