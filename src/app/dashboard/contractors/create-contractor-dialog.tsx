@@ -61,7 +61,7 @@ export function CreateContractorDialog({
   tenantId
 }: CreateContractorDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { createContractorAsync } = useContractors(tenantId);
+  const { createContractorAsync } = useContractors({ tenantId });
 
   const form = useForm<ContractorFormData>({
     resolver: zodResolver(contractorSchema),
