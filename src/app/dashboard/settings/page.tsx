@@ -96,7 +96,7 @@ export default function SettingsPage() {
               <Input
                 id='email'
                 type='email'
-                value={user.email}
+                value={user?.email || ''}
                 disabled
                 className='bg-muted'
               />
