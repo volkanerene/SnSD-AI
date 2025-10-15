@@ -68,13 +68,6 @@ export default function AppSidebar() {
   const { profile, isLoading: profileLoading } = useProfile();
   const router = useRouter();
 
-  // Debug logging
-  React.useEffect(() => {
-    console.log('🔍 [SIDEBAR] Profile:', profile);
-    console.log('🔍 [SIDEBAR] Role ID:', profile?.role_id);
-    console.log('🔍 [SIDEBAR] Loading:', profileLoading);
-  }, [profile, profileLoading]);
-
   const handleSwitchTenant = (_tenantId: string) => {
     // Tenant switching functionality would be implemented here
   };
@@ -97,18 +90,14 @@ export default function AppSidebar() {
       '🔍 [SIDEBAR FILTER] Running filter. Profile role_id:',
       profile?.role_id
     );
-    console.log('🔍 [SIDEBAR FILTER] Profile loading:', profileLoading);
 
     // Show loading state - don't show any items while loading
     if (profileLoading) return [];
 
     // If profile is still loading or role_id is missing, return empty array to prevent showing all items
     if (!profile?.role_id) {
-      console.log('❌ [SIDEBAR FILTER] No role_id, returning empty array');
       return [];
     }
-
-    console.log('✅ [SIDEBAR FILTER] Filtering for role_id:', profile.role_id);
 
     const result = navItems
       .map((item) => {
