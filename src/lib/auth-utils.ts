@@ -136,7 +136,6 @@ export function hasSpecificPermission(
  */
 export function getAccessibleRoutes(roleId: number): string[] {
   const baseRoutes = [
-    '/dashboard',
     '/dashboard/overview',
     '/dashboard/profile',
     '/dashboard/settings'

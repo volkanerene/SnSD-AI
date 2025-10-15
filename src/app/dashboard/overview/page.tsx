@@ -141,7 +141,7 @@ export default async function OverviewPage() {
                 </div>
               )}
 
-              {profile.role_id === 4 && (
+              {(profile.role_id === 4 || profile.role_id === 6) && (
                 <div className='flex items-center space-x-4'>
                   <div className='space-y-1'>
                     <p className='text-sm leading-none font-medium'>
@@ -158,6 +158,43 @@ export default async function OverviewPage() {
                     Go
                   </a>
                 </div>
+              )}
+
+              {profile.role_id === 5 && (
+                <>
+                  <div className='flex items-center space-x-4'>
+                    <div className='space-y-1'>
+                      <p className='text-sm leading-none font-medium'>
+                        Site Contractors
+                      </p>
+                      <p className='text-muted-foreground text-sm'>
+                        View contractors on your site
+                      </p>
+                    </div>
+                    <a
+                      href='/dashboard/contractors'
+                      className='hover:bg-muted rounded-md px-3 py-2 text-sm font-medium transition-colors'
+                    >
+                      Go
+                    </a>
+                  </div>
+                  <div className='flex items-center space-x-4'>
+                    <div className='space-y-1'>
+                      <p className='text-sm leading-none font-medium'>
+                        Site Evaluations
+                      </p>
+                      <p className='text-muted-foreground text-sm'>
+                        Manage site safety evaluations
+                      </p>
+                    </div>
+                    <a
+                      href='/dashboard/evaluations'
+                      className='hover:bg-muted rounded-md px-3 py-2 text-sm font-medium transition-colors'
+                    >
+                      Go
+                    </a>
+                  </div>
+                </>
               )}
 
               {profile.role_id <= 1 && (
