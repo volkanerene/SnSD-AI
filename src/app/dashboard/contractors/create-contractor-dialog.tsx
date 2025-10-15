@@ -95,194 +95,196 @@ export function CreateContractorDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
-            <div className='grid grid-cols-2 gap-4'>
-              <FormField
-                control={form.control}
-                name='name'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Company Name</FormLabel>
+        <Form
+          form={form}
+          onSubmit={form.handleSubmit(onSubmit)}
+          className='space-y-4'
+        >
+          <div className='grid grid-cols-2 gap-4'>
+            <FormField
+              control={form.control}
+              name='name'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Company Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder='Acme Corp' {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='legal_name'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Legal Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder='Acme Corporation Ltd.' {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='tax_number'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tax Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder='1234567890' {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='trade_registry_number'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Trade Registry (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder='TR12345' {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='contact_person'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contact Person</FormLabel>
+                  <FormControl>
+                    <Input placeholder='John Doe' {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='contact_email'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contact Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      type='email'
+                      placeholder='john@example.com'
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='contact_phone'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contact Phone</FormLabel>
+                  <FormControl>
+                    <Input placeholder='+90 532 123 4567' {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='status'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
-                      <Input placeholder='Acme Corp' {...field} />
+                      <SelectTrigger>
+                        <SelectValue placeholder='Select status' />
+                      </SelectTrigger>
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                    <SelectContent>
+                      <SelectItem value='active'>Active</SelectItem>
+                      <SelectItem value='inactive'>Inactive</SelectItem>
+                      <SelectItem value='blacklisted'>Blacklisted</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name='legal_name'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Legal Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder='Acme Corporation Ltd.' {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name='city'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>City</FormLabel>
+                  <FormControl>
+                    <Input placeholder='Istanbul' {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name='tax_number'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tax Number</FormLabel>
-                    <FormControl>
-                      <Input placeholder='1234567890' {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name='country'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Country</FormLabel>
+                  <FormControl>
+                    <Input placeholder='TR' {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name='trade_registry_number'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Trade Registry (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder='TR12345' {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name='address'
+              render={({ field }) => (
+                <FormItem className='col-span-2'>
+                  <FormLabel>Address (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder='123 Main St, Suite 100' {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
-              <FormField
-                control={form.control}
-                name='contact_person'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Contact Person</FormLabel>
-                    <FormControl>
-                      <Input placeholder='John Doe' {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name='contact_email'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Contact Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        type='email'
-                        placeholder='john@example.com'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name='contact_phone'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Contact Phone</FormLabel>
-                    <FormControl>
-                      <Input placeholder='+90 532 123 4567' {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name='status'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder='Select status' />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value='active'>Active</SelectItem>
-                        <SelectItem value='inactive'>Inactive</SelectItem>
-                        <SelectItem value='blacklisted'>Blacklisted</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name='city'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>City</FormLabel>
-                    <FormControl>
-                      <Input placeholder='Istanbul' {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name='country'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Country</FormLabel>
-                    <FormControl>
-                      <Input placeholder='TR' {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name='address'
-                render={({ field }) => (
-                  <FormItem className='col-span-2'>
-                    <FormLabel>Address (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder='123 Main St, Suite 100' {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <DialogFooter>
-              <Button
-                type='button'
-                variant='outline'
-                onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button type='submit' disabled={isSubmitting}>
-                {isSubmitting ? 'Creating...' : 'Create Contractor'}
-              </Button>
-            </DialogFooter>
-          </form>
+          <DialogFooter>
+            <Button
+              type='button'
+              variant='outline'
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button type='submit' disabled={isSubmitting}>
+              {isSubmitting ? 'Creating...' : 'Create Contractor'}
+            </Button>
+          </DialogFooter>
         </Form>
       </DialogContent>
     </Dialog>
