@@ -25,13 +25,8 @@ export class ApiClient {
       Authorization: `Bearer ${session.access_token}`
     };
 
-    console.log('🔑 [API CLIENT] Tenant ID received:', tenantId);
-
     if (tenantId) {
       headers['X-Tenant-ID'] = tenantId;
-      console.log('✅ [API CLIENT] X-Tenant-ID header set:', tenantId);
-    } else {
-      console.warn('⚠️ [API CLIENT] No tenant ID provided!');
     }
 
     return headers;
@@ -57,28 +52,15 @@ export class ApiClient {
       Object.assign(headers, fetchOptions.headers);
     }
 
-    console.log('🌐 [API CLIENT] Request:', {
-      url: `${API_BASE_URL}${endpoint}`,
-      method: fetchOptions.method || 'GET',
-      headers: headers
-    });
-
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...fetchOptions,
       headers
-    });
-
-    console.log('📥 [API CLIENT] Response:', {
-      status: response.status,
-      ok: response.ok,
-      url: response.url
     });
 
     if (!response.ok) {
       const error: ApiError = await response.json().catch(() => ({
         detail: `HTTP ${response.status}: ${response.statusText}`
       }));
-      console.error('❌ [API CLIENT] Error:', error);
       throw new Error(error.detail);
     }
 

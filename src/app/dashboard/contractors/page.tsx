@@ -14,9 +14,6 @@ export default function ContractorsPage() {
   const { profile } = useProfile();
   const tenantId = profile?.tenant_id || '';
 
-  console.log('👤 [CONTRACTORS PAGE] Profile:', profile);
-  console.log('🏢 [CONTRACTORS PAGE] Tenant ID:', tenantId);
-
   const [status, setStatus] = useState<ContractorStatus | undefined>();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
@@ -28,12 +25,9 @@ export default function ContractorsPage() {
     }
   });
 
-  console.log('📊 [CONTRACTORS PAGE] Loading:', isLoading);
-  console.log('⚠️ [CONTRACTORS PAGE] Error:', error);
-
   if (isLoading) {
     return (
-      <div className='flex h-[450px] items-center justify-center'>
+      <div className='flex min-h-[calc(100vh-4rem)] items-center justify-center p-4'>
         <div className='text-muted-foreground'>Loading contractors...</div>
       </div>
     );
@@ -41,7 +35,7 @@ export default function ContractorsPage() {
 
   if (error) {
     return (
-      <div className='flex h-[450px] items-center justify-center'>
+      <div className='flex min-h-[calc(100vh-4rem)] items-center justify-center p-4'>
         <div className='text-destructive'>
           Error loading contractors: {error.message}
         </div>
@@ -50,10 +44,10 @@ export default function ContractorsPage() {
   }
 
   return (
-    <div className='space-y-4'>
+    <div className='flex-1 space-y-4 p-4 pt-6 md:p-8'>
       <div className='flex items-center justify-between'>
         <div>
-          <h2 className='text-2xl font-bold tracking-tight'>Contractors</h2>
+          <h2 className='text-3xl font-bold tracking-tight'>Contractors</h2>
           <p className='text-muted-foreground'>
             Manage your contractor relationships and evaluations
           </p>
