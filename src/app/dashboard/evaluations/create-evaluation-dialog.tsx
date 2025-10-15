@@ -97,128 +97,130 @@ export function CreateEvaluationDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
-            <FormField
-              control={form.control}
-              name='contractor_id'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contractor</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder='Select a contractor' />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {contractors.map((contractor) => (
-                        <SelectItem key={contractor.id} value={contractor.id}>
-                          {contractor.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name='evaluation_period'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Evaluation Period</FormLabel>
+        <Form
+          form={form}
+          onSubmit={form.handleSubmit(onSubmit)}
+          className='space-y-4'
+        >
+          <FormField
+            control={form.control}
+            name='contractor_id'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Contractor</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
                   <FormControl>
-                    <Input placeholder='2025-Q1' {...field} />
+                    <SelectTrigger>
+                      <SelectValue placeholder='Select a contractor' />
+                    </SelectTrigger>
                   </FormControl>
-                  <FormDescription>
-                    Format: YYYY-Q# (e.g., 2025-Q1, 2025-Q2)
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <SelectContent>
+                    {contractors.map((contractor) => (
+                      <SelectItem key={contractor.id} value={contractor.id}>
+                        {contractor.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <FormField
-              control={form.control}
-              name='evaluation_type'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Evaluation Type</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder='Select type' />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value='periodic'>
-                        Periodic - Regular scheduled evaluation
-                      </SelectItem>
-                      <SelectItem value='incident'>
-                        Incident - Post-incident evaluation
-                      </SelectItem>
-                      <SelectItem value='audit'>
-                        Audit - Compliance audit
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <FormField
+            control={form.control}
+            name='evaluation_period'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Evaluation Period</FormLabel>
+                <FormControl>
+                  <Input placeholder='2025-Q1' {...field} />
+                </FormControl>
+                <FormDescription>
+                  Format: YYYY-Q# (e.g., 2025-Q1, 2025-Q2)
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <FormField
-              control={form.control}
-              name='status'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Initial Status</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder='Select status' />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value='draft'>
-                        Draft - Save for later
-                      </SelectItem>
-                      <SelectItem value='submitted'>
-                        Submitted - Start immediately
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <FormField
+            control={form.control}
+            name='evaluation_type'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Evaluation Type</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder='Select type' />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value='periodic'>
+                      Periodic - Regular scheduled evaluation
+                    </SelectItem>
+                    <SelectItem value='incident'>
+                      Incident - Post-incident evaluation
+                    </SelectItem>
+                    <SelectItem value='audit'>
+                      Audit - Compliance audit
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <DialogFooter>
-              <Button
-                type='button'
-                variant='outline'
-                onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button type='submit' disabled={isSubmitting}>
-                {isSubmitting ? 'Creating...' : 'Create Evaluation'}
-              </Button>
-            </DialogFooter>
-          </form>
+          <FormField
+            control={form.control}
+            name='status'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Initial Status</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder='Select status' />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value='draft'>
+                      Draft - Save for later
+                    </SelectItem>
+                    <SelectItem value='submitted'>
+                      Submitted - Start immediately
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <DialogFooter>
+            <Button
+              type='button'
+              variant='outline'
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button type='submit' disabled={isSubmitting}>
+              {isSubmitting ? 'Creating...' : 'Create Evaluation'}
+            </Button>
+          </DialogFooter>
         </Form>
       </DialogContent>
     </Dialog>
