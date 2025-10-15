@@ -88,15 +88,40 @@ export default function AppSidebar() {
   const filteredNavItems = React.useMemo(() => {
     if (!profile?.role_id) return navItems;
 
-    return navItems.filter((item) => {
-      // Hide admin-only items for non-admins
-      if ((item as any).adminOnly && profile.role_id > 1) {
-        return false;
-      }
+    return navItems
+      .map((item) => {
+        // Filter sub-items if they exist
+        if (item.items && item.items.length > 0) {
+          const filteredSubItems = item.items.filter((subItem) =>
+            canAccessRoute(profile.role_id!, subItem.url)
+          );
 
-      if (!item.url || item.url === '#') return true;
-      return canAccessRoute(profile.role_id, item.url);
-    });
+          // If no sub-items are accessible, hide the parent
+          if (filteredSubItems.length === 0 && item.url === '#') {
+            return null;
+          }
+
+          return { ...item, items: filteredSubItems };
+        }
+
+        return item;
+      })
+      .filter((item): item is NonNullable<typeof item> => {
+        if (!item) return false;
+
+        // Hide admin-only items for non-admins (role_id > 2)
+        if ((item as any).adminOnly && profile.role_id > 2) {
+          return false;
+        }
+
+        // If item has no URL or is a placeholder, keep it if it has accessible sub-items
+        if (!item.url || item.url === '#') {
+          return item.items && item.items.length > 0;
+        }
+
+        // Check if user can access this route
+        return canAccessRoute(profile.role_id, item.url);
+      });
   }, [profile]);
 
   React.useEffect(() => {

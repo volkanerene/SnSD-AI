@@ -5,11 +5,12 @@ import type { Profile, ROLE_LEVELS } from '@/types/api';
  */
 
 export const ROLES = {
-  SNSD_ADMIN: 0,
-  COMPANY_ADMIN: 1,
-  HSE_MANAGER: 2,
+  SNSD_ADMIN: 1,
+  COMPANY_ADMIN: 2,
   HSE_SPECIALIST: 3,
-  CONTRACTOR: 4
+  CONTRACTOR_ADMIN: 4,
+  SUPERVISOR: 5,
+  WORKER: 6
 } as const;
 
 export type RoleLevel = (typeof ROLES)[keyof typeof ROLES];
@@ -47,17 +48,17 @@ export function isCompanyAdmin(userRoleId: number): boolean {
 }
 
 /**
- * Check if user is HSE Manager or above
+ * Check if user is HSE Specialist or above
  */
-export function isHSEManager(userRoleId: number): boolean {
-  return userRoleId <= ROLES.HSE_MANAGER;
+export function isHSESpecialist(userRoleId: number): boolean {
+  return userRoleId <= ROLES.HSE_SPECIALIST;
 }
 
 /**
- * Check if user is contractor
+ * Check if user is contractor admin
  */
-export function isContractor(userRoleId: number): boolean {
-  return userRoleId === ROLES.CONTRACTOR;
+export function isContractorAdmin(userRoleId: number): boolean {
+  return userRoleId === ROLES.CONTRACTOR_ADMIN;
 }
 
 /**
@@ -65,11 +66,12 @@ export function isContractor(userRoleId: number): boolean {
  */
 export function getRoleName(roleId: number): string {
   const roleNames: Record<number, string> = {
-    0: 'SNSD Admin',
-    1: 'Company Admin',
-    2: 'HSE Manager',
+    1: 'SNSD Admin',
+    2: 'Company Admin',
     3: 'HSE Specialist',
-    4: 'Contractor'
+    4: 'Contractor Admin',
+    5: 'Supervisor',
+    6: 'Worker'
   };
   return roleNames[roleId] || 'Unknown Role';
 }
@@ -79,14 +81,14 @@ export function getRoleName(roleId: number): string {
  */
 export function getRolePermissions(roleId: number): string[] {
   const permissions: Record<number, string[]> = {
-    0: [
+    1: [
       'manage_all_tenants',
       'manage_all_users',
       'view_all_data',
       'manage_system_settings',
       'manage_billing'
     ],
-    1: [
+    2: [
       'manage_tenant',
       'manage_users',
       'manage_contractors',
@@ -94,20 +96,26 @@ export function getRolePermissions(roleId: number): string[] {
       'manage_evaluations',
       'manage_payments'
     ],
-    2: [
-      'manage_contractors',
-      'create_evaluations',
-      'review_evaluations',
-      'view_reports',
-      'manage_team'
-    ],
     3: [
       'view_contractors',
       'create_evaluations',
       'update_evaluations',
-      'view_reports'
+      'view_reports',
+      'manage_evaluations'
     ],
-    4: ['view_own_evaluations', 'submit_documents', 'view_own_profile']
+    4: [
+      'view_own_company',
+      'view_own_evaluations',
+      'submit_documents',
+      'update_own_profile'
+    ],
+    5: [
+      'view_site_contractors',
+      'update_evaluations',
+      'view_site_reports',
+      'update_own_profile'
+    ],
+    6: ['view_own_documents', 'view_own_evaluations', 'view_own_profile']
   };
   return permissions[roleId] || [];
 }
@@ -127,42 +135,58 @@ export function hasSpecificPermission(
  * Get accessible routes based on role
  */
 export function getAccessibleRoutes(roleId: number): string[] {
-  const baseRoutes = ['/dashboard', '/dashboard/profile'];
+  const baseRoutes = [
+    '/dashboard',
+    '/dashboard/overview',
+    '/dashboard/profile',
+    '/dashboard/settings'
+  ];
 
   const roleRoutes: Record<number, string[]> = {
-    0: [
-      ...baseRoutes,
-      '/dashboard/contractors',
-      '/dashboard/evaluations',
-      '/dashboard/payments',
-      '/dashboard/tenants',
-      '/dashboard/users',
-      '/dashboard/settings',
-      '/dashboard/reports'
-    ],
     1: [
+      // SNSD Admin - Full access
       ...baseRoutes,
+      '/dashboard/admin',
       '/dashboard/contractors',
       '/dashboard/evaluations',
       '/dashboard/payments',
-      '/dashboard/users',
-      '/dashboard/settings',
       '/dashboard/reports'
     ],
     2: [
+      // Company Admin - Tenant-level access
       ...baseRoutes,
+      '/dashboard/admin/users', // Can manage users in their tenant
       '/dashboard/contractors',
       '/dashboard/evaluations',
-      '/dashboard/reports',
-      '/dashboard/team'
+      '/dashboard/payments',
+      '/dashboard/reports'
     ],
     3: [
+      // HSE Specialist - Evaluation management
       ...baseRoutes,
       '/dashboard/contractors',
       '/dashboard/evaluations',
       '/dashboard/reports'
     ],
-    4: [...baseRoutes, '/dashboard/my-evaluations', '/dashboard/documents']
+    4: [
+      // Contractor Admin - Own company only
+      ...baseRoutes,
+      '/dashboard/my-evaluations',
+      '/dashboard/documents'
+    ],
+    5: [
+      // Supervisor - Site management
+      ...baseRoutes,
+      '/dashboard/contractors',
+      '/dashboard/evaluations',
+      '/dashboard/reports'
+    ],
+    6: [
+      // Worker - Read-only
+      ...baseRoutes,
+      '/dashboard/my-evaluations',
+      '/dashboard/documents'
+    ]
   };
 
   return roleRoutes[roleId] || baseRoutes;
@@ -181,11 +205,12 @@ export function canAccessRoute(userRoleId: number, route: string): boolean {
  */
 export function getDashboardRoute(roleId: number): string {
   const dashboardRoutes: Record<number, string> = {
-    0: '/dashboard/overview', // SNSD Admin
-    1: '/dashboard/overview', // Company Admin
-    2: '/dashboard/evaluations', // HSE Manager
+    1: '/dashboard/overview', // SNSD Admin
+    2: '/dashboard/overview', // Company Admin
     3: '/dashboard/evaluations', // HSE Specialist
-    4: '/dashboard/my-evaluations' // Contractor
+    4: '/dashboard/my-evaluations', // Contractor Admin
+    5: '/dashboard/evaluations', // Supervisor
+    6: '/dashboard/my-evaluations' // Worker
   };
   return dashboardRoutes[roleId] || '/dashboard';
 }
