@@ -65,8 +65,15 @@ export default function AppSidebar() {
   const pathname = usePathname();
   const { isOpen } = useMediaQuery();
   const { user, signOutAsync } = useAuth();
-  const { profile } = useProfile();
+  const { profile, isLoading: profileLoading } = useProfile();
   const router = useRouter();
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('🔍 [SIDEBAR] Profile:', profile);
+    console.log('🔍 [SIDEBAR] Role ID:', profile?.role_id);
+    console.log('🔍 [SIDEBAR] Loading:', profileLoading);
+  }, [profile, profileLoading]);
 
   const handleSwitchTenant = (_tenantId: string) => {
     // Tenant switching functionality would be implemented here
@@ -86,9 +93,24 @@ export default function AppSidebar() {
 
   // Filter nav items based on user role
   const filteredNavItems = React.useMemo(() => {
-    if (!profile?.role_id) return navItems;
+    console.log(
+      '🔍 [SIDEBAR FILTER] Running filter. Profile role_id:',
+      profile?.role_id
+    );
+    console.log('🔍 [SIDEBAR FILTER] Profile loading:', profileLoading);
 
-    return navItems
+    // Show loading state - don't show any items while loading
+    if (profileLoading) return [];
+
+    // If profile is still loading or role_id is missing, return empty array to prevent showing all items
+    if (!profile?.role_id) {
+      console.log('❌ [SIDEBAR FILTER] No role_id, returning empty array');
+      return [];
+    }
+
+    console.log('✅ [SIDEBAR FILTER] Filtering for role_id:', profile.role_id);
+
+    const result = navItems
       .map((item) => {
         // Filter sub-items if they exist
         if (item.items && item.items.length > 0) {
@@ -120,9 +142,20 @@ export default function AppSidebar() {
         }
 
         // Check if user can access this route
-        return canAccessRoute(profile.role_id, item.url);
+        const canAccess = canAccessRoute(profile.role_id, item.url);
+        console.log(
+          `🔒 [SIDEBAR FILTER] Item "${item.title}" (${item.url}):`,
+          canAccess
+        );
+        return canAccess;
       });
-  }, [profile]);
+
+    console.log(
+      '📋 [SIDEBAR FILTER] Filtered items:',
+      result.map((i: any) => i.title)
+    );
+    return result;
+  }, [profile, profileLoading]);
 
   React.useEffect(() => {
     // Side effects based on sidebar state changes

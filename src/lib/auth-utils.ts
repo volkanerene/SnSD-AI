@@ -135,11 +135,7 @@ export function hasSpecificPermission(
  * Get accessible routes based on role
  */
 export function getAccessibleRoutes(roleId: number): string[] {
-  const baseRoutes = [
-    '/dashboard',
-    '/dashboard/profile',
-    '/dashboard/settings'
-  ];
+  const baseRoutes = ['/dashboard/profile', '/dashboard/settings'];
 
   const roleRoutes: Record<number, string[]> = {
     1: [
@@ -195,6 +191,9 @@ export function getAccessibleRoutes(roleId: number): string[] {
  * Check if user can access route
  */
 export function canAccessRoute(userRoleId: number, route: string): boolean {
+  // Everyone can access /dashboard root
+  if (route === '/dashboard') return true;
+
   const accessibleRoutes = getAccessibleRoutes(userRoleId);
   return accessibleRoutes.some((r) => route.startsWith(r));
 }
