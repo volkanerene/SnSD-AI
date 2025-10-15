@@ -30,7 +30,7 @@ export function HSEDashboard() {
   const isSpecialist = profile?.role_id === 3;
 
   // Fetch data
-  const { contractors } = useContractors(tenantId);
+  const { contractors } = useContractors({ tenantId });
   const { submissions } = useSubmissions(tenantId, { limit: 100 });
 
   // Calculate stats

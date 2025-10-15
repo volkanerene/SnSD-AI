@@ -34,7 +34,7 @@ export function AdminDashboard() {
   // Fetch data
   const { tenants } = useTenants();
   const { users } = useUsers({ tenantId });
-  const { contractors } = useContractors(tenantId);
+  const { contractors } = useContractors({ tenantId });
   const { submissions } = useSubmissions(tenantId, { limit: 100 });
 
   // Calculate stats

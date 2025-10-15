@@ -60,7 +60,10 @@ export function CreateEvaluationDialog({
 }: CreateEvaluationDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { createSubmissionAsync } = useSubmissions(tenantId);
-  const { contractors } = useContractors(tenantId, { status: 'active' });
+  const { contractors } = useContractors({
+    tenantId,
+    filters: { status: 'active' }
+  });
 
   const form = useForm<EvaluationFormData>({
     resolver: zodResolver(evaluationSchema),
