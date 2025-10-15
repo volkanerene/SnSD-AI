@@ -31,7 +31,7 @@ export function useAuth() {
     data: session,
     isLoading: isLoadingSession,
     error: sessionError
-  } = useQuery<AuthSession | null>({
+  } = useQuery({
     queryKey: ['auth', 'session'],
     queryFn: async () => {
       const {

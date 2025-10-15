@@ -121,7 +121,7 @@ export default function AppSidebar() {
         if (!item) return false;
 
         // Hide admin-only items for non-admins (role_id > 2)
-        if ((item as any).adminOnly && profile.role_id > 2) {
+        if (item.adminOnly && profile.role_id > 2) {
           return false;
         }
 
