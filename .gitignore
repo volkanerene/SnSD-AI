@@ -25,8 +25,13 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env*
 .env*.local
+.env.local
+
+# Allow specific env files to be committed
+!.env.example
+!.env.development
+!.env.production
 
 # vercel
 .vercel

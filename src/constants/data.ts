@@ -19,44 +19,59 @@ export const navItems: NavItem[] = [
     icon: 'dashboard',
     isActive: false,
     shortcut: ['d', 'd'],
-    items: [] // Empty array as there are no child items for Dashboard
+    items: []
   },
   {
-    title: 'Product',
-    url: '/dashboard/product',
-    icon: 'product',
+    title: 'Contractors',
+    url: '/dashboard/contractors',
+    icon: 'users',
+    shortcut: ['c', 'c'],
+    isActive: false,
+    items: []
+  },
+  {
+    title: 'Evaluations',
+    url: '/dashboard/evaluations',
+    icon: 'fileText',
+    shortcut: ['e', 'e'],
+    isActive: false,
+    items: []
+  },
+  {
+    title: 'Payments',
+    url: '/dashboard/payments',
+    icon: 'billing',
     shortcut: ['p', 'p'],
     isActive: false,
-    items: [] // No child items
+    items: []
+  },
+  {
+    title: 'My Evaluations',
+    url: '/dashboard/my-evaluations',
+    icon: 'fileCheck',
+    shortcut: ['m', 'e'],
+    isActive: false,
+    items: []
   },
   {
     title: 'Account',
-    url: '#', // Placeholder as there is no direct link for the parent
-    icon: 'billing',
+    url: '#',
+    icon: 'user',
     isActive: true,
-
     items: [
       {
         title: 'Profile',
         url: '/dashboard/profile',
         icon: 'userPen',
-        shortcut: ['m', 'm']
+        shortcut: ['p', 'r']
       },
       {
-        title: 'Login',
-        shortcut: ['l', 'l'],
-        url: '/',
-        icon: 'login'
+        title: 'Settings',
+        url: '/dashboard/settings',
+        icon: 'settings',
+        shortcut: ['s', 's']
       }
     ]
-  },
-  {
-    title: 'Kanban',
-    url: '/dashboard/kanban',
-    icon: 'kanban',
-    shortcut: ['k', 'k'],
-    isActive: false,
-    items: [] // No child items
   }
 ];
 
