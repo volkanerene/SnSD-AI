@@ -1,4 +1,4 @@
-import type { Profile, ROLE_LEVELS } from '@/types/api';
+// Role-based access control utilities
 
 /**
  * Role-based access control utilities

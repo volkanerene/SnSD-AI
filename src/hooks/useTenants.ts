@@ -10,7 +10,7 @@ interface UseTenantsOptions {
 
 export function useTenants(options: UseTenantsOptions = {}) {
   const queryClient = useQueryClient();
-  const { tenantId, limit = 50, offset = 0 } = options;
+  const { limit = 50, offset = 0 } = options;
 
   // Build query string
   const queryParams = new URLSearchParams();

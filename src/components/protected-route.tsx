@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
-import { canAccessRoute, getDashboardRoute } from '@/lib/auth-utils';
+import { getDashboardRoute } from '@/lib/auth-utils';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {

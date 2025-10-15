@@ -35,9 +35,12 @@ export function OrgSwitcher({
   const { tenants: fetchedTenants, isLoading } = useTenants();
 
   // Use prop tenants if provided, otherwise use fetched tenants
-  const tenants =
-    propTenants ||
-    (fetchedTenants?.map((t) => ({ id: t.id, name: t.name })) ?? []);
+  const tenants = React.useMemo(
+    () =>
+      propTenants ||
+      (fetchedTenants?.map((t) => ({ id: t.id, name: t.name })) ?? []),
+    [propTenants, fetchedTenants]
+  );
 
   const [selectedTenant, setSelectedTenant] = React.useState<
     Tenant | undefined

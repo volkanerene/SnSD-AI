@@ -64,9 +64,9 @@ export default function ProductForm({
 
   const router = useRouter();
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  function onSubmit(_values: z.infer<typeof formSchema>) {
     // Form submission logic would be implemented here
-    console.log(values);
+    // TODO: Implement form submission logic
     router.push('/dashboard/product');
   }
 

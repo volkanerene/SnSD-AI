@@ -91,7 +91,7 @@ export function CreateContractorDialog({
         <DialogHeader>
           <DialogTitle>Add New Contractor</DialogTitle>
           <DialogDescription>
-            Enter the contractor's information to add them to your system.
+            Enter the contractor&apos;s information to add them to your system.
           </DialogDescription>
         </DialogHeader>
 
