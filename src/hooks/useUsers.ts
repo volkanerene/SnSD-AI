@@ -93,6 +93,16 @@ export function useUsers(options: UseUsersOptions = {}) {
     }
   });
 
+  // Delete user
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: UUID) => {
+      return apiClient.delete(`/profiles/${userId}`, { tenantId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    }
+  });
+
   return {
     // Users data
     users: users || [],
@@ -114,6 +124,11 @@ export function useUsers(options: UseUsersOptions = {}) {
     // Deactivate user
     deactivateUser: deactivateUserMutation.mutate,
     deactivateUserAsync: deactivateUserMutation.mutateAsync,
-    isDeactivating: deactivateUserMutation.isPending
+    isDeactivating: deactivateUserMutation.isPending,
+
+    // Delete user
+    deleteUser: deleteUserMutation.mutate,
+    deleteUserAsync: deleteUserMutation.mutateAsync,
+    isDeleting: deleteUserMutation.isPending
   };
 }

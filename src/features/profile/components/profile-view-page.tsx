@@ -21,7 +21,7 @@ export default function ProfileViewPage() {
 
   if (isLoading) {
     return (
-      <div className='flex min-h-[calc(100vh-4rem)] items-center justify-center p-4'>
+      <div className='flex items-center justify-center p-8'>
         <div className='text-muted-foreground'>Loading profile...</div>
       </div>
     );
@@ -29,14 +29,14 @@ export default function ProfileViewPage() {
 
   if (!profile || !user) {
     return (
-      <div className='flex min-h-[calc(100vh-4rem)] items-center justify-center p-4'>
+      <div className='flex items-center justify-center p-8'>
         <div className='text-destructive'>Profile not found</div>
       </div>
     );
   }
 
   return (
-    <div className='flex-1 space-y-6 p-4 pt-6 md:p-8'>
+    <div className='space-y-6 p-4 pt-6 md:p-8'>
       <div>
         <h2 className='text-3xl font-bold tracking-tight'>Profile</h2>
         <p className='text-muted-foreground'>

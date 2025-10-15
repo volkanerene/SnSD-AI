@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(pnpm add:*)"
+      "Bash(pnpm add:*)",
+      "Read(//Users/ilkeryoru/Desktop/PERSONAL/SnSD/**)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

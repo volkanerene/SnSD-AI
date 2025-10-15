@@ -65,6 +65,13 @@ export function useTenants(options: UseTenantsOptions = {}) {
     }
   });
 
+  const deleteTenant = useMutation({
+    mutationFn: (id: UUID) => apiClient.delete(`/tenants/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
+    }
+  });
+
   return {
     tenants: tenants || [],
     isLoading,
@@ -81,7 +88,10 @@ export function useTenants(options: UseTenantsOptions = {}) {
     isActivating: activateTenant.isPending,
     suspendTenant: suspendTenant.mutate,
     suspendTenantAsync: suspendTenant.mutateAsync,
-    isSuspending: suspendTenant.isPending
+    isSuspending: suspendTenant.isPending,
+    deleteTenant: deleteTenant.mutate,
+    deleteTenantAsync: deleteTenant.mutateAsync,
+    isDeleting: deleteTenant.isPending
   };
 }
 

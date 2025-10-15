@@ -24,7 +24,8 @@ export default function UsersManagementPage() {
     error,
     updateUserAsync,
     activateUser,
-    deactivateUser
+    deactivateUser,
+    deleteUser
   } = useUsers({ tenantId, filters: { limit: 200 } });
 
   const handleEdit = (user: Profile) => {
@@ -57,9 +58,24 @@ export default function UsersManagementPage() {
     });
   };
 
+  const handleDelete = (userId: string) => {
+    if (
+      !confirm(
+        'Are you sure you want to delete this user? This will deactivate their account.'
+      )
+    ) {
+      return;
+    }
+    deleteUser(userId, {
+      onSuccess: () => toast.success('User deleted successfully'),
+      onError: (error: any) =>
+        toast.error(error.message || 'Failed to delete user')
+    });
+  };
+
   if (isLoading) {
     return (
-      <div className='flex min-h-0 items-center justify-center p-4'>
+      <div className='flex items-center justify-center p-4'>
         <div className='text-muted-foreground'>Loading users...</div>
       </div>
     );
@@ -67,7 +83,7 @@ export default function UsersManagementPage() {
 
   if (error) {
     return (
-      <div className='flex min-h-0 items-center justify-center p-4'>
+      <div className='flex items-center justify-center p-4'>
         <div className='text-destructive'>
           Error loading users: {error.message}
         </div>

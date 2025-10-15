@@ -29,7 +29,7 @@ export default function TenantsManagementPage() {
 
   if (isLoading) {
     return (
-      <div className='flex min-h-0 items-center justify-center p-4'>
+      <div className='flex items-center justify-center p-4'>
         <div className='text-muted-foreground'>Loading tenants...</div>
       </div>
     );
@@ -37,7 +37,7 @@ export default function TenantsManagementPage() {
 
   if (error) {
     return (
-      <div className='flex min-h-0 items-center justify-center p-4'>
+      <div className='flex items-center justify-center p-4'>
         <div className='text-destructive'>
           Error loading tenants: {error.message}
         </div>

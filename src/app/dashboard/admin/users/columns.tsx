@@ -135,7 +135,7 @@ export const usersColumns: ColumnDef<Profile>[] = [
             {user.is_active ? (
               <DropdownMenuItem
                 onClick={() => meta?.onDeactivate?.(user.id)}
-                className='text-red-600'
+                className='text-orange-600'
               >
                 Deactivate user
               </DropdownMenuItem>
@@ -147,6 +147,13 @@ export const usersColumns: ColumnDef<Profile>[] = [
                 Activate user
               </DropdownMenuItem>
             )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => meta?.onDelete?.(user.id)}
+              className='text-red-600'
+            >
+              Delete user
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );
