@@ -61,7 +61,14 @@ export class ApiClient {
       Object.assign(headers, fetchOptions.headers);
     }
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const fullUrl = `${API_BASE_URL}${endpoint}`;
+
+    // Debug: Log the actual fetch URL
+    if (typeof window !== 'undefined') {
+      console.log('🌐 [API CLIENT] Fetching:', fullUrl);
+    }
+
+    const response = await fetch(fullUrl, {
       ...fetchOptions,
       headers
     });
