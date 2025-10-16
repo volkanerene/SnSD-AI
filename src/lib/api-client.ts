@@ -1,7 +1,8 @@
 import { supabase } from './supabase/client';
 import type { ApiError } from '@/types/api';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 // Debug: Log API URL on initialization
 if (typeof window !== 'undefined') {

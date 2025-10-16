@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, API_BASE_URL } from '@/lib/api-client';
 import type { Profile, ProfileUpdate, UUID } from '@/types/api';
 
 interface UseProfileOptions {
@@ -60,16 +60,13 @@ export function useProfile(options: UseProfileOptions = {}) {
         ? `/profiles/${userId}/avatar`
         : '/profiles/me/avatar';
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${endpoint}`,
-        {
-          method: 'POST',
-          headers: {
-            ...(await apiClient['getAuthHeaders'](tenantId))
-          },
-          body: formData
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          ...(await apiClient['getAuthHeaders'](tenantId))
+        },
+        body: formData
+      });
 
       if (!response.ok) {
         throw new Error('Failed to upload avatar');
