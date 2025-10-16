@@ -3,6 +3,15 @@ import type { ApiError } from '@/types/api';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+// Debug: Log API URL on initialization
+if (typeof window !== 'undefined') {
+  console.log('🔧 [API CLIENT] Using API_BASE_URL:', API_BASE_URL);
+  console.log(
+    '🔧 [API CLIENT] NEXT_PUBLIC_API_URL:',
+    process.env.NEXT_PUBLIC_API_URL
+  );
+}
+
 export interface ApiOptions extends RequestInit {
   tenantId?: string;
   skipAuth?: boolean;
