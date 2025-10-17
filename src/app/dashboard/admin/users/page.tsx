@@ -21,12 +21,16 @@ import {
 import {
   useAdminUsers,
   useDeleteAdminUser,
-  useResetUserPassword
+  useResetUserPassword,
+  useUpdateAdminUser,
+  AdminUser
 } from '@/hooks/useUsersAdmin';
 import { useRoles } from '@/hooks/useRoles';
 import { useTenants } from '@/hooks/useTenants';
 import { UsersTable } from './users-table';
 import { CreateUserDialog } from './create-user-dialog';
+import { EditUserDialog } from './edit-user-dialog';
+import { ManageTenantsDialog } from './manage-tenants-dialog';
 import { Can } from '@/contexts/PermissionContext';
 import { toast } from 'sonner';
 
@@ -36,6 +40,9 @@ export default function AdminUsersPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [tenantFilter, setTenantFilter] = useState<string>('all');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [manageTenantsDialogOpen, setManageTenantsDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
 
   // Build filters
   const filters = {
@@ -50,6 +57,31 @@ export default function AdminUsersPage() {
   const { tenants } = useTenants();
   const { mutate: deleteUser } = useDeleteAdminUser();
   const { mutate: resetPassword } = useResetUserPassword();
+  const { mutate: updateUser } = useUpdateAdminUser();
+
+  const handleEdit = (user: AdminUser) => {
+    setSelectedUser(user);
+    setEditDialogOpen(true);
+  };
+
+  const handleManageTenants = (user: AdminUser) => {
+    setSelectedUser(user);
+    setManageTenantsDialogOpen(true);
+  };
+
+  const handleUpdateUser = (userId: string, data: any) => {
+    updateUser(
+      { id: userId, data },
+      {
+        onSuccess: () => {
+          toast.success('User updated successfully');
+          setEditDialogOpen(false);
+        },
+        onError: (error: any) =>
+          toast.error(error.message || 'Failed to update user')
+      }
+    );
+  };
 
   const handleDelete = (userId: string) => {
     if (
@@ -219,17 +251,35 @@ export default function AdminUsersPage() {
           <UsersTable
             users={users || []}
             isLoading={isLoading}
+            onEdit={handleEdit}
             onDelete={handleDelete}
             onResetPassword={handleResetPassword}
+            onManageTenants={handleManageTenants}
           />
         </CardContent>
       </Card>
 
-      {/* Create User Dialog */}
+      {/* Dialogs */}
       <CreateUserDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
       />
+
+      {selectedUser && (
+        <>
+          <EditUserDialog
+            user={selectedUser}
+            open={editDialogOpen}
+            onOpenChange={setEditDialogOpen}
+            onSave={handleUpdateUser}
+          />
+          <ManageTenantsDialog
+            user={selectedUser}
+            open={manageTenantsDialogOpen}
+            onOpenChange={setManageTenantsDialogOpen}
+          />
+        </>
+      )}
     </div>
   );
 }

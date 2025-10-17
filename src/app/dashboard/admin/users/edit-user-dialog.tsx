@@ -20,11 +20,10 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { useRoles } from '@/hooks/useRoles';
-import type { Profile } from '@/types/api';
-import { toast } from 'sonner';
+import { AdminUser } from '@/hooks/useUsersAdmin';
 
 interface EditUserDialogProps {
-  user: Profile | null;
+  user: AdminUser;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (userId: string, data: any) => void;
@@ -38,23 +37,18 @@ export function EditUserDialog({
 }: EditUserDialogProps) {
   const { data: roles } = useRoles();
   const [formData, setFormData] = useState({
-    full_name: user?.full_name || '',
-    phone: user?.phone || '',
-    department: user?.department || '',
-    job_title: user?.job_title || '',
-    role_id: user?.role_id || 1
+    full_name: user.full_name,
+    phone: user.phone || '',
+    department: user.department || '',
+    job_title: user.job_title || '',
+    role_id: user.role_id || 1
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
-
     onSave(user.id, formData);
-    toast.success('User updated successfully');
     onOpenChange(false);
   };
-
-  if (!user) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
