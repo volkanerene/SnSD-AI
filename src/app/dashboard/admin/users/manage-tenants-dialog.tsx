@@ -56,7 +56,7 @@ export function ManageTenantsDialog({
     } else {
       // Add to tenant
       addToTenant(
-        { userId: user.id, tenantId },
+        { userId: user.id, tenantId, role_id: user.role_id },
         {
           onSuccess: () => toast.success('User added to tenant'),
           onError: (error: any) =>

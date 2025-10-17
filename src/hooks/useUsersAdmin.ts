@@ -170,35 +170,46 @@ export function useResetUserPassword() {
 }
 
 // Add user to tenant (admin only)
-export function useAddUserToTenant(userId: string) {
+export function useAddUserToTenant() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { tenant_id: string; role_id: number }) => {
-      const response = await apiClient.post(`/users/${userId}/tenants`, data);
+    mutationFn: async (data: {
+      userId: string;
+      tenantId: string;
+      role_id?: number;
+    }) => {
+      const { userId, tenantId, role_id } = data;
+      const response = await apiClient.post(`/users/${userId}/tenants`, {
+        tenant_id: tenantId,
+        role_id
+      });
       return response;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ['admin-users', userId, 'tenants']
+        queryKey: ['admin-users', variables.userId, 'tenants']
       });
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       queryClient.invalidateQueries({ queryKey: ['tenant-users'] });
     }
   });
 }
 
 // Remove user from tenant (admin only)
-export function useRemoveUserFromTenant(userId: string) {
+export function useRemoveUserFromTenant() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (tenantId: string) => {
+    mutationFn: async (data: { userId: string; tenantId: string }) => {
+      const { userId, tenantId } = data;
       await apiClient.delete(`/users/${userId}/tenants/${tenantId}`);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ['admin-users', userId, 'tenants']
+        queryKey: ['admin-users', variables.userId, 'tenants']
       });
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       queryClient.invalidateQueries({ queryKey: ['tenant-users'] });
     }
   });
