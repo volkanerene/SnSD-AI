@@ -23,6 +23,10 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
 
   // Debug: Log permissions data
   React.useEffect(() => {
+    console.log('🔐 [PermissionContext] Raw data:', data);
+    console.log('🔐 [PermissionContext] Is loading:', isLoading);
+    console.log('🔐 [PermissionContext] Error:', error);
+
     if (data) {
       console.log('🔐 [PermissionContext] Loaded permissions:', {
         role_id: data.role_id,
@@ -31,7 +35,7 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
         permissions: data.permissions
       });
     }
-  }, [data]);
+  }, [data, isLoading, error]);
 
   const hasPermission = React.useCallback(
     (permission: string) => {
