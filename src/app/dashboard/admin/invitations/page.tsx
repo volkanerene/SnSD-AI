@@ -61,7 +61,7 @@ export default function InvitationsPage() {
     status: statusFilter !== 'all' ? (statusFilter as any) : undefined
   };
 
-  const { data: invitations, isLoading } = useInvitations(filters);
+  const { data: invitations } = useInvitations(filters);
   const { roles } = useRoles();
   const { tenants } = useTenants();
   const { mutateAsync: createInvitation, isPending: isCreating } =
