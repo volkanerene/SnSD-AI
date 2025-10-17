@@ -48,20 +48,53 @@ export const navItems: NavItem[] = [
     icon: 'shield',
     isActive: false,
     adminOnly: true,
+    requiredPermission: 'users.read', // At least one admin permission
     items: [
       {
         title: 'Users',
         url: '/dashboard/admin/users',
         icon: 'users',
-        shortcut: ['a', 'u']
+        shortcut: ['a', 'u'],
+        requiredPermission: 'users.read'
+      },
+      {
+        title: 'Roles & Permissions',
+        url: '/dashboard/admin/roles',
+        icon: 'shield',
+        shortcut: ['a', 'r'],
+        requiredPermission: 'roles.read'
+      },
+      {
+        title: 'Invitations',
+        url: '/dashboard/admin/invitations',
+        icon: 'mail',
+        shortcut: ['a', 'i'],
+        requiredPermission: 'users.invite'
       },
       {
         title: 'Tenants',
         url: '/dashboard/admin/tenants',
         icon: 'building',
-        shortcut: ['a', 't']
+        shortcut: ['a', 't'],
+        requiredPermission: 'tenants.read'
+      },
+      {
+        title: 'Subscription',
+        url: '/dashboard/admin/subscription',
+        icon: 'creditCard',
+        shortcut: ['a', 's'],
+        requiredPermission: 'tenants.read'
       }
     ]
+  },
+  {
+    title: 'Team',
+    url: '/dashboard/team',
+    icon: 'users',
+    shortcut: ['t', 't'],
+    isActive: false,
+    requiredPermission: 'tenants.users.manage',
+    items: []
   },
   {
     title: 'Account',

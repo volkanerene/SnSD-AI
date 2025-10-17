@@ -12,6 +12,7 @@ export interface NavItem {
   isActive?: boolean;
   items?: NavItem[];
   adminOnly?: boolean;
+  requiredPermission?: string;
 }
 
 export interface NavItemWithChildren extends NavItem {

@@ -2,6 +2,7 @@ import KBar from '@/components/kbar';
 import AppSidebar from '@/components/layout/app-sidebar';
 import Header from '@/components/layout/header';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { PermissionProvider } from '@/contexts/PermissionProvider.client';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 
@@ -19,16 +20,18 @@ export default async function DashboardLayout({
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get('sidebar_state')?.value === 'true';
   return (
-    <KBar>
-      <SidebarProvider defaultOpen={defaultOpen} className='h-screen'>
-        <AppSidebar />
-        <SidebarInset className='flex flex-col overflow-hidden'>
-          <Header />
-          {/* page main content */}
-          <div className='flex-1 overflow-y-auto'>{children}</div>
-          {/* page main content ends */}
-        </SidebarInset>
-      </SidebarProvider>
-    </KBar>
+    <PermissionProvider>
+      <KBar>
+        <SidebarProvider defaultOpen={defaultOpen} className='h-screen'>
+          <AppSidebar />
+          <SidebarInset className='flex flex-col overflow-hidden'>
+            <Header />
+            {/* page main content */}
+            <div className='flex-1 overflow-y-auto'>{children}</div>
+            {/* page main content ends */}
+          </SidebarInset>
+        </SidebarProvider>
+      </KBar>
+    </PermissionProvider>
   );
 }

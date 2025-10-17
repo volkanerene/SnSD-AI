@@ -33,6 +33,7 @@ import { navItems } from '@/constants/data';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
+import { usePermissionContext } from '@/contexts/PermissionContext';
 import { canAccessRoute } from '@/lib/auth-utils';
 import {
   IconBell,
@@ -66,6 +67,8 @@ export default function AppSidebar() {
   const { isOpen } = useMediaQuery();
   const { user, signOutAsync } = useAuth();
   const { profile, isLoading: profileLoading } = useProfile();
+  const { hasPermission, isLoading: permissionsLoading } =
+    usePermissionContext();
   const router = useRouter();
 
   const handleSwitchTenant = (_tenantId: string) => {
@@ -84,28 +87,26 @@ export default function AppSidebar() {
 
   const activeTenant = tenants[0];
 
-  // Filter nav items based on user role
+  // Filter nav items based on user permissions
   const filteredNavItems = React.useMemo(() => {
-    console.log(
-      '🔍 [SIDEBAR FILTER] Running filter. Profile role_id:',
-      profile?.role_id
-    );
-
     // Show loading state - don't show any items while loading
-    if (profileLoading) return [];
+    if (profileLoading || permissionsLoading) return [];
 
-    // If profile is still loading or role_id is missing, return empty array to prevent showing all items
-    if (!profile?.role_id) {
-      return [];
-    }
+    // If profile or permissions not loaded yet, return empty
+    if (!profile?.role_id) return [];
 
     const result = navItems
       .map((item) => {
         // Filter sub-items if they exist
         if (item.items && item.items.length > 0) {
-          const filteredSubItems = item.items.filter((subItem) =>
-            canAccessRoute(profile.role_id!, subItem.url)
-          );
+          const filteredSubItems = item.items.filter((subItem) => {
+            // Check permission if requiredPermission is specified
+            if (subItem.requiredPermission) {
+              return hasPermission(subItem.requiredPermission);
+            }
+            // Fallback to role-based access
+            return canAccessRoute(profile.role_id!, subItem.url);
+          });
 
           // If no sub-items are accessible, hide the parent
           if (filteredSubItems.length === 0 && item.url === '#') {
@@ -120,6 +121,12 @@ export default function AppSidebar() {
       .filter((item): item is NonNullable<typeof item> => {
         if (!item) return false;
 
+        // Check permission if requiredPermission is specified
+        if (item.requiredPermission) {
+          const hasAccess = hasPermission(item.requiredPermission);
+          if (!hasAccess) return false;
+        }
+
         // Hide admin-only items for non-admins (role_id > 2)
         if (item.adminOnly && profile.role_id > 2) {
           return false;
@@ -130,21 +137,12 @@ export default function AppSidebar() {
           return !!(item.items && item.items.length > 0);
         }
 
-        // Check if user can access this route
-        const canAccess = canAccessRoute(profile.role_id, item.url);
-        console.log(
-          `🔒 [SIDEBAR FILTER] Item "${item.title}" (${item.url}):`,
-          canAccess
-        );
-        return canAccess;
+        // Fallback to role-based access check
+        return canAccessRoute(profile.role_id, item.url);
       });
 
-    console.log(
-      '📋 [SIDEBAR FILTER] Filtered items:',
-      result.map((i: any) => i.title)
-    );
     return result;
-  }, [profile, profileLoading]);
+  }, [profile, profileLoading, permissionsLoading, hasPermission]);
 
   React.useEffect(() => {
     // Side effects based on sidebar state changes

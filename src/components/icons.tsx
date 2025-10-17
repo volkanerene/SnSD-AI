@@ -34,7 +34,8 @@ import {
   IconLayoutKanban,
   IconBrandGithub,
   IconShield,
-  IconBuilding
+  IconBuilding,
+  IconMail
 } from '@tabler/icons-react';
 
 export type Icon = React.ComponentType<IconProps>;
@@ -58,6 +59,7 @@ export const Icons = {
   media: IconPhoto,
   settings: IconSettings,
   billing: IconCreditCard,
+  creditCard: IconCreditCard,
   ellipsis: IconDotsVertical,
   add: IconPlus,
   warning: IconAlertTriangle,
@@ -75,5 +77,6 @@ export const Icons = {
   twitter: IconBrandTwitter,
   check: IconCheck,
   shield: IconShield,
-  building: IconBuilding
+  building: IconBuilding,
+  mail: IconMail
 };
