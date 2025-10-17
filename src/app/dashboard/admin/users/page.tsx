@@ -46,7 +46,7 @@ export default function AdminUsersPage() {
   };
 
   const { data: users, isLoading } = useAdminUsers(filters);
-  const { roles } = useRoles();
+  const { data: roles } = useRoles();
   const { tenants } = useTenants();
   const { mutate: deleteUser } = useDeleteAdminUser();
   const { mutate: resetPassword } = useResetUserPassword();

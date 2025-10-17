@@ -55,7 +55,7 @@ export function CreateUserDialog({
 }: CreateUserDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { mutateAsync: createUser } = useCreateAdminUser();
-  const { roles } = useRoles();
+  const { data: roles } = useRoles();
   const { tenants } = useTenants();
 
   const form = useForm<UserFormData>({

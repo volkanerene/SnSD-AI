@@ -36,7 +36,7 @@ export function EditUserDialog({
   onOpenChange,
   onSave
 }: EditUserDialogProps) {
-  const { roles } = useRoles();
+  const { data: roles } = useRoles();
   const [formData, setFormData] = useState({
     full_name: user?.full_name || '',
     phone: user?.phone || '',
