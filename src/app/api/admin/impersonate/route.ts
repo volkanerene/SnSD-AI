@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
 
   // Verify admin has permission by fetching from backend
   try {
+    console.log('Fetching admin profile from backend...');
     const profileResponse = await fetch(`${API_URL}/profiles/me`, {
       headers: {
         Authorization: `Bearer ${session.access_token}`
@@ -41,6 +42,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!profileResponse.ok) {
+      console.log('Admin profile fetch failed:', profileResponse.status);
       return NextResponse.json(
         { error: 'Failed to verify admin status' },
         { status: 403 }
@@ -48,9 +50,11 @@ export async function GET(request: NextRequest) {
     }
 
     const adminProfile = await profileResponse.json();
+    console.log('Admin profile:', adminProfile);
 
     // Only allow SNSD Admin (role_id <= 1) to impersonate
     if (!adminProfile || adminProfile.role_id > 1) {
+      console.log('Insufficient permissions:', adminProfile?.role_id);
       return NextResponse.json(
         { error: 'Unauthorized: Admin access required' },
         { status: 403 }
@@ -69,10 +73,18 @@ export async function GET(request: NextRequest) {
     }
 
     const targetUser = await userResponse.json();
+    console.log('Target user fetched:', targetUser);
 
-    if (!targetUser || !targetUser.email) {
+    if (!targetUser || !targetUser.id) {
+      console.log('Target user validation failed:', { targetUser });
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
+
+    // The backend doesn't return email, so we need to fetch it from Supabase auth
+    // We'll store the user data for later use in the activate endpoint
+    console.log(
+      'Target user validated, proceeding to create impersonation session'
+    );
   } catch (error) {
     console.error('Error fetching user data:', error);
     return NextResponse.json(
@@ -82,11 +94,18 @@ export async function GET(request: NextRequest) {
   }
 
   // Use admin client to store impersonation session in Supabase
+  console.log('Creating admin client and impersonation session...');
   const adminClient = createAdminClient();
 
   // Create impersonation token (store in database for security)
   const impersonationToken = crypto.randomUUID();
   const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+
+  console.log('Inserting impersonation session:', {
+    admin_user_id: currentUser.id,
+    target_user_id: userId,
+    expires_at: expiresAt.toISOString()
+  });
 
   // Store impersonation session in database using admin client
   const { error: insertError } = await adminClient
@@ -101,10 +120,12 @@ export async function GET(request: NextRequest) {
   if (insertError) {
     console.error('Error creating impersonation session:', insertError);
     return NextResponse.json(
-      { error: 'Failed to create impersonation session' },
+      { error: 'Failed to create impersonation session', details: insertError },
       { status: 500 }
     );
   }
+
+  console.log('Impersonation session created successfully');
 
   // Redirect to impersonation handler with token
   const impersonateRedirectUrl = new URL(

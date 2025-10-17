@@ -22,12 +22,12 @@ export default async function DashboardLayout({
   const defaultOpen = cookieStore.get('sidebar_state')?.value === 'true';
   return (
     <PermissionProvider>
-      <ImpersonationBanner />
       <KBar>
         <SidebarProvider defaultOpen={defaultOpen} className='h-screen'>
           <AppSidebar />
           <SidebarInset className='flex flex-col overflow-hidden'>
             <Header />
+            <ImpersonationBanner />
             {/* page main content */}
             <div className='flex-1 overflow-y-auto'>{children}</div>
             {/* page main content ends */}

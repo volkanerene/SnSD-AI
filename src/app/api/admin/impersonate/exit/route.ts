@@ -22,9 +22,14 @@ export async function POST() {
     { status: 200 }
   );
 
+  // Get Supabase project ref for cookie name
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const projectRef = supabaseUrl.match(/https:\/\/(.+?)\.supabase\.co/)?.[1];
+
   // Clear all session-related cookies
-  response.cookies.delete('sb-access-token');
-  response.cookies.delete('sb-refresh-token');
+  if (projectRef) {
+    response.cookies.delete(`sb-${projectRef}-auth-token`);
+  }
   response.cookies.delete('impersonation');
   response.cookies.delete('impersonated_user_name');
 

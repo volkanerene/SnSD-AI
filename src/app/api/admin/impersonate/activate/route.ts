@@ -53,9 +53,12 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Fetch target user's email from backend
+  // Fetch target user's data from backend (for name) and Supabase (for email)
   let targetUser;
+  let targetUserEmail;
+
   try {
+    // Get user data from backend for display name
     const userResponse = await fetch(
       `${API_URL}/users/${session.target_user_id}`,
       {
@@ -73,11 +76,19 @@ export async function GET(request: NextRequest) {
 
     targetUser = await userResponse.json();
 
-    if (!targetUser || !targetUser.email) {
+    // Get email from Supabase auth.users table
+    const { data: authUser, error: authError } =
+      await adminClient.auth.admin.getUserById(session.target_user_id);
+
+    if (authError || !authUser || !authUser.user || !authUser.user.email) {
+      console.error('Error fetching target user email:', authError);
       return NextResponse.redirect(
-        new URL('/dashboard?error=target_user_not_found', request.url)
+        new URL('/dashboard?error=target_user_email_not_found', request.url)
       );
     }
+
+    targetUserEmail = authUser.user.email;
+    console.log('Target user email:', targetUserEmail);
   } catch (error) {
     console.error('Error fetching target user:', error);
     return NextResponse.redirect(
@@ -89,7 +100,7 @@ export async function GET(request: NextRequest) {
   const { data: linkData, error: linkError } =
     await adminClient.auth.admin.generateLink({
       type: 'magiclink',
-      email: targetUser.email
+      email: targetUserEmail
     });
 
   if (linkError || !linkData || !linkData.properties) {
@@ -125,8 +136,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const accessToken = verifyData.session.access_token;
-  const refreshToken = verifyData.session.refresh_token;
+  const newSession = verifyData.session;
 
   // Mark session as used
   await adminClient
@@ -139,21 +149,35 @@ export async function GET(request: NextRequest) {
     new URL('/dashboard?impersonated=true', request.url)
   );
 
-  // Set session cookie
-  response.cookies.set('sb-access-token', accessToken, {
+  // Get Supabase project ref from URL for cookie name
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const projectRef = supabaseUrl.match(/https:\/\/(.+?)\.supabase\.co/)?.[1];
+
+  if (!projectRef) {
+    console.error('Could not extract project ref from Supabase URL');
+    return NextResponse.redirect(
+      new URL('/dashboard?error=invalid_supabase_config', request.url)
+    );
+  }
+
+  // Set session cookie with correct Supabase SSR format
+  const authToken = Buffer.from(
+    JSON.stringify({
+      access_token: newSession.access_token,
+      token_type: 'bearer',
+      expires_in: 3600,
+      expires_at: Math.floor(Date.now() / 1000) + 3600,
+      refresh_token: newSession.refresh_token,
+      user: newSession.user
+    })
+  ).toString('base64');
+
+  response.cookies.set(`sb-${projectRef}-auth-token`, `base64-${authToken}`, {
     path: '/',
-    httpOnly: true,
+    httpOnly: false, // Supabase SSR cookies are not httpOnly
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     maxAge: 60 * 30 // 30 minutes
-  });
-
-  response.cookies.set('sb-refresh-token', refreshToken, {
-    path: '/',
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 60 * 30
   });
 
   // Add impersonation indicator cookie
