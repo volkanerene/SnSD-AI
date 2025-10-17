@@ -9,6 +9,9 @@ export interface AdminUser {
   full_name: string;
   role_id: number;
   tenant_id?: string;
+  phone?: string;
+  department?: string;
+  job_title?: string;
   status: 'active' | 'inactive' | 'suspended';
   created_at: string;
   updated_at: string;
@@ -44,6 +47,9 @@ export interface CreateUserDto {
 export interface UpdateUserDto {
   full_name?: string;
   role_id?: number;
+  phone?: string;
+  department?: string;
+  job_title?: string;
   status?: 'active' | 'inactive' | 'suspended';
   metadata?: Record<string, any>;
 }
