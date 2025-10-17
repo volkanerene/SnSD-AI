@@ -90,6 +90,9 @@ export function ManagePermissionsDialog({
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className='sm:max-w-[600px]'>
+          <DialogHeader>
+            <DialogTitle>Manage Permissions</DialogTitle>
+          </DialogHeader>
           <div className='flex items-center justify-center p-8'>
             <div className='text-muted-foreground'>Loading permissions...</div>
           </div>

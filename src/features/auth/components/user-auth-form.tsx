@@ -43,7 +43,7 @@ export default function UserAuthForm() {
 
   const onSubmit = async (data: UserFormValue) => {
     try {
-      const result = await signInAsync({
+      await signInAsync({
         email: data.email,
         password: data.password
       });
@@ -63,52 +63,53 @@ export default function UserAuthForm() {
 
   return (
     <>
-      <Form
-        form={form}
-        onSubmit={form.handleSubmit(onSubmit)}
-        className='w-full space-y-4'
-      >
-        <FormField
-          control={form.control}
-          name='email'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input
-                  type='email'
-                  placeholder='Enter your email...'
-                  disabled={isSigningIn}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className='w-full space-y-4'
+        >
+          <FormField
+            control={form.control}
+            name='email'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input
+                    type='email'
+                    placeholder='Enter your email...'
+                    disabled={isSigningIn}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name='password'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <FormControl>
-                <Input
-                  type='password'
-                  placeholder='Enter your password...'
-                  disabled={isSigningIn}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name='password'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                  <Input
+                    type='password'
+                    placeholder='Enter your password...'
+                    disabled={isSigningIn}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <Button disabled={isSigningIn} className='w-full' type='submit'>
-          {isSigningIn ? 'Signing in...' : 'Sign In'}
-        </Button>
+          <Button disabled={isSigningIn} className='w-full' type='submit'>
+            {isSigningIn ? 'Signing in...' : 'Sign In'}
+          </Button>
+        </form>
       </Form>
 
       <div className='relative'>
