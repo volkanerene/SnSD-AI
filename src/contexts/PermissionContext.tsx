@@ -21,9 +21,25 @@ const PermissionContext = createContext<PermissionContextType | undefined>(
 export function PermissionProvider({ children }: { children: ReactNode }) {
   const { data, isLoading, error } = useMyPermissions();
 
+  // Debug: Log permissions data
+  React.useEffect(() => {
+    if (data) {
+      console.log('🔐 [PermissionContext] Loaded permissions:', {
+        role_id: data.role_id,
+        role_name: data.role_name,
+        permissions_count: data.permissions?.length || 0,
+        permissions: data.permissions
+      });
+    }
+  }, [data]);
+
   const hasPermission = React.useCallback(
     (permission: string) => {
-      return data?.permissions?.includes(permission) ?? false;
+      const result = data?.permissions?.includes(permission) ?? false;
+      if (!result && data?.permissions) {
+        console.log('🚫 [PermissionContext] Missing permission:', permission);
+      }
+      return result;
     },
     [data?.permissions]
   );
