@@ -13,7 +13,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Pencil, Trash2, Key, UserPlus } from 'lucide-react';
+import {
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  Key,
+  UserPlus,
+  LogIn
+} from 'lucide-react';
 import { Can } from '@/contexts/PermissionContext';
 
 interface UsersTableProps {
@@ -23,6 +30,7 @@ interface UsersTableProps {
   onDelete?: (userId: string) => void;
   onResetPassword?: (userId: string) => void;
   onManageTenants?: (user: AdminUser) => void;
+  onImpersonate?: (user: AdminUser) => void;
 }
 
 export function UsersTable({
@@ -31,7 +39,8 @@ export function UsersTable({
   onEdit,
   onDelete,
   onResetPassword,
-  onManageTenants
+  onManageTenants,
+  onImpersonate
 }: UsersTableProps) {
   const columns: ColumnDef<AdminUser>[] = [
     {
@@ -145,6 +154,16 @@ export function UsersTable({
                 <DropdownMenuItem onClick={() => onManageTenants?.(user)}>
                   <UserPlus className='mr-2 h-4 w-4' />
                   Manage Tenants
+                </DropdownMenuItem>
+              </Can>
+              <DropdownMenuSeparator />
+              <Can permission='users.read'>
+                <DropdownMenuItem
+                  onClick={() => onImpersonate?.(user)}
+                  className='text-blue-600'
+                >
+                  <LogIn className='mr-2 h-4 w-4' />
+                  Login as User
                 </DropdownMenuItem>
               </Can>
               <DropdownMenuSeparator />

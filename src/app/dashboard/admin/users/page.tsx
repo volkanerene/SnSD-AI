@@ -116,6 +116,21 @@ export default function AdminUsersPage() {
     });
   };
 
+  const handleImpersonate = (user: AdminUser) => {
+    if (
+      !confirm(
+        `Login as ${user.full_name}? This will open a new tab where you'll be logged in as this user.`
+      )
+    ) {
+      return;
+    }
+
+    // Create impersonation token and open in new tab
+    const impersonateUrl = `/api/admin/impersonate?userId=${user.id}`;
+    window.open(impersonateUrl, '_blank');
+    toast.success(`Opening session as ${user.full_name}...`);
+  };
+
   // Stats
   const activeUsers = users?.filter((u) => u.status === 'active').length || 0;
   const inactiveUsers =
@@ -277,6 +292,7 @@ export default function AdminUsersPage() {
             onDelete={handleDelete}
             onResetPassword={handleResetPassword}
             onManageTenants={handleManageTenants}
+            onImpersonate={handleImpersonate}
           />
         </CardContent>
       </Card>

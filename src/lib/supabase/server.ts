@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 
 /**
@@ -27,6 +28,32 @@ export async function createClient() {
             // user sessions.
           }
         }
+      }
+    }
+  );
+}
+
+/**
+ * Create a Supabase admin client with service role key
+ * WARNING: This bypasses Row Level Security (RLS) - use with caution
+ * Only use for admin operations that require elevated privileges
+ */
+export function createAdminClient() {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!serviceRoleKey) {
+    throw new Error(
+      'SUPABASE_SERVICE_ROLE_KEY is not set in environment variables'
+    );
+  }
+
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    serviceRoleKey,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
       }
     }
   );
