@@ -92,7 +92,7 @@ export function EditUserDialog({
                   <SelectValue placeholder='Select role' />
                 </SelectTrigger>
                 <SelectContent>
-                  {roles.map((role) => (
+                  {roles?.map((role) => (
                     <SelectItem key={role.id} value={role.id.toString()}>
                       {role.name}
                     </SelectItem>
