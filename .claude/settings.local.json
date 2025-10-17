@@ -3,7 +3,11 @@
     "allow": [
       "Bash(pnpm add:*)",
       "Read(//Users/ilkeryoru/Desktop/PERSONAL/SnSD/**)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(source:*)",
+      "Bash(python3:*)",
+      "Bash(chmod:*)",
+      "Bash(pnpm build:*)"
     ],
     "deny": [],
     "ask": []
