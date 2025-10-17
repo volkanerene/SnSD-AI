@@ -1,7 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Search } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  Users as UsersIcon,
+  UserCheck,
+  UserX,
+  Ban
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -117,77 +124,92 @@ export default function AdminUsersPage() {
     users?.filter((u) => u.status === 'suspended').length || 0;
 
   return (
-    <div className='container mx-auto space-y-6 py-6'>
+    <div className='space-y-8 p-8 pt-6'>
+      {/* Header */}
       <div className='flex items-center justify-between'>
         <div>
           <h1 className='text-3xl font-bold tracking-tight'>User Management</h1>
-          <p className='text-muted-foreground'>
+          <p className='text-muted-foreground mt-2'>
             Manage all users across all tenants
           </p>
         </div>
         <Can permission='users.create'>
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className='mr-2 h-4 w-4' />
+          <Button onClick={() => setCreateDialogOpen(true)} size='lg'>
+            <Plus className='mr-2 h-5 w-5' />
             Create User
           </Button>
         </Can>
       </div>
 
       {/* Stats Cards */}
-      <div className='grid gap-4 md:grid-cols-4'>
-        <Card>
+      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
+        <Card className='border-l-4 border-l-blue-500'>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Total Users</CardTitle>
+            <UsersIcon className='text-muted-foreground h-4 w-4' />
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>{users?.length || 0}</div>
+            <p className='text-muted-foreground mt-1 text-xs'>
+              All registered users
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className='border-l-4 border-l-green-500'>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Active</CardTitle>
+            <UserCheck className='h-4 w-4 text-green-600' />
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold text-green-600'>
               {activeUsers}
             </div>
+            <p className='text-muted-foreground mt-1 text-xs'>
+              Currently active
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className='border-l-4 border-l-gray-500'>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Inactive</CardTitle>
+            <UserX className='h-4 w-4 text-gray-600' />
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold text-gray-600'>
               {inactiveUsers}
             </div>
+            <p className='text-muted-foreground mt-1 text-xs'>Not active</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className='border-l-4 border-l-red-500'>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Suspended</CardTitle>
+            <Ban className='h-4 w-4 text-red-600' />
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold text-red-600'>
               {suspendedUsers}
             </div>
+            <p className='text-muted-foreground mt-1 text-xs'>
+              Access suspended
+            </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Filters */}
       <Card>
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
+        <CardHeader className='pb-4'>
+          <CardTitle className='text-lg'>Filters</CardTitle>
           <CardDescription>
             Filter users by role, status, tenant, or search by name/email
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
+        <CardContent className='pt-0'>
+          <div className='grid gap-3 md:grid-cols-2 lg:grid-cols-4'>
             {/* Search */}
             <div className='relative'>
               <Search className='text-muted-foreground absolute top-2.5 left-2 h-4 w-4' />

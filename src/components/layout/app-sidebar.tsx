@@ -91,23 +91,13 @@ export default function AppSidebar() {
   const filteredNavItems = React.useMemo(() => {
     // Show loading state - don't show any items while loading
     if (profileLoading || permissionsLoading) {
-      console.log('📊 [Sidebar] Loading...', {
-        profileLoading,
-        permissionsLoading
-      });
       return [];
     }
 
     // If profile or permissions not loaded yet, return empty
     if (!profile?.role_id) {
-      console.log('📊 [Sidebar] No profile or role_id');
       return [];
     }
-
-    console.log('📊 [Sidebar] Filtering nav items:', {
-      role_id: profile.role_id,
-      total_items: navItems.length
-    });
 
     const result = navItems
       .map((item) => {
@@ -138,20 +128,11 @@ export default function AppSidebar() {
         // Check permission if requiredPermission is specified
         if (item.requiredPermission) {
           const hasAccess = hasPermission(item.requiredPermission);
-          console.log('🔍 [Sidebar] Checking item permission:', {
-            title: item.title,
-            requiredPermission: item.requiredPermission,
-            hasAccess
-          });
           if (!hasAccess) return false;
         }
 
         // Hide admin-only items for non-admins (role_id > 2)
         if (item.adminOnly && profile.role_id > 2) {
-          console.log(
-            '🚫 [Sidebar] Hiding admin-only item for non-admin:',
-            item.title
-          );
           return false;
         }
 

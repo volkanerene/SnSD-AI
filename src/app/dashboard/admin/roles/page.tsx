@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Shield, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Shield, Pencil, Trash2, ShieldCheck, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -174,19 +174,19 @@ export default function RolesPage() {
   }
 
   return (
-    <div className='container mx-auto space-y-6 py-6'>
+    <div className='space-y-8 p-8 pt-6'>
       <div className='flex items-center justify-between'>
         <div>
           <h1 className='text-3xl font-bold tracking-tight'>
             Roles & Permissions
           </h1>
-          <p className='text-muted-foreground'>
+          <p className='text-muted-foreground mt-2'>
             Manage user roles and their permission assignments
           </p>
         </div>
         <Can permission='roles.create'>
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className='mr-2 h-4 w-4' />
+          <Button onClick={() => setCreateDialogOpen(true)} size='lg'>
+            <Plus className='mr-2 h-5 w-5' />
             Create Role
           </Button>
         </Can>
@@ -194,34 +194,46 @@ export default function RolesPage() {
 
       {/* Stats */}
       <div className='grid gap-4 md:grid-cols-3'>
-        <Card>
-          <CardHeader className='pb-2'>
+        <Card className='border-l-4 border-l-blue-500'>
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Total Roles</CardTitle>
+            <Shield className='text-muted-foreground h-4 w-4' />
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>{roles?.length || 0}</div>
+            <p className='text-muted-foreground mt-1 text-xs'>
+              All system roles
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className='pb-2'>
+        <Card className='border-l-4 border-l-purple-500'>
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Admin Roles</CardTitle>
+            <ShieldCheck className='h-4 w-4 text-purple-600' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold text-blue-600'>
+            <div className='text-2xl font-bold text-purple-600'>
               {roles?.filter((r) => r.level <= 1).length || 0}
             </div>
+            <p className='text-muted-foreground mt-1 text-xs'>
+              Administrative access
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className='pb-2'>
+        <Card className='border-l-4 border-l-green-500'>
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>User Roles</CardTitle>
+            <Users className='h-4 w-4 text-green-600' />
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold text-green-600'>
               {roles?.filter((r) => r.level > 1).length || 0}
             </div>
+            <p className='text-muted-foreground mt-1 text-xs'>
+              Standard user access
+            </p>
           </CardContent>
         </Card>
       </div>

@@ -233,25 +233,25 @@ export default function TeamPage() {
   }
 
   return (
-    <div className='container mx-auto space-y-6 py-6'>
+    <div className='space-y-8 p-8 pt-6'>
       <div className='flex items-center justify-between'>
         <div>
           <h1 className='text-3xl font-bold tracking-tight'>Team</h1>
-          <p className='text-muted-foreground'>
+          <p className='text-muted-foreground mt-2'>
             Manage your organization&apos;s team members
           </p>
         </div>
         <Can permission='tenants.users.manage'>
-          <Button onClick={() => setAddDialogOpen(true)}>
-            <UserPlus className='mr-2 h-4 w-4' />
+          <Button onClick={() => setAddDialogOpen(true)} size='lg'>
+            <UserPlus className='mr-2 h-5 w-5' />
             Add Member
           </Button>
         </Can>
       </div>
 
       {/* Stats */}
-      <div className='grid gap-4 md:grid-cols-4'>
-        <Card>
+      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
+        <Card className='border-l-4 border-l-blue-500'>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Total Members</CardTitle>
             <Users className='text-muted-foreground h-4 w-4' />
@@ -260,53 +260,61 @@ export default function TeamPage() {
             <div className='text-2xl font-bold'>
               {stats?.total_members || 0}
             </div>
+            <p className='text-muted-foreground mt-1 text-xs'>Team size</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className='border-l-4 border-l-green-500'>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Active</CardTitle>
-            <UserCheck className='text-muted-foreground h-4 w-4' />
+            <UserCheck className='h-4 w-4 text-green-600' />
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold text-green-600'>
               {stats?.active_members || 0}
             </div>
+            <p className='text-muted-foreground mt-1 text-xs'>
+              Currently active
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className='border-l-4 border-l-orange-500'>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Inactive</CardTitle>
-            <UserX className='text-muted-foreground h-4 w-4' />
+            <UserX className='h-4 w-4 text-orange-600' />
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold text-orange-600'>
               {stats?.inactive_members || 0}
             </div>
+            <p className='text-muted-foreground mt-1 text-xs'>Not active</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className='border-l-4 border-l-purple-500'>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Roles</CardTitle>
-            <Users className='text-muted-foreground h-4 w-4' />
+            <Users className='h-4 w-4 text-purple-600' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>
+            <div className='text-2xl font-bold text-purple-600'>
               {Object.keys(stats?.by_role || {}).length}
             </div>
+            <p className='text-muted-foreground mt-1 text-xs'>
+              Different roles
+            </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Filters */}
       <Card>
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
+        <CardHeader className='pb-4'>
+          <CardTitle className='text-lg'>Filters</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className='flex gap-4'>
+        <CardContent className='pt-0'>
+          <div className='flex gap-3'>
             <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger className='w-[200px]'>
                 <SelectValue placeholder='All Roles' />
