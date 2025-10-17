@@ -1,6 +1,8 @@
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const userId = searchParams.get('userId');
@@ -13,42 +15,74 @@ export async function GET(request: NextRequest) {
 
   // Get current user (admin)
   const {
-    data: { user: currentUser }
+    data: { user: currentUser },
+    error: authError
   } = await supabase.auth.getUser();
 
-  if (!currentUser) {
+  if (authError || !currentUser) {
     return NextResponse.redirect(new URL('/auth/sign-in', request.url));
   }
 
-  // Verify admin has permission to impersonate
-  // Get admin's profile and check if they have admin role
-  const { data: adminProfile } = await supabase
-    .from('profiles')
-    .select('role_id')
-    .eq('id', currentUser.id)
-    .single();
+  // Get current user's session for API calls
+  const {
+    data: { session }
+  } = await supabase.auth.getSession();
 
-  // Only allow SNSD Admin (role_id <= 1) to impersonate
-  if (!adminProfile || adminProfile.role_id > 1) {
+  if (!session) {
+    return NextResponse.redirect(new URL('/auth/sign-in', request.url));
+  }
+
+  // Verify admin has permission by fetching from backend
+  try {
+    const profileResponse = await fetch(`${API_URL}/profiles/me`, {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`
+      }
+    });
+
+    if (!profileResponse.ok) {
+      return NextResponse.json(
+        { error: 'Failed to verify admin status' },
+        { status: 403 }
+      );
+    }
+
+    const adminProfile = await profileResponse.json();
+
+    // Only allow SNSD Admin (role_id <= 1) to impersonate
+    if (!adminProfile || adminProfile.role_id > 1) {
+      return NextResponse.json(
+        { error: 'Unauthorized: Admin access required' },
+        { status: 403 }
+      );
+    }
+
+    // Get target user's details from backend
+    const userResponse = await fetch(`${API_URL}/users/${userId}`, {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`
+      }
+    });
+
+    if (!userResponse.ok) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const targetUser = await userResponse.json();
+
+    if (!targetUser || !targetUser.email) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+  } catch (error) {
+    console.error('Error fetching user data:', error);
     return NextResponse.json(
-      { error: 'Unauthorized: Admin access required' },
-      { status: 403 }
+      { error: 'Failed to fetch user data' },
+      { status: 500 }
     );
   }
 
-  // Use admin client to check target user
+  // Use admin client to store impersonation session in Supabase
   const adminClient = createAdminClient();
-
-  // Get target user's details
-  const { data: targetUser, error: userError } = await adminClient
-    .from('profiles')
-    .select('id, email, full_name')
-    .eq('id', userId)
-    .single();
-
-  if (userError || !targetUser) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 });
-  }
 
   // Create impersonation token (store in database for security)
   const impersonationToken = crypto.randomUUID();

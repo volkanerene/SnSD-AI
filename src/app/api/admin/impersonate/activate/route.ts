@@ -1,5 +1,7 @@
-import { createAdminClient } from '@/lib/supabase/server';
+import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -13,6 +15,7 @@ export async function GET(request: NextRequest) {
 
   // Use admin client for all operations
   const adminClient = createAdminClient();
+  const userClient = await createClient();
 
   // Get impersonation session
   const { data: session, error: sessionError } = await adminClient
@@ -40,34 +43,90 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Get target user's email for sign in
-  const { data: targetUser } = await adminClient
-    .from('profiles')
-    .select('email, full_name')
-    .eq('id', session.target_user_id)
-    .single();
+  // Get admin's session to fetch user data from backend
+  const { data: adminAuthData } = await userClient.auth.getUser();
+  const { data: adminSessionData } = await userClient.auth.getSession();
 
-  if (!targetUser) {
+  if (!adminAuthData.user || !adminSessionData.session) {
     return NextResponse.redirect(
-      new URL('/dashboard?error=target_user_not_found', request.url)
+      new URL('/dashboard?error=admin_session_invalid', request.url)
     );
   }
 
-  // Sign in as target user using admin API
-  const {
-    data: { session: newSession },
-    error: signInError
-  } = await adminClient.auth.admin.generateLink({
-    type: 'magiclink',
-    email: targetUser.email
-  });
+  // Fetch target user's email from backend
+  let targetUser;
+  try {
+    const userResponse = await fetch(
+      `${API_URL}/users/${session.target_user_id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${adminSessionData.session.access_token}`
+        }
+      }
+    );
 
-  if (signInError || !newSession) {
-    console.error('Error generating magic link:', signInError);
+    if (!userResponse.ok) {
+      return NextResponse.redirect(
+        new URL('/dashboard?error=target_user_not_found', request.url)
+      );
+    }
+
+    targetUser = await userResponse.json();
+
+    if (!targetUser || !targetUser.email) {
+      return NextResponse.redirect(
+        new URL('/dashboard?error=target_user_not_found', request.url)
+      );
+    }
+  } catch (error) {
+    console.error('Error fetching target user:', error);
+    return NextResponse.redirect(
+      new URL('/dashboard?error=failed_to_fetch_user', request.url)
+    );
+  }
+
+  // Generate a magic link for the target user using admin API
+  const { data: linkData, error: linkError } =
+    await adminClient.auth.admin.generateLink({
+      type: 'magiclink',
+      email: targetUser.email
+    });
+
+  if (linkError || !linkData || !linkData.properties) {
+    console.error('Error generating magic link:', linkError);
     return NextResponse.redirect(
       new URL('/dashboard?error=failed_to_impersonate', request.url)
     );
   }
+
+  // Extract the hashed_token from the action_link
+  const actionLink = linkData.properties.action_link;
+  const url = new URL(actionLink);
+  const hashedToken = url.searchParams.get('token') || url.hash.split('=')[1];
+
+  if (!hashedToken) {
+    console.error('No token in generated link');
+    return NextResponse.redirect(
+      new URL('/dashboard?error=failed_to_impersonate', request.url)
+    );
+  }
+
+  // Verify the OTP token to get a session
+  const { data: verifyData, error: verifyError } =
+    await adminClient.auth.verifyOtp({
+      type: 'magiclink',
+      token_hash: hashedToken
+    });
+
+  if (verifyError || !verifyData || !verifyData.session) {
+    console.error('Error verifying OTP:', verifyError);
+    return NextResponse.redirect(
+      new URL('/dashboard?error=failed_to_impersonate', request.url)
+    );
+  }
+
+  const accessToken = verifyData.session.access_token;
+  const refreshToken = verifyData.session.refresh_token;
 
   // Mark session as used
   await adminClient
@@ -81,7 +140,7 @@ export async function GET(request: NextRequest) {
   );
 
   // Set session cookie
-  response.cookies.set('sb-access-token', newSession.access_token, {
+  response.cookies.set('sb-access-token', accessToken, {
     path: '/',
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -89,7 +148,7 @@ export async function GET(request: NextRequest) {
     maxAge: 60 * 30 // 30 minutes
   });
 
-  response.cookies.set('sb-refresh-token', newSession.refresh_token, {
+  response.cookies.set('sb-refresh-token', refreshToken, {
     path: '/',
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
