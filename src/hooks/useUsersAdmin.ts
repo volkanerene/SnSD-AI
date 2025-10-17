@@ -128,20 +128,19 @@ export function useCreateAdminUser() {
 }
 
 // Update user (admin only)
-export function useUpdateAdminUser(userId: string) {
+export function useUpdateAdminUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: UpdateUserDto) => {
-      const response = await apiClient.patch<AdminUser>(
-        `/users/${userId}`,
-        data
-      );
+    mutationFn: async ({ id, data }: { id: string; data: UpdateUserDto }) => {
+      const response = await apiClient.patch<AdminUser>(`/users/${id}`, data);
       return response;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-users', userId] });
+      queryClient.invalidateQueries({
+        queryKey: ['admin-users', variables.id]
+      });
     }
   });
 }
