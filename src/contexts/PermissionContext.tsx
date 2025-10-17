@@ -21,24 +21,42 @@ const PermissionContext = createContext<PermissionContextType | undefined>(
 export function PermissionProvider({ children }: { children: ReactNode }) {
   const { data, isLoading, error } = useMyPermissions();
 
-  const contextValue: PermissionContextType = {
-    permissions: data?.permissions ?? [],
-    hasPermission: (permission: string) => {
-      return data?.permissions.includes(permission) ?? false;
+  const hasPermission = React.useCallback(
+    (permission: string) => {
+      return data?.permissions?.includes(permission) ?? false;
     },
-    hasAnyPermission: (permissions: string[]) => {
-      if (!data) return false;
+    [data?.permissions]
+  );
+
+  const hasAnyPermission = React.useCallback(
+    (permissions: string[]) => {
+      if (!data?.permissions) return false;
       return permissions.some((p) => data.permissions.includes(p));
     },
-    hasAllPermissions: (permissions: string[]) => {
-      if (!data) return false;
+    [data?.permissions]
+  );
+
+  const hasAllPermissions = React.useCallback(
+    (permissions: string[]) => {
+      if (!data?.permissions) return false;
       return permissions.every((p) => data.permissions.includes(p));
     },
-    isLoading,
-    error: error as Error | null,
-    userRole: data?.role_name ?? null,
-    roleId: data?.role_id ?? null
-  };
+    [data?.permissions]
+  );
+
+  const contextValue: PermissionContextType = React.useMemo(
+    () => ({
+      permissions: data?.permissions ?? [],
+      hasPermission,
+      hasAnyPermission,
+      hasAllPermissions,
+      isLoading,
+      error: error as Error | null,
+      userRole: data?.role_name ?? null,
+      roleId: data?.role_id ?? null
+    }),
+    [data, isLoading, error, hasPermission, hasAnyPermission, hasAllPermissions]
+  );
 
   return (
     <PermissionContext.Provider value={contextValue}>

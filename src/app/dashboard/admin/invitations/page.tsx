@@ -62,7 +62,7 @@ export default function InvitationsPage() {
   };
 
   const { data: invitations } = useInvitations(filters);
-  const { roles } = useRoles();
+  const { data: roles } = useRoles();
   const { tenants } = useTenants();
   const { mutateAsync: createInvitation, isPending: isCreating } =
     useCreateInvitation();
