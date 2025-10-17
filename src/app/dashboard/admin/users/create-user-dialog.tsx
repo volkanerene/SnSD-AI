@@ -99,8 +99,8 @@ export function CreateUserDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <>
-          <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
+        <Form {...form}>
+          <div className='space-y-4'>
             <FormField
               control={form.control}
               name='full_name'
@@ -182,8 +182,11 @@ export function CreateUserDialog({
                 <FormItem>
                   <FormLabel>Tenant (Optional)</FormLabel>
                   <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    onValueChange={(value) => {
+                      // Allow clearing by using undefined for "none"
+                      field.onChange(value === 'none' ? undefined : value);
+                    }}
+                    value={field.value || 'none'}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -191,7 +194,7 @@ export function CreateUserDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value=''>No tenant</SelectItem>
+                      <SelectItem value='none'>No tenant</SelectItem>
                       {tenants?.map((tenant) => (
                         <SelectItem key={tenant.id} value={tenant.id}>
                           {tenant.name}
@@ -213,12 +216,15 @@ export function CreateUserDialog({
               >
                 Cancel
               </Button>
-              <Button type='submit' disabled={isLoading}>
+              <Button
+                onClick={form.handleSubmit(onSubmit)}
+                disabled={isLoading}
+              >
                 {isLoading ? 'Creating...' : 'Create User'}
               </Button>
             </DialogFooter>
-          </form>
-        </>
+          </div>
+        </Form>
       </DialogContent>
     </Dialog>
   );

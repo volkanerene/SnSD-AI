@@ -7,7 +7,6 @@ import {
   Controller,
   FormProvider,
   useFormContext,
-  UseFormReturn,
   useFormState,
   type ControllerProps,
   type FieldPath,
@@ -17,25 +16,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 
-const Form = ({
-  children,
-  onSubmit,
-  form,
-  className
-}: {
-  children: React.ReactNode;
-  onSubmit: (data: any) => void;
-  form: UseFormReturn<any, any, undefined>;
-  className?: string;
-}) => {
-  return (
-    <FormProvider {...form}>
-      <form onSubmit={onSubmit} className={className}>
-        {children}
-      </form>
-    </FormProvider>
-  );
-};
+const Form = FormProvider;
 
 type FormFieldContextValue<
   TFieldValues extends FieldValues = FieldValues,
@@ -64,13 +45,14 @@ const FormField = <
 const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext);
   const itemContext = React.useContext(FormItemContext);
-  const { getFieldState } = useFormContext();
-  const formState = useFormState({ name: fieldContext.name });
-  const fieldState = getFieldState(fieldContext.name, formState);
 
   if (!fieldContext) {
     throw new Error('useFormField should be used within <FormField>');
   }
+
+  const { getFieldState } = useFormContext();
+  const formState = useFormState({ name: fieldContext.name });
+  const fieldState = getFieldState(fieldContext.name, formState);
 
   const { id } = itemContext;
 

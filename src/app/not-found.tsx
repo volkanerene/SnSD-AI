@@ -4,9 +4,6 @@ import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 
-// Force dynamic rendering to avoid static generation issues with Sentry
-export const dynamic = 'force-dynamic';
-
 export default function NotFound() {
   const router = useRouter();
 

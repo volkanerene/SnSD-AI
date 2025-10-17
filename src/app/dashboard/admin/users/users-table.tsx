@@ -52,11 +52,20 @@ export function UsersTable({
       header: 'Role',
       cell: ({ row }) => {
         const role = row.original.roles;
-        return role ? (
-          <Badge variant='outline'>{role.name}</Badge>
-        ) : (
-          <span className='text-muted-foreground'>-</span>
-        );
+        if (!role) {
+          return <span className='text-muted-foreground'>-</span>;
+        }
+        // Different colors for different role levels
+        const getRoleColor = (roleId: number) => {
+          if (roleId <= 1)
+            return 'bg-purple-100 text-purple-800 hover:bg-purple-100'; // Admin
+          if (roleId === 2)
+            return 'bg-blue-100 text-blue-800 hover:bg-blue-100'; // HSE Manager
+          if (roleId === 3)
+            return 'bg-teal-100 text-teal-800 hover:bg-teal-100'; // HSE Specialist
+          return 'bg-orange-100 text-orange-800 hover:bg-orange-100'; // Contractor
+        };
+        return <Badge className={getRoleColor(role.id)}>{role.name}</Badge>;
       }
     },
     {
@@ -76,19 +85,24 @@ export function UsersTable({
       header: 'Status',
       cell: ({ row }) => {
         const status = row.original.status;
-        return (
-          <Badge
-            variant={
-              status === 'active'
-                ? 'default'
-                : status === 'suspended'
-                  ? 'destructive'
-                  : 'secondary'
-            }
-          >
-            {status}
-          </Badge>
-        );
+        const statusConfig = {
+          active: {
+            label: 'Active',
+            className: 'bg-green-100 text-green-800 hover:bg-green-100'
+          },
+          inactive: {
+            label: 'Inactive',
+            className: 'bg-gray-100 text-gray-800 hover:bg-gray-100'
+          },
+          suspended: {
+            label: 'Suspended',
+            className: 'bg-red-100 text-red-800 hover:bg-red-100'
+          }
+        };
+        const config =
+          statusConfig[status as keyof typeof statusConfig] ||
+          statusConfig.inactive;
+        return <Badge className={config.className}>{config.label}</Badge>;
       }
     },
     {

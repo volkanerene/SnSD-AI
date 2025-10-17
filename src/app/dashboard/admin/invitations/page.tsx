@@ -1,7 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Copy, XCircle, RefreshCw } from 'lucide-react';
+import {
+  Plus,
+  Copy,
+  XCircle,
+  RefreshCw,
+  Mail,
+  MailCheck,
+  MailX,
+  Clock
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -138,19 +147,28 @@ export default function InvitationsPage() {
       header: 'Status',
       cell: ({ row }) => {
         const status = row.original.status;
-        return (
-          <Badge
-            variant={
-              status === 'pending'
-                ? 'default'
-                : status === 'accepted'
-                  ? 'secondary'
-                  : 'destructive'
-            }
-          >
-            {status}
-          </Badge>
-        );
+        const statusConfig = {
+          pending: {
+            label: 'Pending',
+            className: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100'
+          },
+          accepted: {
+            label: 'Accepted',
+            className: 'bg-green-100 text-green-800 hover:bg-green-100'
+          },
+          expired: {
+            label: 'Expired',
+            className: 'bg-red-100 text-red-800 hover:bg-red-100'
+          },
+          cancelled: {
+            label: 'Cancelled',
+            className: 'bg-gray-100 text-gray-800 hover:bg-gray-100'
+          }
+        };
+        const config =
+          statusConfig[status as keyof typeof statusConfig] ||
+          statusConfig.pending;
+        return <Badge className={config.className}>{config.label}</Badge>;
       }
     },
     {
@@ -216,73 +234,89 @@ export default function InvitationsPage() {
     invitations?.filter((i) => i.status === 'expired').length || 0;
 
   return (
-    <div className='container mx-auto space-y-6 py-6'>
+    <div className='space-y-8 p-8 pt-6'>
       <div className='flex items-center justify-between'>
         <div>
           <h1 className='text-3xl font-bold tracking-tight'>Invitations</h1>
-          <p className='text-muted-foreground'>
+          <p className='text-muted-foreground mt-2'>
             Manage user invitations and onboarding
           </p>
         </div>
         <Can permission='users.invite'>
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className='mr-2 h-4 w-4' />
+          <Button onClick={() => setCreateDialogOpen(true)} size='lg'>
+            <Plus className='mr-2 h-5 w-5' />
             Send Invitation
           </Button>
         </Can>
       </div>
 
       {/* Stats */}
-      <div className='grid gap-4 md:grid-cols-4'>
-        <Card>
-          <CardHeader className='pb-2'>
+      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
+        <Card className='border-l-4 border-l-blue-500'>
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Total</CardTitle>
+            <Mail className='text-muted-foreground h-4 w-4' />
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>{invitations?.length || 0}</div>
+            <p className='text-muted-foreground mt-1 text-xs'>
+              All invitations
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className='pb-2'>
+        <Card className='border-l-4 border-l-yellow-500'>
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Pending</CardTitle>
+            <Clock className='h-4 w-4 text-yellow-600' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold text-blue-600'>
+            <div className='text-2xl font-bold text-yellow-600'>
               {pendingCount}
             </div>
+            <p className='text-muted-foreground mt-1 text-xs'>
+              Awaiting response
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className='pb-2'>
+        <Card className='border-l-4 border-l-green-500'>
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Accepted</CardTitle>
+            <MailCheck className='h-4 w-4 text-green-600' />
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold text-green-600'>
               {acceptedCount}
             </div>
+            <p className='text-muted-foreground mt-1 text-xs'>
+              Successfully joined
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className='pb-2'>
+        <Card className='border-l-4 border-l-red-500'>
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Expired</CardTitle>
+            <MailX className='h-4 w-4 text-red-600' />
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold text-red-600'>
               {expiredCount}
             </div>
+            <p className='text-muted-foreground mt-1 text-xs'>
+              No longer valid
+            </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Filters */}
       <Card>
-        <CardHeader>
-          <CardTitle>Filter</CardTitle>
+        <CardHeader className='pb-4'>
+          <CardTitle className='text-lg'>Filter</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className='pt-0'>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className='w-[200px]'>
               <SelectValue placeholder='All Status' />

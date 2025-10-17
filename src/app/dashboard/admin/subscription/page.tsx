@@ -15,7 +15,14 @@ import {
   useUsageTracking,
   useSubscriptionTiers
 } from '@/hooks/useSubscriptionTiers';
-import { CheckCircle2, XCircle } from 'lucide-react';
+import {
+  CheckCircle2,
+  XCircle,
+  CreditCard,
+  Users,
+  FileText,
+  Building
+} from 'lucide-react';
 
 export default function SubscriptionPage() {
   const { profile } = useProfile();
@@ -64,29 +71,33 @@ export default function SubscriptionPage() {
   };
 
   return (
-    <div className='container mx-auto space-y-6 py-6'>
+    <div className='space-y-8 p-8 pt-6'>
       <div>
         <h1 className='text-3xl font-bold tracking-tight'>
           Subscription & Usage
         </h1>
-        <p className='text-muted-foreground'>
+        <p className='text-muted-foreground mt-2'>
           View your current plan and resource usage
         </p>
       </div>
 
       {/* Current Plan */}
-      <Card>
+      <Card className='border-l-4 border-l-blue-500'>
         <CardHeader>
           <div className='flex items-center justify-between'>
-            <div>
-              <CardTitle>{tier?.display_name}</CardTitle>
-              <CardDescription>{tier?.description}</CardDescription>
+            <div className='flex items-center gap-3'>
+              <CreditCard className='h-8 w-8 text-blue-600' />
+              <div>
+                <CardTitle>{tier?.display_name}</CardTitle>
+                <CardDescription>{tier?.description}</CardDescription>
+              </div>
             </div>
             <Badge
-              variant={
-                subscription.status === 'active' ? 'default' : 'secondary'
+              className={
+                subscription.status === 'active'
+                  ? 'bg-green-100 px-4 py-1 text-lg text-green-800 hover:bg-green-100'
+                  : 'bg-gray-100 px-4 py-1 text-lg text-gray-800 hover:bg-gray-100'
               }
-              className='px-4 py-1 text-lg'
             >
               {subscription.status}
             </Badge>
@@ -125,9 +136,10 @@ export default function SubscriptionPage() {
       {/* Usage Stats */}
       <div className='grid gap-4 md:grid-cols-3'>
         {/* Users */}
-        <Card>
-          <CardHeader>
+        <Card className='border-l-4 border-l-purple-500'>
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-base'>Users</CardTitle>
+            <Users className='h-5 w-5 text-purple-600' />
           </CardHeader>
           <CardContent className='space-y-2'>
             <div className='flex items-center justify-between'>
@@ -139,15 +151,22 @@ export default function SubscriptionPage() {
             {tier?.max_users && (
               <Progress value={usagePercent.users} className='h-2' />
             )}
+            <p className='text-muted-foreground text-xs'>
+              {tier?.max_users
+                ? Math.round(100 - usagePercent.users)
+                : 'Unlimited'}{' '}
+              {tier?.max_users && '%'} available
+            </p>
           </CardContent>
         </Card>
 
         {/* Evaluations */}
-        <Card>
-          <CardHeader>
+        <Card className='border-l-4 border-l-green-500'>
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-base'>
               Evaluations (This Month)
             </CardTitle>
+            <FileText className='h-5 w-5 text-green-600' />
           </CardHeader>
           <CardContent className='space-y-2'>
             <div className='flex items-center justify-between'>
@@ -164,13 +183,20 @@ export default function SubscriptionPage() {
             {tier?.max_evaluations_per_month && (
               <Progress value={usagePercent.evaluations} className='h-2' />
             )}
+            <p className='text-muted-foreground text-xs'>
+              {tier?.max_evaluations_per_month
+                ? Math.round(100 - usagePercent.evaluations)
+                : 'Unlimited'}{' '}
+              {tier?.max_evaluations_per_month && '%'} remaining
+            </p>
           </CardContent>
         </Card>
 
         {/* Contractors */}
-        <Card>
-          <CardHeader>
+        <Card className='border-l-4 border-l-orange-500'>
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-base'>Contractors</CardTitle>
+            <Building className='h-5 w-5 text-orange-600' />
           </CardHeader>
           <CardContent className='space-y-2'>
             <div className='flex items-center justify-between'>
@@ -184,6 +210,12 @@ export default function SubscriptionPage() {
             {tier?.max_contractors && (
               <Progress value={usagePercent.contractors} className='h-2' />
             )}
+            <p className='text-muted-foreground text-xs'>
+              {tier?.max_contractors
+                ? Math.round(100 - usagePercent.contractors)
+                : 'Unlimited'}{' '}
+              {tier?.max_contractors && '%'} available
+            </p>
           </CardContent>
         </Card>
       </div>
