@@ -128,9 +128,11 @@ export async function GET(request: NextRequest) {
   console.log('Impersonation session created successfully');
 
   // Redirect to impersonation handler with token
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
   const impersonateRedirectUrl = new URL(
     '/api/admin/impersonate/activate',
-    request.url
+    baseUrl
   );
   impersonateRedirectUrl.searchParams.set('token', impersonationToken);
 

@@ -6,10 +6,12 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const token = searchParams.get('token');
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
 
   if (!token) {
     return NextResponse.redirect(
-      new URL('/dashboard?error=invalid_impersonation_token', request.url)
+      new URL('/dashboard?error=invalid_impersonation_token', baseUrl)
     );
   }
 
@@ -26,7 +28,7 @@ export async function GET(request: NextRequest) {
 
   if (sessionError || !session) {
     return NextResponse.redirect(
-      new URL('/dashboard?error=invalid_impersonation_session', request.url)
+      new URL('/dashboard?error=invalid_impersonation_session', baseUrl)
     );
   }
 
@@ -39,7 +41,7 @@ export async function GET(request: NextRequest) {
       .eq('token', token);
 
     return NextResponse.redirect(
-      new URL('/dashboard?error=impersonation_session_expired', request.url)
+      new URL('/dashboard?error=impersonation_session_expired', baseUrl)
     );
   }
 
@@ -49,7 +51,7 @@ export async function GET(request: NextRequest) {
 
   if (!adminAuthData.user || !adminSessionData.session) {
     return NextResponse.redirect(
-      new URL('/dashboard?error=admin_session_invalid', request.url)
+      new URL('/dashboard?error=admin_session_invalid', baseUrl)
     );
   }
 
@@ -70,7 +72,7 @@ export async function GET(request: NextRequest) {
 
     if (!userResponse.ok) {
       return NextResponse.redirect(
-        new URL('/dashboard?error=target_user_not_found', request.url)
+        new URL('/dashboard?error=target_user_not_found', baseUrl)
       );
     }
 
@@ -83,7 +85,7 @@ export async function GET(request: NextRequest) {
     if (authError || !authUser || !authUser.user || !authUser.user.email) {
       console.error('Error fetching target user email:', authError);
       return NextResponse.redirect(
-        new URL('/dashboard?error=target_user_email_not_found', request.url)
+        new URL('/dashboard?error=target_user_email_not_found', baseUrl)
       );
     }
 
@@ -92,7 +94,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching target user:', error);
     return NextResponse.redirect(
-      new URL('/dashboard?error=failed_to_fetch_user', request.url)
+      new URL('/dashboard?error=failed_to_fetch_user', baseUrl)
     );
   }
 
@@ -106,7 +108,7 @@ export async function GET(request: NextRequest) {
   if (linkError || !linkData || !linkData.properties) {
     console.error('Error generating magic link:', linkError);
     return NextResponse.redirect(
-      new URL('/dashboard?error=failed_to_impersonate', request.url)
+      new URL('/dashboard?error=failed_to_impersonate', baseUrl)
     );
   }
 
@@ -118,7 +120,7 @@ export async function GET(request: NextRequest) {
   if (!hashedToken) {
     console.error('No token in generated link');
     return NextResponse.redirect(
-      new URL('/dashboard?error=failed_to_impersonate', request.url)
+      new URL('/dashboard?error=failed_to_impersonate', baseUrl)
     );
   }
 
@@ -132,7 +134,7 @@ export async function GET(request: NextRequest) {
   if (verifyError || !verifyData || !verifyData.session) {
     console.error('Error verifying OTP:', verifyError);
     return NextResponse.redirect(
-      new URL('/dashboard?error=failed_to_impersonate', request.url)
+      new URL('/dashboard?error=failed_to_impersonate', baseUrl)
     );
   }
 
@@ -146,7 +148,7 @@ export async function GET(request: NextRequest) {
 
   // Create response with impersonation indicator
   const response = NextResponse.redirect(
-    new URL('/dashboard?impersonated=true', request.url)
+    new URL('/dashboard?impersonated=true', baseUrl)
   );
 
   // Get Supabase project ref from URL for cookie name
@@ -156,7 +158,7 @@ export async function GET(request: NextRequest) {
   if (!projectRef) {
     console.error('Could not extract project ref from Supabase URL');
     return NextResponse.redirect(
-      new URL('/dashboard?error=invalid_supabase_config', request.url)
+      new URL('/dashboard?error=invalid_supabase_config', baseUrl)
     );
   }
 
