@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Upload } from 'lucide-react';
+import { Plus, Upload, Send } from 'lucide-react';
 import { useContractors } from '@/hooks/useContractors';
 import { useProfile } from '@/hooks/useProfile';
 import { Button } from '@/components/ui/button';
@@ -9,25 +9,28 @@ import { DataTable } from '@/components/ui/data-table';
 import { contractorsColumns } from './columns';
 import { CreateContractorDialog } from './create-contractor-dialog';
 import { ImportContractorsDialog } from './import-contractors-dialog';
+import { StartProcessDialog } from './start-process-dialog';
 import type { ContractorStatus } from '@/types/api';
-import { isSNSDAdmin } from '@/lib/auth-utils';
+import { isSNSDAdmin, isAdmin as checkIsAdmin } from '@/lib/auth-utils';
 
-export default function ContractorsPage() {
+export default function EvrenGPTContractorsPage() {
   const { profile } = useProfile();
-  // For SNSD Admin (role_id = 1), show all contractors (no tenant filter)
-  // For others, filter by their tenant_id
-  const isAdmin = profile?.role_id ? isSNSDAdmin(profile.role_id) : false;
+  const isAdmin = profile?.role_id
+    ? isSNSDAdmin(profile.role_id) || checkIsAdmin(profile.role_id)
+    : false;
   const tenantId = isAdmin ? '' : profile?.tenant_id || '';
 
   const [status, setStatus] = useState<ContractorStatus | undefined>();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isStartProcessOpen, setIsStartProcessOpen] = useState(false);
+  const [selectedContractors, setSelectedContractors] = useState<string[]>([]);
 
   const { contractors, isLoading, error } = useContractors({
     tenantId,
     filters: {
       status,
-      limit: 100 // Show more contractors for admins
+      limit: 100
     }
   });
 
@@ -53,14 +56,22 @@ export default function ContractorsPage() {
     <div className='space-y-4 p-4 pt-6 md:p-8'>
       <div className='flex items-center justify-between'>
         <div>
-          <h2 className='text-3xl font-bold tracking-tight'>Contractors</h2>
+          <h2 className='text-3xl font-bold tracking-tight'>
+            EvrenGPT Contractors
+          </h2>
           <p className='text-muted-foreground'>
-            {isAdmin
-              ? 'View and manage all contractors across all tenants'
-              : 'Manage your contractor relationships and evaluations'}
+            Manage contractors and start evaluation processes
           </p>
         </div>
         <div className='flex gap-2'>
+          <Button
+            variant='outline'
+            onClick={() => setIsStartProcessOpen(true)}
+            disabled={selectedContractors.length === 0}
+          >
+            <Send className='mr-2 h-4 w-4' />
+            Start Process ({selectedContractors.length})
+          </Button>
           <Button variant='outline' onClick={() => setIsImportOpen(true)}>
             <Upload className='mr-2 h-4 w-4' />
             Import Excel
@@ -73,7 +84,10 @@ export default function ContractorsPage() {
       </div>
 
       <DataTable
-        columns={contractorsColumns}
+        columns={contractorsColumns(
+          selectedContractors,
+          setSelectedContractors
+        )}
         data={contractors}
         searchKey='name'
       />
@@ -88,6 +102,14 @@ export default function ContractorsPage() {
         open={isImportOpen}
         onOpenChange={setIsImportOpen}
         tenantId={tenantId}
+      />
+
+      <StartProcessDialog
+        open={isStartProcessOpen}
+        onOpenChange={setIsStartProcessOpen}
+        selectedContractorIds={selectedContractors}
+        tenantId={tenantId}
+        onSuccess={() => setSelectedContractors([])}
       />
     </div>
   );

@@ -141,26 +141,42 @@ export function getAccessibleRoutes(roleId: number): string[] {
     1: [
       // SNSD Admin - Full access
       ...baseRoutes,
-      '/dashboard/admin',
-      '/dashboard/contractors',
-      '/dashboard/evaluations',
+      '/dashboard/admin/users',
+      '/dashboard/admin/roles',
+      '/dashboard/admin/invitations',
+      '/dashboard/admin/tenants',
+      '/dashboard/admin/subscription',
+      '/dashboard/evren-gpt',
+      '/dashboard/evren-gpt/contractors',
+      '/dashboard/evren-gpt/evaluations',
+      '/dashboard/marcel-gpt',
+      '/dashboard/safety-bud',
       '/dashboard/payments',
+      '/dashboard/team',
       '/dashboard/reports'
     ],
     2: [
       // Company Admin - Tenant-level access
       ...baseRoutes,
       '/dashboard/admin/users', // Can manage users in their tenant
-      '/dashboard/contractors',
-      '/dashboard/evaluations',
+      '/dashboard/admin/roles',
+      '/dashboard/admin/invitations',
+      '/dashboard/evren-gpt',
+      '/dashboard/evren-gpt/contractors',
+      '/dashboard/evren-gpt/evaluations',
+      '/dashboard/marcel-gpt',
+      '/dashboard/safety-bud',
       '/dashboard/payments',
+      '/dashboard/team',
       '/dashboard/reports'
     ],
     3: [
       // HSE Specialist - Evaluation management
       ...baseRoutes,
-      '/dashboard/contractors',
-      '/dashboard/evaluations',
+      '/dashboard/evren-gpt/contractors',
+      '/dashboard/evren-gpt/evaluations',
+      '/dashboard/marcel-gpt',
+      '/dashboard/safety-bud',
       '/dashboard/reports'
     ],
     4: [
@@ -172,8 +188,9 @@ export function getAccessibleRoutes(roleId: number): string[] {
     5: [
       // Supervisor - Site management
       ...baseRoutes,
-      '/dashboard/contractors',
-      '/dashboard/evaluations',
+      '/dashboard/evren-gpt/contractors',
+      '/dashboard/evren-gpt/evaluations',
+      '/dashboard/safety-bud',
       '/dashboard/reports'
     ],
     6: [
@@ -205,9 +222,9 @@ export function getDashboardRoute(roleId: number): string {
   const dashboardRoutes: Record<number, string> = {
     1: '/dashboard', // SNSD Admin
     2: '/dashboard', // Company Admin
-    3: '/dashboard/evaluations', // HSE Specialist
+    3: '/dashboard/evren-gpt/evaluations/frm32', // HSE Specialist
     4: '/dashboard/my-evaluations', // Contractor Admin
-    5: '/dashboard/evaluations', // Supervisor
+    5: '/dashboard/evren-gpt/evaluations/frm32', // Supervisor
     6: '/dashboard/my-evaluations' // Worker
   };
   return dashboardRoutes[roleId] || '/dashboard';

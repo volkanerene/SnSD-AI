@@ -103,14 +103,47 @@ export default function AppSidebar() {
       .map((item) => {
         // Filter sub-items if they exist
         if (item.items && item.items.length > 0) {
-          const filteredSubItems = item.items.filter((subItem) => {
-            // Check permission if requiredPermission is specified
-            if (subItem.requiredPermission) {
-              return hasPermission(subItem.requiredPermission);
-            }
-            // Fallback to role-based access
-            return canAccessRoute(profile.role_id!, subItem.url);
-          });
+          const filteredSubItems = item.items
+            .map((subItem) => {
+              // Check if subItem has nested items
+              if (subItem.items && subItem.items.length > 0) {
+                const filteredNestedItems = subItem.items.filter(
+                  (nestedItem) => {
+                    if (nestedItem.requiredPermission) {
+                      return hasPermission(nestedItem.requiredPermission);
+                    }
+                    return canAccessRoute(profile.role_id!, nestedItem.url);
+                  }
+                );
+
+                if (filteredNestedItems.length === 0) {
+                  return null;
+                }
+
+                return { ...subItem, items: filteredNestedItems };
+              }
+
+              // Check permission if requiredPermission is specified
+              if (subItem.requiredPermission) {
+                return hasPermission(subItem.requiredPermission)
+                  ? subItem
+                  : null;
+              }
+              // Fallback to role-based access - always allow base routes like profile/settings
+              if (
+                subItem.url === '/dashboard/profile' ||
+                subItem.url === '/dashboard/settings'
+              ) {
+                return subItem;
+              }
+              return canAccessRoute(profile.role_id!, subItem.url)
+                ? subItem
+                : null;
+            })
+            .filter(
+              (subItem): subItem is NonNullable<typeof subItem> =>
+                subItem !== null
+            );
 
           // If no sub-items are accessible, hide the parent
           if (filteredSubItems.length === 0 && item.url === '#') {
@@ -124,6 +157,11 @@ export default function AppSidebar() {
       })
       .filter((item): item is NonNullable<typeof item> => {
         if (!item) return false;
+
+        // Account section should be visible to all users
+        if (item.title === 'Account') {
+          return true;
+        }
 
         // Check permission if requiredPermission is specified
         if (item.requiredPermission) {
@@ -166,7 +204,8 @@ export default function AppSidebar() {
           <SidebarGroupLabel>Overview</SidebarGroupLabel>
           <SidebarMenu>
             {filteredNavItems.map((item) => {
-              const Icon = item.icon ? Icons[item.icon] : Icons.logo;
+              const IconComp =
+                item.icon && Icons[item.icon] ? Icons[item.icon] : Icons.logo;
               return item?.items && item?.items?.length > 0 ? (
                 <Collapsible
                   key={item.title}
@@ -180,25 +219,61 @@ export default function AppSidebar() {
                         tooltip={item.title}
                         isActive={pathname === item.url}
                       >
-                        {item.icon && <Icon />}
+                        {IconComp ? <IconComp /> : null}
                         <span>{item.title}</span>
                         <IconChevronRight className='ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90' />
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                       <SidebarMenuSub>
-                        {item.items?.map((subItem) => (
-                          <SidebarMenuSubItem key={subItem.title}>
-                            <SidebarMenuSubButton
+                        {item.items?.map((subItem) =>
+                          subItem.items && subItem.items.length > 0 ? (
+                            <Collapsible
+                              key={subItem.title}
                               asChild
-                              isActive={pathname === subItem.url}
+                              defaultOpen={false}
+                              className='group/nested-collapsible'
                             >
-                              <Link href={subItem.url}>
-                                <span>{subItem.title}</span>
-                              </Link>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        ))}
+                              <SidebarMenuSubItem>
+                                <CollapsibleTrigger asChild>
+                                  <SidebarMenuSubButton>
+                                    <span>{subItem.title}</span>
+                                    <IconChevronRight className='ml-auto transition-transform duration-200 group-data-[state=open]/nested-collapsible:rotate-90' />
+                                  </SidebarMenuSubButton>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent>
+                                  <SidebarMenuSub>
+                                    {subItem.items?.map((nestedItem) => (
+                                      <SidebarMenuSubItem
+                                        key={nestedItem.title}
+                                      >
+                                        <SidebarMenuSubButton
+                                          asChild
+                                          isActive={pathname === nestedItem.url}
+                                        >
+                                          <Link href={nestedItem.url}>
+                                            <span>{nestedItem.title}</span>
+                                          </Link>
+                                        </SidebarMenuSubButton>
+                                      </SidebarMenuSubItem>
+                                    ))}
+                                  </SidebarMenuSub>
+                                </CollapsibleContent>
+                              </SidebarMenuSubItem>
+                            </Collapsible>
+                          ) : (
+                            <SidebarMenuSubItem key={subItem.title}>
+                              <SidebarMenuSubButton
+                                asChild
+                                isActive={pathname === subItem.url}
+                              >
+                                <Link href={subItem.url}>
+                                  <span>{subItem.title}</span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          )
+                        )}
                       </SidebarMenuSub>
                     </CollapsibleContent>
                   </SidebarMenuItem>
@@ -211,7 +286,7 @@ export default function AppSidebar() {
                     isActive={pathname === item.url}
                   >
                     <Link href={item.url}>
-                      <Icon />
+                      {IconComp ? <IconComp /> : null}
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>

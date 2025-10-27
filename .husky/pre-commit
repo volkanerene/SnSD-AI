@@ -1,1 +1,17 @@
-npx lint-staged
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# (geçici tanı için log açık)
+set -x
+
+# repo köküne git
+cd "$(git rev-parse --show-toplevel)"
+
+# paket yöneticine göre lint-staged
+if command -v pnpm >/dev/null 2>&1; then
+  pnpm exec lint-staged --debug
+elif command -v yarn >/dev/null 2>&1; then
+  yarn lint-staged --debug
+else
+  npx --no-install lint-staged --debug
+fi

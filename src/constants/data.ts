@@ -11,18 +11,59 @@ export const navItems: NavItem[] = [
     items: []
   },
   {
-    title: 'Contractors',
-    url: '/dashboard/contractors',
-    icon: 'users',
-    shortcut: ['c', 'c'],
+    title: 'EvrenGPT',
+    url: '#',
+    icon: 'bot',
+    isActive: false,
+    items: [
+      {
+        title: 'Contractors',
+        url: '/dashboard/evren-gpt/contractors',
+        icon: 'users',
+        shortcut: ['e', 'c']
+      },
+      {
+        title: 'Evaluations',
+        url: '#',
+        icon: 'fileText',
+        items: [
+          {
+            title: 'FRM32 Evaluations',
+            url: '/dashboard/evren-gpt/evaluations/frm32',
+            shortcut: ['e', '3', '2']
+          },
+          {
+            title: 'FRM33 Evaluations',
+            url: '/dashboard/evren-gpt/evaluations/frm33',
+            shortcut: ['e', '3', '3']
+          },
+          {
+            title: 'FRM34 Evaluations',
+            url: '/dashboard/evren-gpt/evaluations/frm34',
+            shortcut: ['e', '3', '4']
+          },
+          {
+            title: 'FRM35 Evaluations',
+            url: '/dashboard/evren-gpt/evaluations/frm35',
+            shortcut: ['e', '3', '5']
+          }
+        ]
+      }
+    ]
+  },
+  {
+    title: 'MarcelGPT',
+    url: '/dashboard/marcel-gpt',
+    icon: 'bot',
+    shortcut: ['m', 'g'],
     isActive: false,
     items: []
   },
   {
-    title: 'Evaluations',
-    url: '/dashboard/evaluations',
-    icon: 'fileText',
-    shortcut: ['e', 'e'],
+    title: 'SafetyBud',
+    url: '/dashboard/safety-bud',
+    icon: 'shield',
+    shortcut: ['s', 'b'],
     isActive: false,
     items: []
   },

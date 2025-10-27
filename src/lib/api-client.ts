@@ -2,7 +2,7 @@ import { supabase } from './supabase/client';
 import type { ApiError } from '@/types/api';
 
 export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  process.env.NEXT_PUBLIC_API_URL || 'https://api.snsdconsultant.com';
 
 // Debug: Log API URL on initialization
 if (typeof window !== 'undefined') {

@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import * as z from 'zod';
 import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
+import { SocialAuthButtons } from './social-auth-buttons';
 
 const formSchema = z
   .object({
@@ -171,6 +172,8 @@ export default function UserSignUpForm() {
           <span className='bg-background text-muted-foreground px-2'>Or</span>
         </div>
       </div>
+
+      <SocialAuthButtons />
 
       <div className='text-center text-sm'>
         <span className='text-muted-foreground'>Already have an account? </span>

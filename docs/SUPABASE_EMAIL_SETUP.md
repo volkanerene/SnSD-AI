@@ -26,23 +26,23 @@ Configure the following URLs:
 
 #### Site URL
 ```
-http://localhost:3000
+https://snsdconsultant.com
 ```
-*For production, change this to your production domain (e.g., `https://yourdomain.com`)*
+*For local development, you can temporarily change this to `http://localhost:3000`*
 
 #### Redirect URLs
 Add these URLs (click **Add URL** for each one):
 
-**Development:**
+**Production:**
+```
+https://snsdconsultant.com/**
+https://snsdconsultant.com/auth/callback
+```
+
+**Development (optional, for local testing):**
 ```
 http://localhost:3000/**
 http://localhost:3000/auth/callback
-```
-
-**Production (when you deploy):**
-```
-https://yourdomain.com/**
-https://yourdomain.com/auth/callback
 ```
 
 ### 4. Update Email Templates

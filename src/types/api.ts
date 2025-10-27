@@ -128,6 +128,7 @@ export type RiskLevel = 'green' | 'yellow' | 'red';
 export interface Contractor {
   id: UUID;
   tenant_id: UUID;
+  tenant_name?: string; // Tenant name for display purposes
   name: string;
   legal_name: string;
   tax_number: string;

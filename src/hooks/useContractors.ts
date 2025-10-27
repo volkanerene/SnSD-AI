@@ -7,19 +7,32 @@ import type {
   ContractorFilters,
   UUID
 } from '@/types/api';
+import { useMemo } from 'react';
 
 interface UseContractorsOptions {
   tenantId?: string;
   filters?: ContractorFilters;
 }
 
+function getDefaultTenantId(): string | undefined {
+  if (typeof window === 'undefined') return undefined;
+  // senin tarafta aktif tenant nerede saklanıyorsa onu oku:
+  // 1) localStorage
+  const ls = window.localStorage.getItem('activeTenantId') ?? undefined;
+  // 2) (opsiyonel) global store’dan oku (ör: Zustand)
+  // const storeTenant = useActiveTenantId(); // varsa
+  return ls; // veya storeTenant ?? ls;
+}
 /**
  * Custom hook for managing contractors list with filtering and pagination
  */
 export function useContractors(options: UseContractorsOptions = {}) {
   const queryClient = useQueryClient();
-  const { tenantId, filters } = options;
-
+  const { tenantId: propTenantId, filters } = options;
+  const tenantId = useMemo(
+    () => propTenantId ?? getDefaultTenantId(),
+    [propTenantId]
+  );
   // Build query params
   const queryParams = new URLSearchParams();
   if (filters?.status) queryParams.append('status', filters.status);
@@ -38,10 +51,9 @@ export function useContractors(options: UseContractorsOptions = {}) {
     refetch
   } = useQuery<Contractor[]>({
     queryKey: ['contractors', tenantId, filters],
-    queryFn: async () => {
-      return apiClient.get<Contractor[]>(endpoint, { tenantId });
-    },
-    staleTime: 2 * 60 * 1000 // 2 minutes
+    queryFn: async () => apiClient.get<Contractor[]>(endpoint, { tenantId }),
+    enabled: !!tenantId, // 👈 tenant yoksa istek atma
+    staleTime: 2 * 60 * 1000
   });
 
   // Create contractor mutation

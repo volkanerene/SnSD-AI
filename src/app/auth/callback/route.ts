@@ -13,6 +13,8 @@ export async function GET(request: Request) {
     if (!error) {
       const forwardedHost = request.headers.get('x-forwarded-host');
       const isLocalEnv = process.env.NODE_ENV === 'development';
+      const prodUrl =
+        process.env.NEXT_PUBLIC_APP_URL || 'https://snsdconsultant.com';
 
       if (isLocalEnv) {
         // In local development, redirect to localhost
@@ -21,8 +23,8 @@ export async function GET(request: Request) {
         // In production, use the forwarded host
         return NextResponse.redirect(`https://${forwardedHost}${next}`);
       } else {
-        // Fallback to origin
-        return NextResponse.redirect(`${origin}${next}`);
+        // Fallback to production URL
+        return NextResponse.redirect(`${prodUrl}${next}`);
       }
     }
   }
