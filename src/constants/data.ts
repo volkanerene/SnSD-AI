@@ -29,23 +29,19 @@ export const navItems: NavItem[] = [
         items: [
           {
             title: 'FRM32 Evaluations',
-            url: '/dashboard/evren-gpt/evaluations/frm32',
-            shortcut: ['e', '3', '2']
+            url: '/dashboard/evren-gpt/evaluations/frm32'
           },
           {
             title: 'FRM33 Evaluations',
-            url: '/dashboard/evren-gpt/evaluations/frm33',
-            shortcut: ['e', '3', '3']
+            url: '/dashboard/evren-gpt/evaluations/frm33'
           },
           {
             title: 'FRM34 Evaluations',
-            url: '/dashboard/evren-gpt/evaluations/frm34',
-            shortcut: ['e', '3', '4']
+            url: '/dashboard/evren-gpt/evaluations/frm34'
           },
           {
             title: 'FRM35 Evaluations',
-            url: '/dashboard/evren-gpt/evaluations/frm35',
-            shortcut: ['e', '3', '5']
+            url: '/dashboard/evren-gpt/evaluations/frm35'
           }
         ]
       }
