@@ -37,7 +37,8 @@ import {
   IconBrandGithub,
   IconShield,
   IconBuilding,
-  IconMail
+  IconMail,
+  IconRobot
 } from '@tabler/icons-react';
 
 export type Icon = React.ComponentType<IconProps>;
@@ -82,5 +83,6 @@ export const Icons = {
   check: IconCheck,
   shield: IconShield,
   building: IconBuilding,
-  mail: IconMail
+  mail: IconMail,
+  bot: IconRobot
 };
