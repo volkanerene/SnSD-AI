@@ -42,12 +42,14 @@ export interface TenantCreate {
   subdomain: string;
   license_plan: LicensePlan;
   contact_email: string;
+  contact_phone?: string;
   logo_url?: string;
-  modules_enabled?: string[];
+  modules_enabled?: string | string[];
   max_users?: number;
   max_contractors?: number;
   max_video_requests_monthly?: number;
   settings?: JsonObject;
+  status?: TenantStatus;
 }
 
 export interface TenantUpdate extends Partial<TenantCreate> {

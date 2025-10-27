@@ -7,7 +7,8 @@ import {
   Users as UsersIcon,
   UserCheck,
   UserX,
-  Ban
+  Ban,
+  FileSpreadsheet
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +39,7 @@ import { UsersTable } from './users-table';
 import { CreateUserDialog } from './create-user-dialog';
 import { EditUserDialog } from './edit-user-dialog';
 import { ManageTenantsDialog } from './manage-tenants-dialog';
+import { ImportUsersDialog } from './import-users-dialog';
 import { Can } from '@/contexts/PermissionContext';
 import { toast } from 'sonner';
 
@@ -47,6 +49,7 @@ export default function AdminUsersPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [tenantFilter, setTenantFilter] = useState<string>('all');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [manageTenantsDialogOpen, setManageTenantsDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
@@ -149,10 +152,20 @@ export default function AdminUsersPage() {
           </p>
         </div>
         <Can permission='users.create'>
-          <Button onClick={() => setCreateDialogOpen(true)} size='lg'>
-            <Plus className='mr-2 h-5 w-5' />
-            Create User
-          </Button>
+          <div className='flex gap-2'>
+            <Button
+              onClick={() => setImportDialogOpen(true)}
+              size='lg'
+              variant='outline'
+            >
+              <FileSpreadsheet className='mr-2 h-5 w-5' />
+              Import Excel
+            </Button>
+            <Button onClick={() => setCreateDialogOpen(true)} size='lg'>
+              <Plus className='mr-2 h-5 w-5' />
+              Create User
+            </Button>
+          </div>
         </Can>
       </div>
 
@@ -301,6 +314,11 @@ export default function AdminUsersPage() {
       <CreateUserDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
+      />
+
+      <ImportUsersDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
       />
 
       {selectedUser && (

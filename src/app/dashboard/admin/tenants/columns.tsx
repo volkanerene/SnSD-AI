@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, Building2, Crown } from 'lucide-react';
 import type { Tenant } from '@/types/api';
+import { toast } from 'sonner';
 
 export const tenantsColumns: ColumnDef<Tenant>[] = [
   {
@@ -75,14 +76,21 @@ export const tenantsColumns: ColumnDef<Tenant>[] = [
     accessorKey: 'max_users',
     header: 'Users Limit',
     cell: ({ row }) => {
-      return <span className='text-sm'>{row.original.max_users}</span>;
+      return <span className='text-sm'>∞</span>;
     }
   },
   {
     accessorKey: 'max_contractors',
     header: 'Contractors Limit',
     cell: ({ row }) => {
-      return <span className='text-sm'>{row.original.max_contractors}</span>;
+      return <span className='text-sm'>∞</span>;
+    }
+  },
+  {
+    accessorKey: 'max_video_requests_monthly',
+    header: 'Video Requests',
+    cell: ({ row }) => {
+      return <span className='text-sm'>∞</span>;
     }
   },
   {
@@ -126,16 +134,12 @@ export const tenantsColumns: ColumnDef<Tenant>[] = [
           <DropdownMenuContent align='end'>
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(tenant.id)}
+              onClick={() => {
+                navigator.clipboard.writeText(tenant.id);
+                toast.success('Tenant ID copied to clipboard');
+              }}
             >
               Copy tenant ID
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => meta?.onEdit?.(tenant)}>
-              Edit tenant
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => meta?.onViewDetails?.(tenant)}>
-              View details
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             {tenant.status === 'active' ? (

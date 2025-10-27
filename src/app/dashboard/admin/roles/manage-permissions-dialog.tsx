@@ -14,7 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { usePermissions } from '@/hooks/usePermissions';
-import { useAssignPermissions } from '@/hooks/useRoles';
+import { useAssignPermissions, useRolePermissions } from '@/hooks/useRoles';
 import { toast } from 'sonner';
 import type { Role } from '@/types/api';
 import type { Permission } from '@/hooks/usePermissions';
@@ -30,30 +30,32 @@ export function ManagePermissionsDialog({
   onOpenChange,
   role
 }: ManagePermissionsDialogProps) {
-  const { data: allPermissions, isLoading } = usePermissions();
+  const { data: allPermissions, isLoading: loadingPermissions } =
+    usePermissions();
+  const { data: rolePermissions, isLoading: loadingRolePerms } =
+    useRolePermissions(role.id);
   const { mutateAsync: assignPermissions, isPending } = useAssignPermissions();
-  const [selectedPermissions, setSelectedPermissions] = useState<string[]>(
-    role.permissions || []
-  );
+  const [selectedPermissions, setSelectedPermissions] = useState<number[]>([]);
 
-  // Update selected permissions when role changes
+  // Update selected permissions when role permissions load
   useEffect(() => {
-    setSelectedPermissions(role.permissions || []);
-  }, [role]);
+    if (rolePermissions) {
+      setSelectedPermissions(rolePermissions.map((p: any) => p.permission.id));
+    }
+  }, [rolePermissions]);
 
-  const handleTogglePermission = (permissionName: string) => {
+  const handleTogglePermission = (permissionId: number) => {
     setSelectedPermissions((prev) =>
-      prev.includes(permissionName)
-        ? prev.filter((p) => p !== permissionName)
-        : [...prev, permissionName]
+      prev.includes(permissionId)
+        ? prev.filter((p) => p !== permissionId)
+        : [...prev, permissionId]
     );
   };
 
   const handleSelectAll = (category: string) => {
     const categoryPermissions =
-      allPermissions
-        ?.filter((p) => p.category === category)
-        .map((p) => p.name) || [];
+      allPermissions?.filter((p) => p.category === category).map((p) => p.id) ||
+      [];
 
     const allSelected = categoryPermissions.every((p) =>
       selectedPermissions.includes(p)
@@ -85,6 +87,8 @@ export function ManagePermissionsDialog({
       toast.error(error.message || 'Failed to update permissions');
     }
   };
+
+  const isLoading = loadingPermissions || loadingRolePerms;
 
   if (isLoading) {
     return (
@@ -135,10 +139,8 @@ export function ManagePermissionsDialog({
             <div className='space-y-6'>
               {Object.entries(permissionsByCategory || {}).map(
                 ([category, permissions]) => {
-                  const categoryPermissionNames = permissions.map(
-                    (p) => p.name
-                  );
-                  const allSelected = categoryPermissionNames.every((p) =>
+                  const categoryPermissionIds = permissions.map((p) => p.id);
+                  const allSelected = categoryPermissionIds.every((p) =>
                     selectedPermissions.includes(p)
                   );
 
@@ -168,18 +170,18 @@ export function ManagePermissionsDialog({
                             className='flex items-start space-x-3'
                           >
                             <Checkbox
-                              id={permission.name}
+                              id={`perm-${permission.id}`}
                               checked={selectedPermissions.includes(
-                                permission.name
+                                permission.id
                               )}
                               onCheckedChange={() =>
-                                handleTogglePermission(permission.name)
+                                handleTogglePermission(permission.id)
                               }
                             />
                             <div className='grid gap-1.5 leading-none'>
                               <label
-                                htmlFor={permission.name}
-                                className='text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
+                                htmlFor={`perm-${permission.id}`}
+                                className='cursor-pointer text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
                               >
                                 {permission.name}
                               </label>

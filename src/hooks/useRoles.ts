@@ -12,7 +12,7 @@ export interface RoleCreate {
   slug: string;
   description?: string;
   level: number;
-  permissions?: string[];
+  permissions?: number[];
 }
 
 export interface RoleUpdate extends Partial<RoleCreate> {}
@@ -108,10 +108,10 @@ export function useAssignPermissions() {
       permissions
     }: {
       roleId: number;
-      permissions: string[];
+      permissions: number[];
     }) => {
-      return await apiClient.post(`/roles/${roleId}/permissions`, {
-        permissions
+      return await apiClient.put(`/roles/${roleId}/permissions`, {
+        permission_ids: permissions
       });
     },
     onSuccess: (_, variables) => {
