@@ -8,6 +8,7 @@ export const navItems: NavItem[] = [
     icon: 'dashboard',
     isActive: false,
     shortcut: ['d', 'd'],
+    requiredPermission: 'pages.view_dashboard',
     items: []
   },
   {
@@ -15,33 +16,40 @@ export const navItems: NavItem[] = [
     url: '#',
     icon: 'bot',
     isActive: false,
+    requiredPermission: 'modules.access_evren_gpt',
     items: [
       {
         title: 'Contractors',
         url: '/dashboard/evren-gpt/contractors',
         icon: 'users',
-        shortcut: ['e', 'c']
+        shortcut: ['e', 'c'],
+        requiredPermission: 'evren_gpt.view_contractors'
       },
       {
         title: 'Evaluations',
         url: '#',
         icon: 'fileText',
+        requiredPermission: 'evren_gpt.view_evaluations',
         items: [
           {
             title: 'FRM32 Evaluations',
-            url: '/dashboard/evren-gpt/evaluations/frm32'
+            url: '/dashboard/evren-gpt/evaluations/frm32',
+            requiredPermission: 'evaluations.view_frm32'
           },
           {
             title: 'FRM33 Evaluations',
-            url: '/dashboard/evren-gpt/evaluations/frm33'
+            url: '/dashboard/evren-gpt/evaluations/frm33',
+            requiredPermission: 'evaluations.view_frm33'
           },
           {
             title: 'FRM34 Evaluations',
-            url: '/dashboard/evren-gpt/evaluations/frm34'
+            url: '/dashboard/evren-gpt/evaluations/frm34',
+            requiredPermission: 'evaluations.view_frm34'
           },
           {
             title: 'FRM35 Evaluations',
-            url: '/dashboard/evren-gpt/evaluations/frm35'
+            url: '/dashboard/evren-gpt/evaluations/frm35',
+            requiredPermission: 'evaluations.view_frm35'
           }
         ]
       }
@@ -53,6 +61,7 @@ export const navItems: NavItem[] = [
     icon: 'bot',
     shortcut: ['m', 'g'],
     isActive: false,
+    requiredPermission: 'modules.access_marcel_gpt',
     items: []
   },
   {
@@ -61,6 +70,7 @@ export const navItems: NavItem[] = [
     icon: 'shield',
     shortcut: ['s', 'b'],
     isActive: false,
+    requiredPermission: 'modules.access_safety_bud',
     items: []
   },
   {
@@ -69,6 +79,7 @@ export const navItems: NavItem[] = [
     icon: 'billing',
     shortcut: ['p', 'p'],
     isActive: false,
+    requiredPermission: 'pages.view_payments',
     items: []
   },
   {
@@ -77,6 +88,7 @@ export const navItems: NavItem[] = [
     icon: 'fileCheck',
     shortcut: ['m', 'e'],
     isActive: false,
+    requiredPermission: 'evaluations.read',
     items: []
   },
   {
@@ -85,21 +97,21 @@ export const navItems: NavItem[] = [
     icon: 'shield',
     isActive: false,
     adminOnly: true,
-    requiredPermission: 'users.read', // At least one admin permission
+    requiredPermission: 'pages.view_admin_panel',
     items: [
       {
         title: 'Users',
         url: '/dashboard/admin/users',
         icon: 'users',
         shortcut: ['a', 'u'],
-        requiredPermission: 'users.read'
+        requiredPermission: 'pages.view_users'
       },
       {
         title: 'Roles & Permissions',
         url: '/dashboard/admin/roles',
         icon: 'shield',
         shortcut: ['a', 'r'],
-        requiredPermission: 'roles.read'
+        requiredPermission: 'pages.view_roles'
       },
       {
         title: 'Invitations',
@@ -113,7 +125,7 @@ export const navItems: NavItem[] = [
         url: '/dashboard/admin/tenants',
         icon: 'building',
         shortcut: ['a', 't'],
-        requiredPermission: 'tenants.read'
+        requiredPermission: 'pages.view_tenants'
       },
       {
         title: 'Subscription',

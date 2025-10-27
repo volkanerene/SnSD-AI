@@ -73,13 +73,48 @@ const ALL_PERMISSIONS = [
   'evaluations.submit',
   'evaluations.review',
   'evaluations.approve',
+  'evaluations.view_frm32',
+  'evaluations.view_frm33',
+  'evaluations.view_frm34',
+  'evaluations.view_frm35',
   // Payment permissions
   'payments.read',
   'payments.create',
   'payments.process',
   // Subscription permissions
   'subscriptions.read',
-  'subscriptions.manage'
+  'subscriptions.manage',
+  // Page view permissions
+  'pages.view_dashboard',
+  'pages.view_admin_panel',
+  'pages.view_tenants',
+  'pages.view_users',
+  'pages.view_roles',
+  'pages.view_contractors',
+  'pages.view_evaluations',
+  'pages.view_payments',
+  // Module access permissions
+  'modules.access_evren_gpt',
+  'modules.access_marcel_gpt',
+  'modules.access_safety_bud',
+  // EvrenGPT permissions
+  'evren_gpt.view_contractors',
+  'evren_gpt.view_evaluations',
+  'evren_gpt.upload_contractors',
+  // FRM form permissions
+  'frm.access_frm32',
+  'frm.access_frm33',
+  'frm.access_frm34',
+  'frm.access_frm35',
+  'frm.view_progress',
+  'frm.view_scores',
+  'frm.submit_frm32',
+  'frm.submit_frm33',
+  'frm.submit_frm34',
+  'frm.submit_frm35',
+  // Notification permissions
+  'notifications.receive',
+  'notifications.send'
 ];
 
 // Get current user's permissions
