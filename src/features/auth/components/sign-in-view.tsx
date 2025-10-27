@@ -70,7 +70,7 @@ export default function SignInViewPage() {
             >
               Gizlilik Politikası
             </Link>
-            'nı kabul etmiş olursunuz.
+            &apos;nı kabul etmiş olursunuz.
           </p>
         </div>
       </div>

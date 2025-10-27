@@ -71,7 +71,7 @@ export default function SignUpViewPage() {
             >
               Gizlilik Politikası
             </Link>
-            'nı kabul etmiş olursunuz.
+            &apos;nı kabul etmiş olursunuz.
           </p>
         </div>
       </div>
