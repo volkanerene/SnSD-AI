@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { PageContainer } from '@/components/layout/page-container';
+import PageContainer from '@/components/layout/page-container';
 import { Button } from '@/components/ui/button';
 import {
   Card,
