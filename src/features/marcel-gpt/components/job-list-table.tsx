@@ -33,10 +33,9 @@ import {
   IconRefresh
 } from '@tabler/icons-react';
 import { formatDistanceToNow } from 'date-fns';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export function JobListTable() {
-  const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState<string>('');
 
   const { data: jobsData, isLoading } = useVideoJobs(statusFilter || undefined);
@@ -48,16 +47,9 @@ export function JobListTable() {
   const handleCancel = async (jobId: number) => {
     try {
       await cancelMutation.mutateAsync(jobId);
-      toast({
-        title: 'Job Cancelled',
-        description: `Job #${jobId} has been cancelled.`
-      });
+      toast.success(`Job #${jobId} has been cancelled.`);
     } catch (error: any) {
-      toast({
-        title: 'Cancel Failed',
-        description: error.message || 'Failed to cancel job',
-        variant: 'destructive'
-      });
+      toast.error(error.message || 'Failed to cancel job');
     }
   };
 
@@ -209,11 +201,7 @@ export function JobListTable() {
                           variant='outline'
                           size='sm'
                           onClick={() => {
-                            toast({
-                              title: 'Error Details',
-                              description: job.error_message,
-                              variant: 'destructive'
-                            });
+                            toast.error(job.error_message || 'Unknown error');
                           }}
                         >
                           <IconAlertCircle className='h-4 w-4' />

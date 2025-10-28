@@ -27,10 +27,9 @@ import {
   IconAlertCircle,
   IconCheck
 } from '@tabler/icons-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export function VideoGenerationForm() {
-  const { toast } = useToast();
   const [inputText, setInputText] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState<string>('');
   const [selectedVoice, setSelectedVoice] = useState<string>('');
@@ -54,29 +53,17 @@ export function VideoGenerationForm() {
 
   const handleGenerate = async () => {
     if (!inputText.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Please enter text for the video',
-        variant: 'destructive'
-      });
+      toast.error('Please enter text for the video');
       return;
     }
 
     if (!selectedAvatar) {
-      toast({
-        title: 'Error',
-        description: 'Please select an avatar',
-        variant: 'destructive'
-      });
+      toast.error('Please select an avatar');
       return;
     }
 
     if (!selectedVoice) {
-      toast({
-        title: 'Error',
-        description: 'Please select a voice',
-        variant: 'destructive'
-      });
+      toast.error('Please select a voice');
       return;
     }
 
@@ -88,10 +75,9 @@ export function VideoGenerationForm() {
         voice_id: selectedVoice
       });
 
-      toast({
-        title: 'Video Generation Started',
-        description: `Job #${result.job_id} has been created and is now processing.`
-      });
+      toast.success(
+        `Job #${result.job_id} has been created and is now processing.`
+      );
 
       // Reset form
       setInputText('');
@@ -99,11 +85,7 @@ export function VideoGenerationForm() {
       setSelectedVoice('');
       setSelectedPreset('');
     } catch (error: any) {
-      toast({
-        title: 'Generation Failed',
-        description: error.message || 'Failed to start video generation',
-        variant: 'destructive'
-      });
+      toast.error(error.message || 'Failed to start video generation');
     }
   };
 

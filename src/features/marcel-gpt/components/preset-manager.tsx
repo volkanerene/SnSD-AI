@@ -36,10 +36,9 @@ import {
   useVoices
 } from '@/hooks/useMarcelGPT';
 import { IconPlus, IconTrash, IconSettings } from '@tabler/icons-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export function PresetManager() {
-  const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [presetName, setPresetName] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState('');
@@ -60,20 +59,12 @@ export function PresetManager() {
 
   const handleCreatePreset = async () => {
     if (!presetName.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Please enter a preset name',
-        variant: 'destructive'
-      });
+      toast.error('Please enter a preset name');
       return;
     }
 
     if (!selectedAvatar || !selectedVoice) {
-      toast({
-        title: 'Error',
-        description: 'Please select both avatar and voice',
-        variant: 'destructive'
-      });
+      toast.error('Please select both avatar and voice');
       return;
     }
 
@@ -85,10 +76,7 @@ export function PresetManager() {
         engine: selectedEngine
       });
 
-      toast({
-        title: 'Preset Created',
-        description: `"${presetName}" has been saved successfully.`
-      });
+      toast.success(`"${presetName}" has been saved successfully.`);
 
       // Reset form
       setPresetName('');
@@ -97,27 +85,16 @@ export function PresetManager() {
       setSelectedEngine('v2');
       setIsCreateDialogOpen(false);
     } catch (error: any) {
-      toast({
-        title: 'Failed to Create Preset',
-        description: error.message || 'An error occurred',
-        variant: 'destructive'
-      });
+      toast.error(error.message || 'Failed to create preset');
     }
   };
 
   const handleDeletePreset = async (presetId: number, presetName: string) => {
     try {
       await deleteMutation.mutateAsync(presetId);
-      toast({
-        title: 'Preset Deleted',
-        description: `"${presetName}" has been removed.`
-      });
+      toast.success(`"${presetName}" has been removed.`);
     } catch (error: any) {
-      toast({
-        title: 'Failed to Delete Preset',
-        description: error.message || 'An error occurred',
-        variant: 'destructive'
-      });
+      toast.error(error.message || 'Failed to delete preset');
     }
   };
 
