@@ -1,0 +1,279 @@
+'use client';
+
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import {
+  usePresets,
+  useCreatePreset,
+  useDeletePreset,
+  useAvatars,
+  useVoices
+} from '@/hooks/useMarcelGPT';
+import { IconPlus, IconTrash, IconSettings } from '@tabler/icons-react';
+import { useToast } from '@/hooks/use-toast';
+
+export function PresetManager() {
+  const { toast } = useToast();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [presetName, setPresetName] = useState('');
+  const [selectedAvatar, setSelectedAvatar] = useState('');
+  const [selectedVoice, setSelectedVoice] = useState('');
+  const [selectedEngine, setSelectedEngine] = useState<'v2' | 'av4'>('v2');
+
+  const { data: presetsData, isLoading: presetsLoading } = usePresets();
+  const presets = presetsData?.presets || [];
+
+  const { data: avatarsData } = useAvatars();
+  const avatars = avatarsData?.avatars || [];
+
+  const { data: voicesData } = useVoices();
+  const voices = voicesData?.voices || [];
+
+  const createMutation = useCreatePreset();
+  const deleteMutation = useDeletePreset();
+
+  const handleCreatePreset = async () => {
+    if (!presetName.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a preset name',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!selectedAvatar || !selectedVoice) {
+      toast({
+        title: 'Error',
+        description: 'Please select both avatar and voice',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      await createMutation.mutateAsync({
+        name: presetName,
+        avatar_id: selectedAvatar,
+        voice_id: selectedVoice,
+        engine: selectedEngine
+      });
+
+      toast({
+        title: 'Preset Created',
+        description: `"${presetName}" has been saved successfully.`
+      });
+
+      // Reset form
+      setPresetName('');
+      setSelectedAvatar('');
+      setSelectedVoice('');
+      setSelectedEngine('v2');
+      setIsCreateDialogOpen(false);
+    } catch (error: any) {
+      toast({
+        title: 'Failed to Create Preset',
+        description: error.message || 'An error occurred',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleDeletePreset = async (presetId: number, presetName: string) => {
+    try {
+      await deleteMutation.mutateAsync(presetId);
+      toast({
+        title: 'Preset Deleted',
+        description: `"${presetName}" has been removed.`
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Failed to Delete Preset',
+        description: error.message || 'An error occurred',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  return (
+    <div className='space-y-4'>
+      {/* Create Preset Button */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogTrigger asChild>
+          <Button className='w-full'>
+            <IconPlus className='mr-2 h-4 w-4' />
+            Create New Preset
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Brand Preset</DialogTitle>
+            <DialogDescription>
+              Save your favorite avatar, voice, and engine combination for quick
+              access
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className='space-y-4 py-4'>
+            <div className='space-y-2'>
+              <Label htmlFor='preset-name'>Preset Name</Label>
+              <Input
+                id='preset-name'
+                placeholder='e.g., Corporate English Male'
+                value={presetName}
+                onChange={(e) => setPresetName(e.target.value)}
+              />
+            </div>
+
+            <div className='space-y-2'>
+              <Label htmlFor='preset-avatar'>Avatar</Label>
+              <Select value={selectedAvatar} onValueChange={setSelectedAvatar}>
+                <SelectTrigger id='preset-avatar'>
+                  <SelectValue placeholder='Select an avatar...' />
+                </SelectTrigger>
+                <SelectContent>
+                  {avatars.map((avatar) => (
+                    <SelectItem key={avatar.avatar_id} value={avatar.avatar_id}>
+                      {avatar.avatar_name || avatar.avatar_id}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className='space-y-2'>
+              <Label htmlFor='preset-voice'>Voice</Label>
+              <Select value={selectedVoice} onValueChange={setSelectedVoice}>
+                <SelectTrigger id='preset-voice'>
+                  <SelectValue placeholder='Select a voice...' />
+                </SelectTrigger>
+                <SelectContent>
+                  {voices.map((voice) => (
+                    <SelectItem key={voice.voice_id} value={voice.voice_id}>
+                      {voice.name || voice.voice_id}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className='space-y-2'>
+              <Label htmlFor='preset-engine'>Engine</Label>
+              <Select
+                value={selectedEngine}
+                onValueChange={(val) => setSelectedEngine(val as 'v2' | 'av4')}
+              >
+                <SelectTrigger id='preset-engine'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='v2'>V2 (Standard)</SelectItem>
+                  <SelectItem value='av4'>AV4 (Photorealistic)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant='outline'
+              onClick={() => setIsCreateDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreatePreset}
+              disabled={createMutation.isPending}
+            >
+              {createMutation.isPending ? 'Creating...' : 'Create Preset'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Presets List */}
+      {presetsLoading ? (
+        <div className='text-muted-foreground flex items-center justify-center py-8'>
+          Loading presets...
+        </div>
+      ) : presets.length === 0 ? (
+        <div className='rounded-lg border border-dashed p-8 text-center'>
+          <IconSettings className='text-muted-foreground mx-auto h-12 w-12' />
+          <h3 className='mt-4 text-lg font-semibold'>No presets yet</h3>
+          <p className='text-muted-foreground mt-2 text-sm'>
+            Create your first preset to save time on future video generations
+          </p>
+        </div>
+      ) : (
+        <div className='grid gap-4 md:grid-cols-2'>
+          {presets.map((preset) => (
+            <Card key={preset.id}>
+              <CardHeader>
+                <div className='flex items-start justify-between'>
+                  <div>
+                    <CardTitle className='text-lg'>{preset.name}</CardTitle>
+                    <CardDescription>
+                      Created {new Date(preset.created_at).toLocaleDateString()}
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    onClick={() => handleDeletePreset(preset.id, preset.name)}
+                    disabled={deleteMutation.isPending}
+                  >
+                    <IconTrash className='text-destructive h-4 w-4' />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className='space-y-2 text-sm'>
+                  <div className='flex justify-between'>
+                    <span className='text-muted-foreground'>Avatar:</span>
+                    <span className='font-medium'>{preset.avatar_id}</span>
+                  </div>
+                  <div className='flex justify-between'>
+                    <span className='text-muted-foreground'>Voice:</span>
+                    <span className='font-medium'>{preset.voice_id}</span>
+                  </div>
+                  <div className='flex justify-between'>
+                    <span className='text-muted-foreground'>Engine:</span>
+                    <Badge variant='outline'>
+                      {preset.engine?.toUpperCase() || 'V2'}
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

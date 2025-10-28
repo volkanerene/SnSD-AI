@@ -58,7 +58,7 @@ export const navItems: NavItem[] = [
   {
     title: 'MarcelGPT',
     url: '/dashboard/marcel-gpt',
-    icon: 'bot',
+    icon: 'video',
     shortcut: ['m', 'g'],
     isActive: false,
     requiredPermission: 'modules.access_marcel_gpt',

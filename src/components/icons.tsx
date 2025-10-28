@@ -38,7 +38,8 @@ import {
   IconShield,
   IconBuilding,
   IconMail,
-  IconRobot
+  IconRobot,
+  IconVideo
 } from '@tabler/icons-react';
 
 export type Icon = React.ComponentType<IconProps>;
@@ -84,5 +85,6 @@ export const Icons = {
   shield: IconShield,
   building: IconBuilding,
   mail: IconMail,
-  bot: IconRobot
+  bot: IconRobot,
+  video: IconVideo
 };
