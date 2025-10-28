@@ -36,9 +36,11 @@ import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 
 export function JobListTable() {
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  const { data: jobsData, isLoading } = useVideoJobs(statusFilter || undefined);
+  const { data: jobsData, isLoading } = useVideoJobs(
+    statusFilter !== 'all' ? statusFilter : undefined
+  );
   const jobs = jobsData?.jobs || [];
   const totalCount = jobsData?.count || 0;
 
@@ -102,7 +104,7 @@ export function JobListTable() {
             <SelectValue placeholder='All Statuses' />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value=''>All Statuses</SelectItem>
+            <SelectItem value='all'>All Statuses</SelectItem>
             <SelectItem value='pending'>Pending</SelectItem>
             <SelectItem value='queued'>Queued</SelectItem>
             <SelectItem value='processing'>Processing</SelectItem>
