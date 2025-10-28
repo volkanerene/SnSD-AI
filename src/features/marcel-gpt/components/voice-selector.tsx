@@ -26,12 +26,12 @@ export function VoiceSelector({
   onSelectVoice
 }: VoiceSelectorProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [languageFilter, setLanguageFilter] = useState<string>('');
-  const [genderFilter, setGenderFilter] = useState<string>('');
+  const [languageFilter, setLanguageFilter] = useState<string>('all');
+  const [genderFilter, setGenderFilter] = useState<string>('all');
 
   const { data: voicesData, isLoading } = useVoices({
-    language: languageFilter || undefined,
-    gender: genderFilter || undefined
+    language: languageFilter !== 'all' ? languageFilter : undefined,
+    gender: genderFilter !== 'all' ? genderFilter : undefined
   });
   const voices = voicesData?.voices || [];
 
@@ -75,9 +75,9 @@ export function VoiceSelector({
               <SelectValue placeholder='All Languages' />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value=''>All Languages</SelectItem>
+              <SelectItem value='all'>All Languages</SelectItem>
               {uniqueLanguages.map((lang) => (
-                <SelectItem key={lang} value={lang || ''}>
+                <SelectItem key={lang} value={lang}>
                   {lang}
                 </SelectItem>
               ))}
@@ -89,9 +89,9 @@ export function VoiceSelector({
               <SelectValue placeholder='All Genders' />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value=''>All Genders</SelectItem>
+              <SelectItem value='all'>All Genders</SelectItem>
               {uniqueGenders.map((gender) => (
-                <SelectItem key={gender} value={gender || ''}>
+                <SelectItem key={gender} value={gender}>
                   {gender}
                 </SelectItem>
               ))}
