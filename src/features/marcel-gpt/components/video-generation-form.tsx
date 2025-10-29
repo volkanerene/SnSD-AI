@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -19,41 +19,67 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useGenerateVideo, usePresets } from '@/hooks/useMarcelGPT';
-import { AvatarSelector } from './avatar-selector';
+import { useGenerateVideo, type PhotoAvatarLook } from '@/hooks/useMarcelGPT';
 import { VoiceSelector } from './voice-selector';
+import { ScriptGenerator } from './script-generator';
 import {
   IconPlayerPlay,
   IconAlertCircle,
-  IconCheck
+  IconInfoCircle
 } from '@tabler/icons-react';
 import { toast } from 'sonner';
+import { LookSelector } from './look-selector';
 
 export function VideoGenerationForm() {
   const [inputText, setInputText] = useState('');
-  const [selectedAvatar, setSelectedAvatar] = useState<string>('');
+  const [selectedLook, setSelectedLook] = useState<PhotoAvatarLook | null>(
+    null
+  );
   const [selectedVoice, setSelectedVoice] = useState<string>('');
-  const [selectedPreset, setSelectedPreset] = useState<string>('');
   const [engine, setEngine] = useState<'v2' | 'av4'>('v2');
-
-  const { data: presetsData } = usePresets();
-  const presets = presetsData?.presets || [];
 
   const generateMutation = useGenerateVideo();
 
-  const handlePresetChange = (presetId: string) => {
-    setSelectedPreset(presetId);
-    const preset = presets.find((p) => p.id.toString() === presetId);
-    if (preset) {
-      setSelectedAvatar(preset.avatar_id);
-      setSelectedVoice(preset.voice_id);
-      setEngine(preset.engine as 'v2' | 'av4');
+  const selectedAvatar = selectedLook?.avatarId ?? '';
+
+  const lookResolution = useMemo(() => {
+    if (!selectedLook?.config?.width || !selectedLook?.config?.height)
+      return null;
+    return `${selectedLook.config.width} × ${selectedLook.config.height}`;
+  }, [selectedLook]);
+
+  const lookBackground = useMemo(() => {
+    if (!selectedLook) return null;
+    if (
+      selectedLook.config?.backgroundType === 'image' &&
+      selectedLook.config?.backgroundImageUrl
+    ) {
+      return `Image • ${selectedLook.config.backgroundImageUrl}`;
+    }
+    if (selectedLook.config?.backgroundType === 'green_screen') {
+      return 'Green Screen';
+    }
+    if (selectedLook.config?.backgroundType === 'color') {
+      return `Solid Color ${selectedLook.config.backgroundColor ?? '#ffffff'}`;
+    }
+    return null;
+  }, [selectedLook]);
+
+  const handleLookSelect = (look: PhotoAvatarLook) => {
+    setSelectedLook(look);
+    if (look.voiceId) {
+      setSelectedVoice(look.voiceId);
     }
   };
 
   const handleGenerate = async () => {
     if (!inputText.trim()) {
       toast.error('Please enter text for the video');
+      return;
+    }
+
+    if (!selectedLook) {
+      toast.error('Please choose or create a look first');
       return;
     }
 
@@ -68,22 +94,60 @@ export function VideoGenerationForm() {
     }
 
     try {
+      const lookConfig = selectedLook.config || {};
+      const config: any = {
+        speed: lookConfig.speed ?? 1,
+        language: lookConfig.language ?? 'en',
+        width: lookConfig.width ?? 1280,
+        height: lookConfig.height ?? 720,
+        avatar_style: lookConfig.avatarStyle ?? 'normal'
+      };
+
+      if (lookConfig.backgroundType === 'color') {
+        config.background = {
+          type: 'color',
+          value: lookConfig.backgroundColor ?? '#ffffff'
+        };
+      } else if (
+        lookConfig.backgroundType === 'image' &&
+        lookConfig.backgroundImageUrl
+      ) {
+        config.background = {
+          type: 'image',
+          url: lookConfig.backgroundImageUrl
+        };
+      } else if (lookConfig.backgroundType === 'green_screen') {
+        config.background = {
+          type: 'color',
+          value: '#00FF00'
+        };
+      }
+
+      if (lookConfig.enableSubtitles) {
+        config.enable_subtitles = true;
+        config.subtitle_language =
+          lookConfig.subtitleLanguage || lookConfig.language || 'en';
+      }
+
+      const presetId =
+        selectedLook.presetId ?? selectedLook.meta?.brand_preset_id;
+
       const result = await generateMutation.mutateAsync({
         engine,
         input_text: inputText,
         avatar_id: selectedAvatar,
-        voice_id: selectedVoice
+        voice_id: selectedVoice,
+        preset_id: presetId,
+        config
       });
 
       toast.success(
         `Job #${result.job_id} has been created and is now processing.`
       );
 
-      // Reset form
       setInputText('');
-      setSelectedAvatar('');
+      setSelectedLook(null);
       setSelectedVoice('');
-      setSelectedPreset('');
     } catch (error: any) {
       toast.error(error.message || 'Failed to start video generation');
     }
@@ -95,7 +159,6 @@ export function VideoGenerationForm() {
 
   return (
     <div className='grid gap-6 lg:grid-cols-2'>
-      {/* Left Column: Input & Settings */}
       <div className='space-y-4'>
         <Card>
           <CardHeader>
@@ -105,24 +168,6 @@ export function VideoGenerationForm() {
             </CardDescription>
           </CardHeader>
           <CardContent className='space-y-4'>
-            {/* Preset Selector */}
-            <div className='space-y-2'>
-              <Label htmlFor='preset'>Load from Preset (Optional)</Label>
-              <Select value={selectedPreset} onValueChange={handlePresetChange}>
-                <SelectTrigger id='preset'>
-                  <SelectValue placeholder='Choose a preset...' />
-                </SelectTrigger>
-                <SelectContent>
-                  {presets.map((preset) => (
-                    <SelectItem key={preset.id} value={preset.id.toString()}>
-                      {preset.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Engine Selection */}
             <div className='space-y-2'>
               <Label htmlFor='engine'>Video Engine</Label>
               <Select
@@ -139,9 +184,11 @@ export function VideoGenerationForm() {
               </Select>
             </div>
 
-            {/* Text Input */}
             <div className='space-y-2'>
-              <Label htmlFor='input-text'>Video Script</Label>
+              <div className='flex items-center justify-between'>
+                <Label htmlFor='input-text'>Video Script</Label>
+                <ScriptGenerator value={inputText} onChange={setInputText} />
+              </div>
               <Textarea
                 id='input-text'
                 placeholder='Enter the text you want the avatar to speak...'
@@ -170,11 +217,87 @@ export function VideoGenerationForm() {
               </Alert>
             )}
 
-            {/* Generate Button */}
+            <Card>
+              <CardHeader>
+                <CardTitle className='text-base'>Review Selection</CardTitle>
+                <CardDescription>
+                  Summary of the look and voice that will be used for this
+                  video.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className='space-y-3 text-sm'>
+                {selectedLook ? (
+                  <>
+                    <div className='space-y-1'>
+                      <span className='font-medium'>Look</span>
+                      <p>{selectedLook.name}</p>
+                      {selectedLook.notes && (
+                        <p className='text-muted-foreground text-xs'>
+                          {selectedLook.notes}
+                        </p>
+                      )}
+                    </div>
+
+                    {selectedLook.source && (
+                      <div className='space-y-1'>
+                        <span className='font-medium'>Source</span>
+                        <p className='text-muted-foreground'>
+                          {selectedLook.source === 'existing_avatar'
+                            ? 'Existing HeyGen avatar'
+                            : 'Generated photo avatar'}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className='space-y-1'>
+                      <span className='font-medium'>Resolution</span>
+                      <p className='text-muted-foreground'>
+                        {lookResolution ?? 'Default (1280×720)'}
+                      </p>
+                    </div>
+
+                    {lookBackground && (
+                      <div className='space-y-1'>
+                        <span className='font-medium'>Background</span>
+                        <p className='text-muted-foreground'>
+                          {lookBackground}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className='space-y-1'>
+                      <span className='font-medium'>Avatar Style</span>
+                      <p className='text-muted-foreground'>
+                        {selectedLook.config?.avatarStyle ?? 'normal'}
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <div className='text-muted-foreground flex items-start gap-2'>
+                    <IconInfoCircle className='mt-0.5 h-4 w-4 flex-shrink-0' />
+                    <p>Select or create a look to see its details here.</p>
+                  </div>
+                )}
+
+                <div className='space-y-1'>
+                  <span className='font-medium'>Voice</span>
+                  <p className='text-muted-foreground'>
+                    {selectedVoice
+                      ? `Voice ID: ${selectedVoice}`
+                      : 'Select a voice in the panel on the right.'}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
             <Button
               onClick={handleGenerate}
               disabled={
-                generateMutation.isPending || isOverLimit || !inputText.trim()
+                generateMutation.isPending ||
+                isOverLimit ||
+                !inputText.trim() ||
+                !selectedLook ||
+                !selectedVoice
               }
               className='w-full'
               size='lg'
@@ -192,11 +315,10 @@ export function VideoGenerationForm() {
         </Card>
       </div>
 
-      {/* Right Column: Avatar & Voice Selection */}
       <div className='space-y-4'>
-        <AvatarSelector
-          selectedAvatarId={selectedAvatar}
-          onSelectAvatar={setSelectedAvatar}
+        <LookSelector
+          selectedLookId={selectedLook?.id}
+          onSelectLook={handleLookSelect}
         />
 
         <VoiceSelector

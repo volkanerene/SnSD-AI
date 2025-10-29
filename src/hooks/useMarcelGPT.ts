@@ -37,9 +37,58 @@ export interface BrandPreset {
   bg_value?: string;
   overlay_logo_url?: string;
   enable_subtitles?: boolean;
+  subtitle_language?: string;
+  subtitle_format?: string;
   video_width?: number;
   video_height?: number;
+  aspect_ratio?: string;
   created_at: string;
+}
+
+export interface LookVisualConfig {
+  backgroundType: 'color' | 'image' | 'green_screen';
+  backgroundColor?: string;
+  backgroundImageUrl?: string;
+  clothingPrompt?: string;
+  language: string;
+  speed: number;
+  tone?: string;
+  enableSubtitles: boolean;
+  subtitleLanguage?: string;
+  width: number;
+  height: number;
+  aspectRatio: '16:9' | '9:16' | '1:1' | '4:5';
+  avatarStyle: 'circle' | 'closeUp' | 'full' | 'normal' | 'voiceOnly';
+}
+
+export interface PhotoAvatarLook {
+  id: number;
+  name: string;
+  notes?: string;
+  status: string;
+  avatarId?: string;
+  voiceId?: string;
+  previewUrls: string[];
+  coverUrl?: string;
+  generationId?: string;
+  errorMessage?: string;
+  config: LookVisualConfig & Record<string, any>;
+  presetId?: number;
+  source?: string;
+  meta?: Record<string, any>;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface CreateLookPayload {
+  name: string;
+  prompt?: string;
+  notes?: string;
+  voiceId: string;
+  config: LookVisualConfig & Record<string, any>;
+  lookOptions?: Record<string, any>;
+  baseAvatarId?: string;
+  baseAvatarPreviewUrl?: string;
 }
 
 export interface VideoJob {
@@ -125,6 +174,69 @@ export function useVoices(filters?: { language?: string; gender?: string }) {
       );
     },
     staleTime: 24 * 60 * 60 * 1000 // 24 hours
+  });
+}
+
+// Photo Avatar Looks
+export function usePhotoAvatarLooks() {
+  return useQuery<{ looks: PhotoAvatarLook[]; count: number }>({
+    queryKey: ['marcel-gpt', 'photo-avatars', 'looks'],
+    queryFn: async () => {
+      return await apiClient.get('/marcel-gpt/photo-avatars/looks');
+    },
+    refetchInterval: (data) => {
+      const pending = data?.looks?.some(
+        (look) => !['ready', 'failed', 'error'].includes(look.status)
+      );
+      return pending ? 4000 : false;
+    }
+  });
+}
+
+export function useCreatePhotoAvatarLook() {
+  const queryClient = useQueryClient();
+
+  return useMutation<{ look: PhotoAvatarLook }, unknown, CreateLookPayload>({
+    mutationFn: async (payload: CreateLookPayload) => {
+      return await apiClient.post('/marcel-gpt/photo-avatars/looks', payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['marcel-gpt', 'photo-avatars', 'looks']
+      });
+      queryClient.invalidateQueries({ queryKey: ['marcel-gpt', 'presets'] });
+    }
+  });
+}
+
+export function usePhotoAvatarLook(lookId?: number, enabled = true) {
+  return useQuery<{ look: PhotoAvatarLook }>({
+    queryKey: ['marcel-gpt', 'photo-avatars', 'looks', lookId],
+    queryFn: async () => {
+      return await apiClient.get(`/marcel-gpt/photo-avatars/looks/${lookId}`);
+    },
+    enabled: enabled && !!lookId
+  });
+}
+
+export function useRefreshPhotoAvatarLook() {
+  const queryClient = useQueryClient();
+
+  return useMutation<{ look: PhotoAvatarLook }, unknown, number>({
+    mutationFn: async (lookId: number) => {
+      return await apiClient.post(
+        `/marcel-gpt/photo-avatars/looks/${lookId}/refresh`,
+        {}
+      );
+    },
+    onSuccess: (_, lookId) => {
+      queryClient.invalidateQueries({
+        queryKey: ['marcel-gpt', 'photo-avatars', 'looks']
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['marcel-gpt', 'photo-avatars', 'looks', lookId]
+      });
+    }
   });
 }
 
@@ -235,6 +347,53 @@ export function useCheckJobStatus() {
   return useMutation({
     mutationFn: async (jobId: number) => {
       return await apiClient.get(`/marcel-gpt/jobs/${jobId}/status`);
+    }
+  });
+}
+
+// =========================================================================
+// Script Generation Hooks (ChatGPT Integration)
+// =========================================================================
+
+export interface GenerateScriptPayload {
+  prompt: string;
+  context?: string;
+  max_tokens?: number;
+  temperature?: number;
+}
+
+export interface RefineScriptPayload {
+  original_script: string;
+  refinement_instructions: string;
+}
+
+export function useGenerateScript() {
+  return useMutation({
+    mutationFn: async (payload: GenerateScriptPayload) => {
+      return await apiClient.post('/marcel-gpt/scripts/generate', payload);
+    }
+  });
+}
+
+export function useGenerateScriptFromPDF() {
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      return await apiClient.post('/marcel-gpt/scripts/from-pdf', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+    }
+  });
+}
+
+export function useRefineScript() {
+  return useMutation({
+    mutationFn: async (payload: RefineScriptPayload) => {
+      return await apiClient.post('/marcel-gpt/scripts/refine', payload);
     }
   });
 }
