@@ -90,7 +90,9 @@ export function VoiceSelector({
       selectedVoiceId
     }: RowComponentProps<VoiceRowData>) => {
       const voice = filteredVoices[index];
-      if (!voice) return null;
+      if (!voice) {
+        return <div style={style} className='px-2 py-1' {...ariaAttributes} />;
+      }
 
       const isSelected = selectedVoiceId === voice.voice_id;
 
@@ -121,9 +123,9 @@ export function VoiceSelector({
                       {voice.gender}
                     </Badge>
                   )}
-                  {voice.age && (
+                  {voice.age_range && (
                     <Badge variant='outline' className='text-xs'>
-                      {voice.age}
+                      {voice.age_range}
                     </Badge>
                   )}
                 </div>
@@ -210,7 +212,7 @@ export function VoiceSelector({
           ) : (
             <List
               className='scrollbar-thin scrollbar-track-transparent scrollbar-thumb-border'
-              height={400}
+              defaultHeight={400}
               rowComponent={VoiceRow}
               rowProps={rowProps}
               rowCount={filteredVoices.length}

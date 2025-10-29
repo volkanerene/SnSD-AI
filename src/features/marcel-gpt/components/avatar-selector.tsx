@@ -80,13 +80,7 @@ export function AvatarSelector({
     }: CellComponentProps<AvatarCellData>) => {
       const index = rowIndex * columnCount + columnIndex;
       if (index >= filteredAvatars.length) {
-        return (
-          <div
-            style={style}
-            className='pointer-events-none'
-            aria-hidden='true'
-          />
-        );
+        return <div style={style} className='p-1.5' {...ariaAttributes} />;
       }
 
       const avatar = filteredAvatars[index];
@@ -198,7 +192,6 @@ export function AvatarSelector({
               rowHeight={rowHeight}
               defaultHeight={400}
               defaultWidth={420}
-              style={{ height: 400, width: 420 }}
               className='scrollbar-thin scrollbar-track-transparent scrollbar-thumb-border'
             />
           )}

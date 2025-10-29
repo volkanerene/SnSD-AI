@@ -145,6 +145,13 @@ export interface GenerateVideoRequest {
   };
 }
 
+export interface GenerateVideoResponse {
+  job_id: number;
+  heygen_job_id: string;
+  status: 'pending' | 'queued' | 'processing' | 'completed' | 'failed';
+  message?: string;
+}
+
 // Avatars
 export function useAvatars(forceRefresh = false) {
   return useQuery<{ avatars: HeyGenAvatar[]; count: number }>({
@@ -184,7 +191,8 @@ export function usePhotoAvatarLooks() {
     queryFn: async () => {
       return await apiClient.get('/marcel-gpt/photo-avatars/looks');
     },
-    refetchInterval: (data) => {
+    refetchInterval: (query) => {
+      const data = query.state.data;
       const pending = data?.looks?.some(
         (look) => !['ready', 'failed', 'error'].includes(look.status)
       );
@@ -280,9 +288,12 @@ export function useDeletePreset() {
 export function useGenerateVideo() {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return useMutation<GenerateVideoResponse, unknown, GenerateVideoRequest>({
     mutationFn: async (data: GenerateVideoRequest) => {
-      return await apiClient.post('/marcel-gpt/generate', data);
+      return await apiClient.post<GenerateVideoResponse>(
+        '/marcel-gpt/generate',
+        data
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['marcel-gpt', 'jobs'] });
@@ -300,8 +311,9 @@ export function useVideoJobs(status?: string) {
       const params = status ? `?status=${status}` : '';
       return await apiClient.get(`/marcel-gpt/jobs${params}`);
     },
-    refetchInterval: (data) => {
+    refetchInterval: (query) => {
       // Auto-refresh if there are pending/processing jobs
+      const data = query.state.data;
       const hasActiveJobs = data?.jobs?.some((job) =>
         ['pending', 'queued', 'processing'].includes(job.status)
       );
@@ -317,8 +329,9 @@ export function useVideoJob(jobId: number) {
       return await apiClient.get(`/marcel-gpt/jobs/${jobId}`);
     },
     enabled: !!jobId,
-    refetchInterval: (data) => {
+    refetchInterval: (query) => {
       // Auto-refresh while job is active
+      const data = query.state.data;
       if (data && ['pending', 'queued', 'processing'].includes(data.status)) {
         return 3000; // 3 seconds
       }
@@ -362,38 +375,58 @@ export interface GenerateScriptPayload {
   temperature?: number;
 }
 
+export interface ScriptResponse {
+  script: string;
+  prompt?: string;
+  generated_at?: string;
+  source?: string;
+  filename?: string;
+  original_script?: string;
+  refinement_instructions?: string;
+}
+
 export interface RefineScriptPayload {
   original_script: string;
   refinement_instructions: string;
 }
 
 export function useGenerateScript() {
-  return useMutation({
+  return useMutation<ScriptResponse, unknown, GenerateScriptPayload>({
     mutationFn: async (payload: GenerateScriptPayload) => {
-      return await apiClient.post('/marcel-gpt/scripts/generate', payload);
+      return await apiClient.post<ScriptResponse>(
+        '/marcel-gpt/scripts/generate',
+        payload
+      );
     }
   });
 }
 
 export function useGenerateScriptFromPDF() {
-  return useMutation({
+  return useMutation<ScriptResponse, unknown, File>({
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append('file', file);
 
-      return await apiClient.post('/marcel-gpt/scripts/from-pdf', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
+      return await apiClient.post<ScriptResponse>(
+        '/marcel-gpt/scripts/from-pdf',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
         }
-      });
+      );
     }
   });
 }
 
 export function useRefineScript() {
-  return useMutation({
+  return useMutation<ScriptResponse, unknown, RefineScriptPayload>({
     mutationFn: async (payload: RefineScriptPayload) => {
-      return await apiClient.post('/marcel-gpt/scripts/refine', payload);
+      return await apiClient.post<ScriptResponse>(
+        '/marcel-gpt/scripts/refine',
+        payload
+      );
     }
   });
 }

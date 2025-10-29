@@ -43,7 +43,6 @@ export function PresetManager() {
   const [presetName, setPresetName] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState('');
   const [selectedVoice, setSelectedVoice] = useState('');
-  const [selectedEngine, setSelectedEngine] = useState<'v2' | 'av4'>('v2');
 
   const { data: presetsData, isLoading: presetsLoading } = usePresets();
   const presets = presetsData?.presets || [];
@@ -72,8 +71,7 @@ export function PresetManager() {
       await createMutation.mutateAsync({
         name: presetName,
         avatar_id: selectedAvatar,
-        voice_id: selectedVoice,
-        engine: selectedEngine
+        voice_id: selectedVoice
       });
 
       toast.success(`"${presetName}" has been saved successfully.`);
@@ -82,7 +80,6 @@ export function PresetManager() {
       setPresetName('');
       setSelectedAvatar('');
       setSelectedVoice('');
-      setSelectedEngine('v2');
       setIsCreateDialogOpen(false);
     } catch (error: any) {
       toast.error(error.message || 'Failed to create preset');
@@ -112,8 +109,7 @@ export function PresetManager() {
           <DialogHeader>
             <DialogTitle>Create Brand Preset</DialogTitle>
             <DialogDescription>
-              Save your favorite avatar, voice, and engine combination for quick
-              access
+              Save your favorite avatar and voice combination for quick access.
             </DialogDescription>
           </DialogHeader>
 
@@ -156,22 +152,6 @@ export function PresetManager() {
                       {voice.name || voice.voice_id}
                     </SelectItem>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className='space-y-2'>
-              <Label htmlFor='preset-engine'>Engine</Label>
-              <Select
-                value={selectedEngine}
-                onValueChange={(val) => setSelectedEngine(val as 'v2' | 'av4')}
-              >
-                <SelectTrigger id='preset-engine'>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='v2'>V2 (Standard)</SelectItem>
-                  <SelectItem value='av4'>AV4 (Photorealistic)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -238,12 +218,6 @@ export function PresetManager() {
                   <div className='flex justify-between'>
                     <span className='text-muted-foreground'>Voice:</span>
                     <span className='font-medium'>{preset.voice_id}</span>
-                  </div>
-                  <div className='flex justify-between'>
-                    <span className='text-muted-foreground'>Engine:</span>
-                    <Badge variant='outline'>
-                      {preset.engine?.toUpperCase() || 'V2'}
-                    </Badge>
                   </div>
                 </div>
               </CardContent>

@@ -177,7 +177,9 @@ export function JobListTable() {
                             size='sm'
                             onClick={() =>
                               handleDownload(
-                                job.artifacts![0].video_url,
+                                job.artifacts![0].heygen_url ??
+                                  job.artifacts![0].signed_url ??
+                                  '',
                                 job.id
                               )
                             }

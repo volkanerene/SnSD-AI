@@ -132,7 +132,7 @@ export function VideoGenerationForm() {
       const presetId =
         selectedLook.presetId ?? selectedLook.meta?.brand_preset_id;
 
-      const result = await generateMutation.mutateAsync({
+      const response = await generateMutation.mutateAsync({
         engine,
         input_text: inputText,
         avatar_id: selectedAvatar,
@@ -142,7 +142,7 @@ export function VideoGenerationForm() {
       });
 
       toast.success(
-        `Job #${result.job_id} has been created and is now processing.`
+        `Job #${response.job_id} has been created and is now processing.`
       );
 
       setInputText('');

@@ -54,7 +54,7 @@ export function ScriptGenerator({ value, onChange }: ScriptGeneratorProps) {
 
     try {
       const result = await generateMutation.mutateAsync({ prompt });
-      onChange(result.script);
+      onChange(result?.script ?? '');
       setPrompt('');
       setIsGenerateOpen(false);
       toast.success('Script generated successfully');
@@ -71,7 +71,7 @@ export function ScriptGenerator({ value, onChange }: ScriptGeneratorProps) {
 
     try {
       const result = await pdfMutation.mutateAsync(selectedFile);
-      onChange(result.script);
+      onChange(result?.script ?? '');
       setSelectedFile(null);
       setIsPDFOpen(false);
       toast.success('Script extracted from PDF successfully');
@@ -96,7 +96,7 @@ export function ScriptGenerator({ value, onChange }: ScriptGeneratorProps) {
         original_script: value,
         refinement_instructions: refinementInstructions
       });
-      onChange(result.script);
+      onChange(result?.script ?? '');
       setRefinementInstructions('');
       setIsRefineOpen(false);
       toast.success('Script refined successfully');
