@@ -194,10 +194,11 @@ export function AvatarSelector({
               cellProps={cellProps}
               columnCount={columnCount}
               columnWidth={columnWidth}
-              height={400}
               rowCount={rowCount}
               rowHeight={rowHeight}
-              width={420}
+              defaultHeight={400}
+              defaultWidth={420}
+              style={{ height: 400, width: 420 }}
               className='scrollbar-thin scrollbar-track-transparent scrollbar-thumb-border'
             />
           )}
