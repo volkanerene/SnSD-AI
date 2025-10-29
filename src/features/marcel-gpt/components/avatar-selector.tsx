@@ -79,7 +79,15 @@ export function AvatarSelector({
       onSelectAvatar
     }: CellComponentProps<AvatarCellData>) => {
       const index = rowIndex * columnCount + columnIndex;
-      if (index >= filteredAvatars.length) return null;
+      if (index >= filteredAvatars.length) {
+        return (
+          <div
+            style={style}
+            className='pointer-events-none'
+            aria-hidden='true'
+          />
+        );
+      }
 
       const avatar = filteredAvatars[index];
       const isSelected = selectedAvatarId === avatar.avatar_id;
