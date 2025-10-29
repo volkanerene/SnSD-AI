@@ -76,7 +76,8 @@ export function JobListTable() {
       queued: { variant: 'secondary', icon: IconClock },
       processing: { variant: 'default', icon: IconPlayerPlay },
       completed: { variant: 'outline', icon: IconCheck },
-      failed: { variant: 'destructive', icon: IconAlertCircle }
+      failed: { variant: 'destructive', icon: IconAlertCircle },
+      cancelled: { variant: 'secondary', icon: IconX }
     };
 
     const { variant, icon: Icon } = variants[status] || {
