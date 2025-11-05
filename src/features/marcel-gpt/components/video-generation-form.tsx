@@ -22,6 +22,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useGenerateVideo, type PhotoAvatarLook } from '@/hooks/useMarcelGPT';
 import { VoiceSelector } from './voice-selector';
 import { ScriptGenerator } from './script-generator';
+import { AvatarGroupBrowser } from './avatar-group-browser';
 import {
   IconPlayerPlay,
   IconAlertCircle,
@@ -37,6 +38,10 @@ export function VideoGenerationForm() {
   );
   const [selectedVoice, setSelectedVoice] = useState<string>('');
   const [engine, setEngine] = useState<'v2' | 'av4'>('v2');
+  const [filteredGroupId, setFilteredGroupId] = useState<string | undefined>();
+  const [filteredAvatarId, setFilteredAvatarId] = useState<
+    string | undefined
+  >();
 
   const generateMutation = useGenerateVideo();
 
@@ -70,6 +75,23 @@ export function VideoGenerationForm() {
     if (look.voiceId) {
       setSelectedVoice(look.voiceId);
     }
+  };
+
+  const handleGroupSelect = (groupId?: string) => {
+    setFilteredGroupId(groupId);
+    if (!groupId) {
+      setFilteredAvatarId(undefined);
+    }
+  };
+
+  const handleAvatarSelect = (groupId: string, avatarId?: string) => {
+    setFilteredGroupId(groupId || filteredGroupId);
+    setFilteredAvatarId(avatarId);
+  };
+
+  const handleClearFilters = () => {
+    setFilteredGroupId(undefined);
+    setFilteredAvatarId(undefined);
   };
 
   const handleGenerate = async () => {
@@ -316,8 +338,20 @@ export function VideoGenerationForm() {
       </div>
 
       <div className='space-y-4'>
+        <AvatarGroupBrowser
+          selectedGroupId={filteredGroupId}
+          selectedAvatarId={filteredAvatarId}
+          onSelectGroup={handleGroupSelect}
+          onSelectAvatar={handleAvatarSelect}
+          onClearFilters={handleClearFilters}
+        />
+
         <LookSelector
           selectedLookId={selectedLook?.id}
+          activeVoiceId={selectedVoice}
+          filterGroupId={filteredGroupId}
+          filterAvatarId={filteredAvatarId}
+          onClearFilter={handleClearFilters}
           onSelectLook={handleLookSelect}
         />
 

@@ -13,6 +13,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import {
+  Form,
   FormControl,
   FormField,
   FormItem,
@@ -99,79 +100,83 @@ export function EditTeamMemberDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
-          <div className='bg-muted rounded-lg p-3'>
-            <div className='text-sm font-medium'>{member.full_name}</div>
-            <div className='text-muted-foreground text-sm'>{member.email}</div>
-          </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
+            <div className='bg-muted rounded-lg p-3'>
+              <div className='text-sm font-medium'>{member.full_name}</div>
+              <div className='text-muted-foreground text-sm'>
+                {member.email}
+              </div>
+            </div>
 
-          <FormField
-            control={form.control}
-            name='role_id'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Role</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+            <FormField
+              control={form.control}
+              name='role_id'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Role</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder='Select a role' />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {roles?.map((role) => (
+                        <SelectItem key={role.id} value={role.id.toString()}>
+                          {role.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='department'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Department (Optional)</FormLabel>
                   <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder='Select a role' />
-                    </SelectTrigger>
+                    <Input placeholder='Engineering' {...field} />
                   </FormControl>
-                  <SelectContent>
-                    {roles?.map((role) => (
-                      <SelectItem key={role.id} value={role.id.toString()}>
-                        {role.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <FormField
-            control={form.control}
-            name='department'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Department (Optional)</FormLabel>
-                <FormControl>
-                  <Input placeholder='Engineering' {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            <FormField
+              control={form.control}
+              name='job_title'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Job Title (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder='Senior HSE Specialist' {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <FormField
-            control={form.control}
-            name='job_title'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Job Title (Optional)</FormLabel>
-                <FormControl>
-                  <Input placeholder='Senior HSE Specialist' {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <DialogFooter>
-            <Button
-              type='button'
-              variant='outline'
-              onClick={() => onOpenChange(false)}
-              disabled={isPending}
-            >
-              Cancel
-            </Button>
-            <Button type='submit' disabled={isPending}>
-              {isPending ? 'Updating...' : 'Update Member'}
-            </Button>
-          </DialogFooter>
-        </form>
+            <DialogFooter>
+              <Button
+                type='button'
+                variant='outline'
+                onClick={() => onOpenChange(false)}
+                disabled={isPending}
+              >
+                Cancel
+              </Button>
+              <Button type='submit' disabled={isPending}>
+                {isPending ? 'Updating...' : 'Update Member'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

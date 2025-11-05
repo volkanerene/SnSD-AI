@@ -1,7 +1,14 @@
 import { NavItem } from '@/types';
 
+const isMarcelEnabled = process.env.NEXT_PUBLIC_ENABLE_MARCEL_GPT === 'true';
+const isSafetyBudEnabled = process.env.NEXT_PUBLIC_ENABLE_SAFETY_BUD === 'true';
+
+const showMarcelMenu = isMarcelEnabled || process.env.NODE_ENV !== 'production';
+const showSafetyBudMenu =
+  isSafetyBudEnabled || process.env.NODE_ENV !== 'production';
+
 //Info: The following data is used for the sidebar navigation and Cmd K bar.
-export const navItems: NavItem[] = [
+const baseNavItems: NavItem[] = [
   {
     title: 'Dashboard',
     url: '/dashboard',
@@ -12,6 +19,24 @@ export const navItems: NavItem[] = [
     items: []
   },
   {
+    title: 'Contractors',
+    url: '/dashboard/contractors',
+    icon: 'users',
+    isActive: false,
+    shortcut: ['c', 't'],
+    requiredPermission: 'evren_gpt.view_contractors',
+    items: []
+  },
+  {
+    title: 'Evaluations',
+    url: '/dashboard/evaluations',
+    icon: 'fileCheck',
+    isActive: false,
+    shortcut: ['e', 'v'],
+    requiredPermission: 'evren_gpt.view_evaluations',
+    items: []
+  },
+  {
     title: 'EvrenGPT',
     url: '#',
     icon: 'bot',
@@ -19,50 +44,71 @@ export const navItems: NavItem[] = [
     requiredPermission: 'modules.access_evren_gpt',
     items: [
       {
-        title: 'Contractors',
-        url: '/dashboard/evren-gpt/contractors',
-        icon: 'users',
-        shortcut: ['e', 'c'],
-        requiredPermission: 'evren_gpt.view_contractors'
+        title: 'FRM32',
+        url: '/dashboard/evren-gpt/frm32',
+        icon: 'fileText',
+        shortcut: ['e', '3', '2'],
+        requiredPermission: 'evaluations.fill_frm32'
       },
       {
-        title: 'Evaluations',
-        url: '#',
+        title: 'FRM33',
+        url: '/dashboard/evren-gpt/frm33',
         icon: 'fileText',
-        requiredPermission: 'evren_gpt.view_evaluations',
-        items: [
-          {
-            title: 'FRM32 Evaluations',
-            url: '/dashboard/evren-gpt/evaluations/frm32',
-            requiredPermission: 'evaluations.view_frm32'
-          },
-          {
-            title: 'FRM33 Evaluations',
-            url: '/dashboard/evren-gpt/evaluations/frm33',
-            requiredPermission: 'evaluations.view_frm33'
-          },
-          {
-            title: 'FRM34 Evaluations',
-            url: '/dashboard/evren-gpt/evaluations/frm34',
-            requiredPermission: 'evaluations.view_frm34'
-          },
-          {
-            title: 'FRM35 Evaluations',
-            url: '/dashboard/evren-gpt/evaluations/frm35',
-            requiredPermission: 'evaluations.view_frm35'
-          }
-        ]
+        shortcut: ['e', '3', '3'],
+        requiredPermission: 'evaluations.fill_frm33'
+      },
+      {
+        title: 'FRM34',
+        url: '/dashboard/evren-gpt/frm34',
+        icon: 'fileText',
+        shortcut: ['e', '3', '4'],
+        requiredPermission: 'evaluations.fill_frm34'
+      },
+      {
+        title: 'FRM35',
+        url: '/dashboard/evren-gpt/frm35',
+        icon: 'fileText',
+        shortcut: ['e', '3', '5'],
+        requiredPermission: 'evaluations.fill_frm35'
       }
     ]
   },
   {
     title: 'MarcelGPT',
-    url: '/dashboard/marcel-gpt',
+    url: '#',
     icon: 'video',
-    shortcut: ['m', 'g'],
     isActive: false,
-    requiredPermission: 'modules.access_marcel_gpt',
-    items: []
+    requiredPermission: 'marcel_gpt.access',
+    items: [
+      {
+        title: 'Video Generator',
+        url: '/dashboard/marcel-gpt',
+        icon: 'video',
+        shortcut: ['m', 'v'],
+        requiredPermission: 'marcel_gpt.access'
+      },
+      {
+        title: 'Video Library',
+        url: '/dashboard/marcel-gpt/library',
+        icon: 'library',
+        shortcut: ['m', 'l'],
+        requiredPermission: 'marcel_gpt.view_library'
+      },
+      {
+        title: 'Training Builder',
+        url: '/dashboard/marcel-gpt/training',
+        icon: 'graduationCap',
+        shortcut: ['m', 't'],
+        requiredPermission: 'marcel_gpt.view_training'
+      },
+      {
+        title: 'My Videos',
+        url: '/dashboard/marcel-gpt/my-videos',
+        icon: 'playCircle',
+        shortcut: ['m', 'm'],
+        requiredPermission: 'marcel_gpt.access'
+      }
+    ]
   },
   {
     title: 'SafetyBud',
@@ -166,6 +212,16 @@ export const navItems: NavItem[] = [
     ]
   }
 ];
+
+export const navItems: NavItem[] = baseNavItems.filter((item) => {
+  if (item.title === 'MarcelGPT' && !showMarcelMenu) {
+    return false;
+  }
+  if (item.title === 'SafetyBud' && !showSafetyBudMenu) {
+    return false;
+  }
+  return true;
+});
 
 export interface SaleUser {
   id: number;

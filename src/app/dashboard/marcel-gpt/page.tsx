@@ -18,6 +18,26 @@ import { ProtectedRoute } from '@/components/protected-route';
 import { IconVideo, IconHistory, IconSettings } from '@tabler/icons-react';
 
 export default function MarcelGPTPage() {
+  const featureEnabled = process.env.NEXT_PUBLIC_ENABLE_MARCEL_GPT === 'true';
+
+  if (!featureEnabled) {
+    return (
+      <PageContainer scrollable>
+        <div className='space-y-6'>
+          <Card>
+            <CardHeader>
+              <CardTitle>MarcelGPT Disabled</CardTitle>
+              <CardDescription>
+                This module is turned off for your current environment. Enable
+                `NEXT_PUBLIC_ENABLE_MARCEL_GPT` to access HeyGen video features.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      </PageContainer>
+    );
+  }
+
   const [activeTab, setActiveTab] = useState('create');
 
   return (

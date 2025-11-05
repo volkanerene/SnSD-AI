@@ -52,7 +52,7 @@ export function useContractors(options: UseContractorsOptions = {}) {
   } = useQuery<Contractor[]>({
     queryKey: ['contractors', tenantId, filters],
     queryFn: async () => apiClient.get<Contractor[]>(endpoint, { tenantId }),
-    enabled: !!tenantId, // 👈 tenant yoksa istek atma
+    enabled: propTenantId === '' || !!tenantId, // 👈 super/company admin için tenantId header'ı olmadan da çalış
     staleTime: 2 * 60 * 1000
   });
 

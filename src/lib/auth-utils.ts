@@ -15,6 +15,13 @@ export const ROLES = {
 
 export type RoleLevel = (typeof ROLES)[keyof typeof ROLES];
 
+const isMarcelEnabled = process.env.NEXT_PUBLIC_ENABLE_MARCEL_GPT === 'true';
+const isSafetyBudEnabled = process.env.NEXT_PUBLIC_ENABLE_SAFETY_BUD === 'true';
+const showMarcelRoutes =
+  isMarcelEnabled || process.env.NODE_ENV !== 'production';
+const showSafetyRoutes =
+  isSafetyBudEnabled || process.env.NODE_ENV !== 'production';
+
 /**
  * Check if user has permission based on role level
  * Lower numbers = higher permissions
@@ -137,10 +144,23 @@ export function hasSpecificPermission(
 export function getAccessibleRoutes(roleId: number): string[] {
   const baseRoutes = ['/dashboard/profile', '/dashboard/settings'];
 
+  const marcelRoutes = showMarcelRoutes
+    ? [
+        '/dashboard/marcel-gpt',
+        '/dashboard/marcel-gpt/library',
+        '/dashboard/marcel-gpt/training',
+        '/dashboard/marcel-gpt/my-videos'
+      ]
+    : [];
+
+  const safetyRoutes = showSafetyRoutes ? ['/dashboard/safety-bud'] : [];
+
   const roleRoutes: Record<number, string[]> = {
     1: [
       // SNSD Admin - Full access
       ...baseRoutes,
+      '/dashboard/contractors',
+      '/dashboard/evaluations',
       '/dashboard/admin/users',
       '/dashboard/admin/roles',
       '/dashboard/admin/invitations',
@@ -149,8 +169,8 @@ export function getAccessibleRoutes(roleId: number): string[] {
       '/dashboard/evren-gpt',
       '/dashboard/evren-gpt/contractors',
       '/dashboard/evren-gpt/evaluations',
-      '/dashboard/marcel-gpt',
-      '/dashboard/safety-bud',
+      ...marcelRoutes,
+      ...safetyRoutes,
       '/dashboard/payments',
       '/dashboard/team',
       '/dashboard/reports'
@@ -158,14 +178,16 @@ export function getAccessibleRoutes(roleId: number): string[] {
     2: [
       // Company Admin - Tenant-level access
       ...baseRoutes,
+      '/dashboard/contractors',
+      '/dashboard/evaluations',
       '/dashboard/admin/users', // Can manage users in their tenant
       '/dashboard/admin/roles',
       '/dashboard/admin/invitations',
       '/dashboard/evren-gpt',
       '/dashboard/evren-gpt/contractors',
       '/dashboard/evren-gpt/evaluations',
-      '/dashboard/marcel-gpt',
-      '/dashboard/safety-bud',
+      ...marcelRoutes,
+      ...safetyRoutes,
       '/dashboard/payments',
       '/dashboard/team',
       '/dashboard/reports'
@@ -173,10 +195,12 @@ export function getAccessibleRoutes(roleId: number): string[] {
     3: [
       // HSE Specialist - Evaluation management
       ...baseRoutes,
+      '/dashboard/contractors',
+      '/dashboard/evaluations',
       '/dashboard/evren-gpt/contractors',
       '/dashboard/evren-gpt/evaluations',
-      '/dashboard/marcel-gpt',
-      '/dashboard/safety-bud',
+      ...marcelRoutes,
+      ...safetyRoutes,
       '/dashboard/reports'
     ],
     4: [
@@ -190,7 +214,7 @@ export function getAccessibleRoutes(roleId: number): string[] {
       ...baseRoutes,
       '/dashboard/evren-gpt/contractors',
       '/dashboard/evren-gpt/evaluations',
-      '/dashboard/safety-bud',
+      ...safetyRoutes,
       '/dashboard/reports'
     ],
     6: [

@@ -2,9 +2,10 @@
 
 import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import type { Contractor } from '@/types/api';
 import { formatDate } from '@/lib/format';
-import { ContractorActionsCell } from './contractor-actions-cell';
+import { ContractorActionsCell } from '@/app/dashboard/contractors/contractor-actions-cell';
 
 const statusColors = {
   active: 'bg-green-500',
@@ -18,7 +19,45 @@ const riskColors = {
   red: 'bg-red-500'
 };
 
-export const contractorsColumns: ColumnDef<Contractor>[] = [
+export const contractorsColumns = (
+  selectedIds: string[],
+  setSelectedIds: (ids: string[]) => void
+): ColumnDef<Contractor>[] => [
+  {
+    id: 'select',
+    header: ({ table }) => (
+      <Checkbox
+        checked={table.getIsAllPageRowsSelected()}
+        onCheckedChange={(value) => {
+          table.toggleAllPageRowsSelected(!!value);
+          if (value) {
+            const allIds = table
+              .getRowModel()
+              .rows.map((row) => row.original.id);
+            setSelectedIds(allIds);
+          } else {
+            setSelectedIds([]);
+          }
+        }}
+        aria-label='Select all'
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={selectedIds.includes(row.original.id)}
+        onCheckedChange={(value) => {
+          if (value) {
+            setSelectedIds([...selectedIds, row.original.id]);
+          } else {
+            setSelectedIds(selectedIds.filter((id) => id !== row.original.id));
+          }
+        }}
+        aria-label='Select row'
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false
+  },
   {
     accessorKey: 'name',
     header: 'Name',

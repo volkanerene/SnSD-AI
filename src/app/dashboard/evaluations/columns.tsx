@@ -4,83 +4,200 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Eye, Pencil, Trash } from 'lucide-react';
-import type { FRM32Submission } from '@/types/api';
-import { formatDate } from '@/lib/format';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Check, X, Eye, Clock, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
+import { formatDate } from '@/lib/format';
 
-const statusColors = {
-  draft: 'bg-gray-500',
-  submitted: 'bg-blue-500',
-  in_review: 'bg-yellow-500',
-  completed: 'bg-green-500',
-  rejected: 'bg-red-500'
-};
+interface ContractorEvaluation {
+  id: string;
+  contractor_id: string;
+  contractor_name: string;
+  session_id: string;
+  cycle: number;
+  frm32_status: 'completed' | 'pending' | 'in_progress';
+  frm33_status: 'completed' | 'pending' | 'in_progress';
+  frm34_status: 'completed' | 'pending' | 'in_progress';
+  frm35_status: 'completed' | 'pending' | 'in_progress';
+  frm32_score: number | null;
+  frm33_score: number | null;
+  frm34_score: number | null;
+  frm35_score: number | null;
+  final_score: number | null;
+  progress_percentage: number;
+  last_updated: string;
+  answers_available: boolean;
+}
 
-const statusLabels = {
-  draft: 'Draft',
-  submitted: 'Submitted',
-  in_review: 'In Review',
-  completed: 'Completed',
-  rejected: 'Rejected'
-};
-
-const riskColors = {
-  green: 'bg-green-500 text-white',
-  yellow: 'bg-yellow-500 text-white',
-  red: 'bg-red-500 text-white'
-};
-
-const evaluationTypeLabels = {
-  periodic: 'Periodic',
-  incident: 'Incident',
-  audit: 'Audit'
-};
-
-export const evaluationsColumns: ColumnDef<FRM32Submission>[] = [
+export const evaluationsColumns = (
+  selectedRows: string[],
+  setSelectedRows: (ids: string[]) => void
+): ColumnDef<ContractorEvaluation>[] => [
   {
-    accessorKey: 'evaluation_period',
-    header: 'Period',
+    id: 'select',
+    header: ({ table }) => (
+      <Checkbox
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && 'indeterminate')
+        }
+        onCheckedChange={(value) => {
+          table.toggleAllPageRowsSelected(!!value);
+          if (value) {
+            setSelectedRows(
+              table.getRowModel().rows.map((row) => row.original.id)
+            );
+          } else {
+            setSelectedRows([]);
+          }
+        }}
+        aria-label='Select all'
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={selectedRows.includes(row.original.id)}
+        onCheckedChange={(value) => {
+          if (value) {
+            setSelectedRows([...selectedRows, row.original.id]);
+          } else {
+            setSelectedRows(
+              selectedRows.filter((id) => id !== row.original.id)
+            );
+          }
+        }}
+        aria-label='Select row'
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false
+  },
+  {
+    accessorKey: 'contractor_name',
+    header: 'Contractor',
     cell: ({ row }) => (
       <div className='flex flex-col'>
-        <span className='font-medium'>{row.original.evaluation_period}</span>
+        <span className='font-medium'>{row.original.contractor_name}</span>
         <span className='text-muted-foreground text-xs'>
-          {evaluationTypeLabels[row.original.evaluation_type]}
+          Session: {row.original.session_id} | Cycle: {row.original.cycle}
         </span>
       </div>
     )
   },
   {
-    accessorKey: 'contractor_id',
-    header: 'Contractor',
-    cell: ({ row }) => (
-      <div className='font-medium'>
-        {/* TODO: Load contractor name from ID */}
-        {row.original.contractor_id.substring(0, 8)}...
-      </div>
-    )
+    accessorKey: 'frm32_score',
+    header: 'FRM32',
+    cell: ({ row }) => {
+      const status = row.original.frm32_status;
+      const score = row.original.frm32_score;
+
+      if (status === 'completed' && score !== null) {
+        return (
+          <div className='flex items-center gap-2'>
+            <Check className='h-4 w-4 text-green-500' />
+            <span className='font-medium'>{score}</span>
+          </div>
+        );
+      } else if (status === 'in_progress') {
+        return (
+          <div className='flex items-center gap-2'>
+            <Clock className='h-4 w-4 text-yellow-500' />
+            <span className='text-muted-foreground text-sm'>In Progress</span>
+          </div>
+        );
+      } else {
+        return (
+          <div className='flex items-center gap-2'>
+            <X className='h-4 w-4 text-red-500' />
+            <span className='text-muted-foreground text-sm'>Pending</span>
+          </div>
+        );
+      }
+    }
   },
   {
-    accessorKey: 'status',
-    header: 'Status',
+    accessorKey: 'frm33_status',
+    header: 'FRM33',
     cell: ({ row }) => {
-      const status = row.original.status;
-      return (
-        <Badge
-          variant='outline'
-          className={`${statusColors[status]} text-white`}
-        >
-          {statusLabels[status]}
-        </Badge>
-      );
+      const status = row.original.frm33_status;
+      const score = row.original.frm33_score;
+
+      if (status === 'completed') {
+        return (
+          <div className='flex items-center gap-2'>
+            <Check className='h-4 w-4 text-green-500' />
+            <span className='text-muted-foreground text-sm'>
+              {score || 'Done'}
+            </span>
+          </div>
+        );
+      } else if (status === 'in_progress') {
+        return (
+          <div className='flex items-center gap-2'>
+            <Clock className='h-4 w-4 text-yellow-500' />
+          </div>
+        );
+      } else {
+        return <X className='h-4 w-4 text-red-500' />;
+      }
+    }
+  },
+  {
+    accessorKey: 'frm34_status',
+    header: 'FRM34',
+    cell: ({ row }) => {
+      const status = row.original.frm34_status;
+      const score = row.original.frm34_score;
+
+      if (status === 'completed') {
+        return (
+          <div className='flex items-center gap-2'>
+            <Check className='h-4 w-4 text-green-500' />
+            <span className='text-muted-foreground text-sm'>
+              {score || 'Done'}
+            </span>
+          </div>
+        );
+      } else if (status === 'in_progress') {
+        return (
+          <div className='flex items-center gap-2'>
+            <Clock className='h-4 w-4 text-yellow-500' />
+          </div>
+        );
+      } else {
+        return <X className='h-4 w-4 text-red-500' />;
+      }
+    }
+  },
+  {
+    accessorKey: 'frm35_score',
+    header: 'FRM35',
+    cell: ({ row }) => {
+      const status = row.original.frm35_status;
+      const score = row.original.frm35_score;
+
+      if (status === 'completed' && score !== null) {
+        return (
+          <div className='flex items-center gap-2'>
+            <Check className='h-4 w-4 text-green-500' />
+            <span className='font-medium'>{score}</span>
+          </div>
+        );
+      } else if (status === 'in_progress') {
+        return (
+          <div className='flex items-center gap-2'>
+            <Clock className='h-4 w-4 text-yellow-500' />
+            <span className='text-muted-foreground text-sm'>In Progress</span>
+          </div>
+        );
+      } else {
+        return (
+          <div className='flex items-center gap-2'>
+            <X className='h-4 w-4 text-red-500' />
+            <span className='text-muted-foreground text-sm'>Pending</span>
+          </div>
+        );
+      }
     }
   },
   {
@@ -88,104 +205,59 @@ export const evaluationsColumns: ColumnDef<FRM32Submission>[] = [
     header: 'Progress',
     cell: ({ row }) => {
       const progress = row.original.progress_percentage;
+      let color = 'bg-red-500';
+      if (progress === 100) color = 'bg-green-500';
+      else if (progress > 50) color = 'bg-yellow-500';
+      else if (progress > 0) color = 'bg-orange-500';
+
       return (
-        <div className='flex items-center gap-2'>
-          <Progress value={progress} className='w-[60px]' />
-          <span className='text-muted-foreground text-sm'>{progress}%</span>
+        <div className='flex items-center gap-3'>
+          <Progress value={progress} className='w-[80px]' />
+          <span className='text-muted-foreground min-w-[45px] text-sm font-medium'>
+            {progress}%
+          </span>
         </div>
       );
     }
   },
   {
     accessorKey: 'final_score',
-    header: 'Score',
+    header: 'Final Score',
     cell: ({ row }) => {
       const score = row.original.final_score;
-      if (!score) return <span className='text-muted-foreground'>-</span>;
+      if (score === null) {
+        return <span className='text-muted-foreground'>--</span>;
+      }
+
+      let badgeClass = 'bg-green-500 text-white';
+      if (score < 50) badgeClass = 'bg-red-500 text-white';
+      else if (score < 75) badgeClass = 'bg-yellow-500 text-white';
+
       return (
-        <div className='font-medium'>
-          <span className='text-lg'>{score.toFixed(1)}</span>
-          <span className='text-muted-foreground text-xs'>/100</span>
-        </div>
-      );
-    }
-  },
-  {
-    accessorKey: 'risk_classification',
-    header: 'Risk',
-    cell: ({ row }) => {
-      const risk = row.original.risk_classification;
-      if (!risk) return <span className='text-muted-foreground'>-</span>;
-      return (
-        <Badge
-          variant='outline'
-          className={`${riskColors[risk]} font-bold uppercase`}
-        >
-          {risk}
+        <Badge variant='outline' className={badgeClass}>
+          <span className='text-base font-bold'>{score.toFixed(1)}</span>
         </Badge>
       );
     }
   },
   {
-    accessorKey: 'submitted_at',
-    header: 'Submitted',
-    cell: ({ row }) => {
-      const date = row.original.submitted_at;
-      if (!date) return <span className='text-muted-foreground'>-</span>;
-      return <span className='text-sm'>{formatDate(date)}</span>;
-    }
-  },
-  {
-    accessorKey: 'completed_at',
-    header: 'Completed',
-    cell: ({ row }) => {
-      const date = row.original.completed_at;
-      if (!date) return <span className='text-muted-foreground'>-</span>;
-      return <span className='text-sm'>{formatDate(date)}</span>;
-    }
-  },
-  {
     id: 'actions',
+    header: 'Actions',
     cell: ({ row }) => {
-      const submission = row.original;
+      const evaluation = row.original;
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant='ghost' className='h-8 w-8 p-0'>
-              <span className='sr-only'>Open menu</span>
-              <MoreHorizontal className='h-4 w-4' />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align='end'>
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(submission.id)}
-            >
-              Copy ID
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href={`/dashboard/evaluations/${submission.id}`}>
-                <Eye className='mr-2 h-4 w-4' />
-                View Details
-              </Link>
-            </DropdownMenuItem>
-            {(submission.status === 'draft' ||
-              submission.status === 'submitted') && (
-              <DropdownMenuItem>
-                <Pencil className='mr-2 h-4 w-4' />
-                Edit
-              </DropdownMenuItem>
-            )}
-            {submission.status === 'draft' && (
-              <DropdownMenuItem className='text-red-600'>
-                <Trash className='mr-2 h-4 w-4' />
-                Delete
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button
+          variant='ghost'
+          size='sm'
+          asChild
+          disabled={!evaluation.answers_available}
+        >
+          <Link href={`/dashboard/evaluations/${evaluation.id}`}>
+            <Eye className='mr-2 h-4 w-4' />
+            View Answers
+          </Link>
+        </Button>
       );
     }
   }

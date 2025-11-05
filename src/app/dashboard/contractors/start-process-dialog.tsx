@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { apiClient } from '@/lib/api-client';
 
 interface StartProcessDialogProps {
   open: boolean;
@@ -34,40 +35,47 @@ export function StartProcessDialog({
   const [message, setMessage] = useState('');
   const [isStarting, setIsStarting] = useState(false);
 
+  // Reset message when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setMessage('');
+    }
+  }, [open]);
+
   const handleStartProcess = async () => {
     if (selectedContractorIds.length === 0) {
       toast.error('Please select at least one contractor');
       return;
     }
 
+    if (!tenantId) {
+      toast.error(
+        'Missing tenant context. Please make sure a tenant is selected.'
+      );
+      return;
+    }
+
     setIsStarting(true);
 
     try {
-      // TODO: Implement API call to start EvrenGPT process
-      // This will:
-      // 1. Create a new session with unique session_id
-      // 2. Send FRM32 form link to all selected contractors who haven't filled it
-      // 3. Mark contractors as "in_process" for this session
+      const payload = {
+        contractor_ids: selectedContractorIds,
+        tenant_id: tenantId,
+        custom_message: message || undefined
+      };
 
-      const response = await fetch('/api/evren-gpt/start-process', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contractor_ids: selectedContractorIds,
-          tenant_id: tenantId,
-          custom_message: message
-        })
+      const data = await apiClient.post<{
+        session_id: string;
+        contractors_notified: number;
+        message: string;
+      }>('/api/evren-gpt/start-process', payload, {
+        tenantId
       });
-
-      if (!response.ok) throw new Error('Failed to start process');
-
-      const data = await response.json();
 
       toast.success(
         `Successfully started EvrenGPT process for ${selectedContractorIds.length} contractor(s). Session ID: ${data.session_id}`
       );
 
-      setMessage('');
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {

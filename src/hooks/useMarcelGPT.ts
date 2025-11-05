@@ -1,6 +1,42 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 
+const isMarcelEnabled = process.env.NEXT_PUBLIC_ENABLE_MARCEL_GPT === 'true';
+
+function assertMarcelEnabled() {
+  if (!isMarcelEnabled) {
+    throw new Error('MarcelGPT module is disabled');
+  }
+}
+
+function isMarcelConfigError(error: unknown): boolean {
+  const message =
+    error instanceof Error ? error.message : String(error ?? '').toLowerCase();
+
+  if (!message) return false;
+
+  return (
+    message.includes('heygen api key not configured') ||
+    message.includes('user not assigned to a tenant') ||
+    message.includes('not found') ||
+    message.includes('http 400')
+  );
+}
+
+async function safeMarcelCall<T>(
+  fn: () => Promise<T>,
+  fallback: T
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    if (isMarcelConfigError(error)) {
+      return fallback;
+    }
+    throw error;
+  }
+}
+
 // Types
 export interface HeyGenAvatar {
   avatar_id: string;
@@ -10,6 +46,20 @@ export interface HeyGenAvatar {
   preview_video_url?: string;
   is_public?: boolean;
   is_instant?: boolean;
+  default_voice_id?: string;
+  resolution?: {
+    width?: number;
+    height?: number;
+  };
+}
+
+export interface HeyGenAvatarGroup {
+  id: string;
+  name?: string;
+  numLooks: number;
+  previewImage?: string;
+  avatars?: HeyGenAvatar[];
+  meta?: Record<string, any>;
 }
 
 export interface HeyGenVoice {
@@ -62,7 +112,7 @@ export interface LookVisualConfig {
 }
 
 export interface PhotoAvatarLook {
-  id: number;
+  id: number | string;
   name: string;
   notes?: string;
   status: string;
@@ -76,8 +126,10 @@ export interface PhotoAvatarLook {
   presetId?: number;
   source?: string;
   meta?: Record<string, any>;
-  createdAt: string;
-  updatedAt?: string;
+  groupId?: string;
+  groupName?: string;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 }
 
 export interface CreateLookPayload {
@@ -156,12 +208,35 @@ export interface GenerateVideoResponse {
 export function useAvatars(forceRefresh = false) {
   return useQuery<{ avatars: HeyGenAvatar[]; count: number }>({
     queryKey: ['marcel-gpt', 'avatars', forceRefresh],
-    queryFn: async () => {
-      return await apiClient.get(
-        `/marcel-gpt/avatars?force_refresh=${forceRefresh}`
-      );
-    },
-    staleTime: 24 * 60 * 60 * 1000 // 24 hours
+    queryFn: () =>
+      safeMarcelCall(
+        () => {
+          assertMarcelEnabled();
+          return apiClient.get(
+            `/marcel-gpt/avatars?force_refresh=${forceRefresh}`
+          );
+        },
+        { avatars: [], count: 0 }
+      ),
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours
+    enabled: isMarcelEnabled
+  });
+}
+
+export function useAvatarGroups(includeAvatars = false) {
+  return useQuery<{ groups: HeyGenAvatarGroup[]; count: number }>({
+    queryKey: ['marcel-gpt', 'avatar-groups', includeAvatars],
+    queryFn: () =>
+      safeMarcelCall(
+        () => {
+          assertMarcelEnabled();
+          const query = includeAvatars ? '?include_avatars=true' : '';
+          return apiClient.get(`/marcel-gpt/avatar-groups${query}`);
+        },
+        { groups: [], count: 0 }
+      ),
+    staleTime: 6 * 60 * 60 * 1000,
+    enabled: isMarcelEnabled
   });
 }
 
@@ -171,16 +246,24 @@ export function useVoices(filters?: { language?: string; gender?: string }) {
 
   return useQuery<{ voices: HeyGenVoice[]; count: number }>({
     queryKey,
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.language) params.append('language', filters.language);
-      if (filters?.gender) params.append('gender', filters.gender);
+    queryFn: () =>
+      safeMarcelCall(
+        () => {
+          assertMarcelEnabled();
+          const params = new URLSearchParams();
+          if (filters?.language) params.append('language', filters.language);
+          if (filters?.gender) params.append('gender', filters.gender);
 
-      return await apiClient.get(
-        `/marcel-gpt/voices${params.toString() ? '?' + params.toString() : ''}`
-      );
-    },
-    staleTime: 24 * 60 * 60 * 1000 // 24 hours
+          return apiClient.get(
+            `/marcel-gpt/voices${
+              params.toString() ? '?' + params.toString() : ''
+            }`
+          );
+        },
+        { voices: [], count: 0 }
+      ),
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours
+    enabled: isMarcelEnabled
   });
 }
 
@@ -188,9 +271,15 @@ export function useVoices(filters?: { language?: string; gender?: string }) {
 export function usePhotoAvatarLooks() {
   return useQuery<{ looks: PhotoAvatarLook[]; count: number }>({
     queryKey: ['marcel-gpt', 'photo-avatars', 'looks'],
-    queryFn: async () => {
-      return await apiClient.get('/marcel-gpt/photo-avatars/looks');
-    },
+    queryFn: () =>
+      safeMarcelCall(
+        () => {
+          assertMarcelEnabled();
+          return apiClient.get('/marcel-gpt/photo-avatars/looks');
+        },
+        { looks: [], count: 0 }
+      ),
+    enabled: isMarcelEnabled,
     refetchInterval: (query) => {
       const data = query.state.data;
       const pending = data?.looks?.some(
@@ -206,6 +295,7 @@ export function useCreatePhotoAvatarLook() {
 
   return useMutation<{ look: PhotoAvatarLook }, unknown, CreateLookPayload>({
     mutationFn: async (payload: CreateLookPayload) => {
+      assertMarcelEnabled();
       return await apiClient.post('/marcel-gpt/photo-avatars/looks', payload);
     },
     onSuccess: () => {
@@ -221,9 +311,10 @@ export function usePhotoAvatarLook(lookId?: number, enabled = true) {
   return useQuery<{ look: PhotoAvatarLook }>({
     queryKey: ['marcel-gpt', 'photo-avatars', 'looks', lookId],
     queryFn: async () => {
+      assertMarcelEnabled();
       return await apiClient.get(`/marcel-gpt/photo-avatars/looks/${lookId}`);
     },
-    enabled: enabled && !!lookId
+    enabled: isMarcelEnabled && enabled && !!lookId
   });
 }
 
@@ -232,6 +323,7 @@ export function useRefreshPhotoAvatarLook() {
 
   return useMutation<{ look: PhotoAvatarLook }, unknown, number>({
     mutationFn: async (lookId: number) => {
+      assertMarcelEnabled();
       return await apiClient.post(
         `/marcel-gpt/photo-avatars/looks/${lookId}/refresh`,
         {}
@@ -252,9 +344,15 @@ export function useRefreshPhotoAvatarLook() {
 export function usePresets() {
   return useQuery<{ presets: BrandPreset[]; count: number }>({
     queryKey: ['marcel-gpt', 'presets'],
-    queryFn: async () => {
-      return await apiClient.get('/marcel-gpt/presets');
-    }
+    queryFn: () =>
+      safeMarcelCall(
+        () => {
+          assertMarcelEnabled();
+          return apiClient.get('/marcel-gpt/presets');
+        },
+        { presets: [], count: 0 }
+      ),
+    enabled: isMarcelEnabled
   });
 }
 
@@ -263,6 +361,7 @@ export function useCreatePreset() {
 
   return useMutation({
     mutationFn: async (data: Partial<BrandPreset>) => {
+      assertMarcelEnabled();
       return await apiClient.post('/marcel-gpt/presets', data);
     },
     onSuccess: () => {
@@ -276,6 +375,7 @@ export function useDeletePreset() {
 
   return useMutation({
     mutationFn: async (presetId: number) => {
+      assertMarcelEnabled();
       return await apiClient.delete(`/marcel-gpt/presets/${presetId}`);
     },
     onSuccess: () => {
@@ -290,6 +390,7 @@ export function useGenerateVideo() {
 
   return useMutation<GenerateVideoResponse, unknown, GenerateVideoRequest>({
     mutationFn: async (data: GenerateVideoRequest) => {
+      assertMarcelEnabled();
       return await apiClient.post<GenerateVideoResponse>(
         '/marcel-gpt/generate',
         data
@@ -307,10 +408,16 @@ export function useVideoJobs(status?: string) {
 
   return useQuery<{ jobs: VideoJob[]; count: number }>({
     queryKey,
-    queryFn: async () => {
-      const params = status ? `?status=${status}` : '';
-      return await apiClient.get(`/marcel-gpt/jobs${params}`);
-    },
+    queryFn: () =>
+      safeMarcelCall(
+        () => {
+          assertMarcelEnabled();
+          const params = status ? `?status=${status}` : '';
+          return apiClient.get(`/marcel-gpt/jobs${params}`);
+        },
+        { jobs: [], count: 0 }
+      ),
+    enabled: isMarcelEnabled,
     refetchInterval: (query) => {
       // Auto-refresh if there are pending/processing jobs
       const data = query.state.data;
@@ -326,9 +433,10 @@ export function useVideoJob(jobId: number) {
   return useQuery<VideoJob>({
     queryKey: ['marcel-gpt', 'jobs', jobId],
     queryFn: async () => {
+      assertMarcelEnabled();
       return await apiClient.get(`/marcel-gpt/jobs/${jobId}`);
     },
-    enabled: !!jobId,
+    enabled: isMarcelEnabled && !!jobId,
     refetchInterval: (query) => {
       // Auto-refresh while job is active
       const data = query.state.data;
@@ -345,6 +453,7 @@ export function useCancelJob() {
 
   return useMutation({
     mutationFn: async (jobId: number) => {
+      assertMarcelEnabled();
       return await apiClient.post(`/marcel-gpt/jobs/${jobId}/cancel`, {});
     },
     onSuccess: (_, jobId) => {
@@ -359,6 +468,7 @@ export function useCancelJob() {
 export function useCheckJobStatus() {
   return useMutation({
     mutationFn: async (jobId: number) => {
+      assertMarcelEnabled();
       return await apiClient.get(`/marcel-gpt/jobs/${jobId}/status`);
     }
   });
@@ -393,6 +503,7 @@ export interface RefineScriptPayload {
 export function useGenerateScript() {
   return useMutation<ScriptResponse, unknown, GenerateScriptPayload>({
     mutationFn: async (payload: GenerateScriptPayload) => {
+      assertMarcelEnabled();
       return await apiClient.post<ScriptResponse>(
         '/marcel-gpt/scripts/generate',
         payload
@@ -404,6 +515,7 @@ export function useGenerateScript() {
 export function useGenerateScriptFromPDF() {
   return useMutation<ScriptResponse, unknown, File>({
     mutationFn: async (file: File) => {
+      assertMarcelEnabled();
       const formData = new FormData();
       formData.append('file', file);
 
@@ -423,6 +535,7 @@ export function useGenerateScriptFromPDF() {
 export function useRefineScript() {
   return useMutation<ScriptResponse, unknown, RefineScriptPayload>({
     mutationFn: async (payload: RefineScriptPayload) => {
+      assertMarcelEnabled();
       return await apiClient.post<ScriptResponse>(
         '/marcel-gpt/scripts/refine',
         payload

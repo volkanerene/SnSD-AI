@@ -54,7 +54,11 @@ import {
 import { cn } from '@/lib/utils';
 
 interface LookSelectorProps {
-  selectedLookId?: number;
+  selectedLookId?: number | string;
+  activeVoiceId?: string;
+  filterGroupId?: string;
+  filterAvatarId?: string;
+  onClearFilter?: () => void;
   onSelectLook: (look: PhotoAvatarLook) => void;
 }
 
@@ -104,23 +108,26 @@ function getStatusBadge(status: string) {
 
 export function LookSelector({
   selectedLookId,
+  activeVoiceId,
+  filterGroupId,
+  filterAvatarId,
+  onClearFilter,
   onSelectLook
 }: LookSelectorProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [lookName, setLookName] = useState('');
   const [notes, setNotes] = useState('');
   const [creationMode, setCreationMode] = useState<'existing' | 'generate'>(
-    'generate'
+    'existing'
   );
   const [selectedBaseAvatarId, setSelectedBaseAvatarId] = useState('');
-  const [selectedVoiceId, setSelectedVoiceId] = useState<string>('');
   const [advancedConfig, setAdvancedConfig] =
     useState<AdvancedVideoConfig>(DEFAULT_CONFIG);
 
   const { data: looksData, isLoading: isLooksLoading } = usePhotoAvatarLooks();
   const looks = looksData?.looks ?? [];
 
-  const { data: voicesData, isLoading: isVoicesLoading } = useVoices();
+  const { data: voicesData } = useVoices();
   const voices: HeyGenVoice[] = voicesData?.voices ?? [];
   const { data: avatarsData } = useAvatars();
   const avatars: HeyGenAvatar[] = avatarsData?.avatars ?? [];
@@ -133,17 +140,17 @@ export function LookSelector({
   }, [avatars, selectedBaseAvatarId]);
 
   useEffect(() => {
-    if (!selectedVoiceId && voices.length > 0) {
-      setSelectedVoiceId(voices[0].voice_id);
+    if (filterAvatarId) {
+      setCreationMode('existing');
+      setSelectedBaseAvatarId(String(filterAvatarId));
     }
-  }, [voices, selectedVoiceId]);
+  }, [filterAvatarId]);
 
   const handleResetForm = () => {
     setLookName('');
     setNotes('');
     setCreationMode('existing');
     setSelectedBaseAvatarId('');
-    setSelectedVoiceId('');
     setAdvancedConfig(DEFAULT_CONFIG);
   };
 
@@ -152,12 +159,20 @@ export function LookSelector({
       toast.error('Please give your look a name');
       return;
     }
-    if (!selectedVoiceId) {
-      toast.error('Please choose a default voice (you can change it later)');
-      return;
-    }
     if (creationMode === 'existing' && !selectedBaseAvatarId) {
       toast.error('Please select a HeyGen avatar to base this look on');
+      return;
+    }
+
+    const fallbackVoice =
+      activeVoiceId ||
+      selectedBaseAvatar?.default_voice_id ||
+      voices[0]?.voice_id;
+
+    if (!fallbackVoice) {
+      toast.error(
+        'Please pick a voice from the voice panel before creating a look.'
+      );
       return;
     }
 
@@ -168,7 +183,7 @@ export function LookSelector({
         name: lookName.trim(),
         prompt: notes || advancedConfig.clothingPrompt,
         notes,
-        voiceId: selectedVoiceId,
+        voiceId: fallbackVoice,
         config: payloadConfig
       };
 
@@ -215,10 +230,71 @@ export function LookSelector({
     onSelectLook(look);
   };
 
-  const selectedLook = useMemo(
-    () => looks.find((look) => look.id === selectedLookId),
-    [looks, selectedLookId]
-  );
+  const normalizedSelectedId = useMemo(() => {
+    if (selectedLookId === undefined || selectedLookId === null) {
+      return undefined;
+    }
+    return String(selectedLookId);
+  }, [selectedLookId]);
+
+  const selectedLook = useMemo(() => {
+    if (!normalizedSelectedId) return undefined;
+    return looks.find((look) => String(look.id) === normalizedSelectedId);
+  }, [looks, normalizedSelectedId]);
+
+  const filteredLooks = useMemo(() => {
+    let result = [...looks];
+
+    if (filterGroupId) {
+      const groupKey = String(filterGroupId);
+      result = result.filter((look) => {
+        const lookGroupId =
+          look.groupId || look.meta?.group_id || look.meta?.groupId;
+        return lookGroupId ? String(lookGroupId) === groupKey : false;
+      });
+    }
+
+    if (filterAvatarId) {
+      const avatarKey = String(filterAvatarId);
+      result = result.filter((look) => {
+        const lookAvatarId =
+          look.avatarId ||
+          (look.meta?.heygen_look_id as string) ||
+          (look.meta?.avatar_id as string) ||
+          String(look.id);
+        return String(lookAvatarId) === avatarKey;
+      });
+    }
+
+    return result;
+  }, [looks, filterGroupId, filterAvatarId]);
+
+  const filterActive = Boolean(filterGroupId || filterAvatarId);
+
+  const filterDescription = useMemo(() => {
+    if (filterAvatarId) {
+      const avatarName =
+        selectedBaseAvatar?.avatar_name ||
+        filteredLooks[0]?.name ||
+        filterAvatarId;
+      return `Showing looks for avatar ${avatarName}`;
+    }
+    if (filterGroupId) {
+      const groupLook =
+        filteredLooks[0] ||
+        looks.find((look) => {
+          const lookGroupId =
+            look.groupId || look.meta?.group_id || look.meta?.groupId;
+          return lookGroupId
+            ? String(lookGroupId) === String(filterGroupId)
+            : false;
+        });
+      const groupName =
+        groupLook?.groupName || groupLook?.meta?.group_name || filterGroupId;
+      return `Showing looks in group ${groupName}`;
+    }
+    return null;
+  }, [filterAvatarId, filterGroupId, filteredLooks, looks, selectedBaseAvatar]);
 
   const getBackgroundPreview = (look: PhotoAvatarLook) => {
     if (look.coverUrl) {
@@ -273,9 +349,12 @@ export function LookSelector({
 
   const renderLookCard = (look: PhotoAvatarLook) => {
     const status = getStatusBadge(look.status);
-    const isSelected = selectedLook?.id === look.id;
+    const isSelected =
+      normalizedSelectedId !== undefined &&
+      String(look.id) === normalizedSelectedId;
     const isReady =
       ['ready', 'completed'].includes(look.status) && !!look.avatarId;
+    const canRefresh = typeof look.id === 'number';
 
     const cardClasses = cn(
       'flex flex-col rounded-lg border p-3 text-left transition-colors',
@@ -326,24 +405,33 @@ export function LookSelector({
 
         <div className='text-muted-foreground mt-3 flex items-center justify-between text-xs'>
           <span>Voice: {look.voiceId || 'Not set'}</span>
-          <span
-            role='button'
-            tabIndex={0}
-            aria-label='Refresh look status'
-            className='hover:bg-muted inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-full'
-            onClick={(e) => {
-              e.stopPropagation();
-              refreshLookMutation.mutateAsync(look.id);
-            }}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                refreshLookMutation.mutateAsync(look.id);
-              }
-            }}
-          >
-            <IconRefresh className='h-3 w-3' />
-          </span>
+          {canRefresh ? (
+            <span
+              role='button'
+              tabIndex={0}
+              aria-label='Refresh look status'
+              className='hover:bg-muted inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-full'
+              onClick={(e) => {
+                e.stopPropagation();
+                refreshLookMutation.mutateAsync(look.id as number);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  refreshLookMutation.mutateAsync(look.id as number);
+                }
+              }}
+            >
+              <IconRefresh className='h-3 w-3' />
+            </span>
+          ) : (
+            <span
+              className='text-muted-foreground inline-flex h-6 w-6 items-center justify-center rounded-full opacity-70'
+              title='Instant HeyGen avatars refresh automatically'
+            >
+              <IconRefresh className='h-3 w-3' />
+            </span>
+          )}
         </div>
       </>
     );
@@ -369,7 +457,7 @@ export function LookSelector({
 
     return (
       <div
-        key={look.id}
+        key={String(look.id)}
         {...containerProps}
         className={cn(
           cardClasses,
@@ -400,18 +488,36 @@ export function LookSelector({
         </Button>
       </CardHeader>
       <CardContent className='space-y-4'>
+        {filterActive && filterDescription && (
+          <div className='bg-muted/70 text-muted-foreground flex items-center justify-between rounded-md px-3 py-2 text-xs'>
+            <span>{filterDescription}</span>
+            {onClearFilter && (
+              <Button
+                size='sm'
+                variant='ghost'
+                className='h-7 px-2 text-xs'
+                onClick={onClearFilter}
+              >
+                Clear filter
+              </Button>
+            )}
+          </div>
+        )}
+
         {isLooksLoading ? (
           <div className='text-muted-foreground flex items-center gap-2 text-sm'>
             <IconLoader2 className='h-4 w-4 animate-spin' />
             Loading looks...
           </div>
-        ) : looks.length === 0 ? (
+        ) : filteredLooks.length === 0 ? (
           <div className='text-muted-foreground text-sm'>
-            No looks yet. Create your first look to get started.
+            {filterActive
+              ? 'No looks match the selected avatar or group yet.'
+              : 'No looks yet. Create your first look to get started.'}
           </div>
         ) : (
           <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
-            {looks.map((look) => renderLookCard(look))}
+            {filteredLooks.map((look) => renderLookCard(look))}
           </div>
         )}
       </CardContent>
@@ -569,39 +675,6 @@ export function LookSelector({
             )}
 
             <div className='space-y-3'>
-              <Label>Default Voice</Label>
-              {isVoicesLoading ? (
-                <p className='text-muted-foreground text-sm'>
-                  Loading voices...
-                </p>
-              ) : (
-                <Select
-                  value={selectedVoiceId}
-                  onValueChange={setSelectedVoiceId}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder='Choose a default voice' />
-                  </SelectTrigger>
-                  <SelectContent className='max-h-72'>
-                    {voices.map((voice) => (
-                      <SelectItem key={voice.voice_id} value={voice.voice_id}>
-                        <div className='flex flex-col'>
-                          <span>{voice.name}</span>
-                          <span className='text-muted-foreground text-xs'>
-                            {voice.language} · {voice.gender}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              <p className='text-muted-foreground text-xs'>
-                You can override the voice at generation time if needed.
-              </p>
-            </div>
-
-            <div className='space-y-3'>
               <div className='flex items-center gap-2'>
                 <IconSparkles className='text-muted-foreground h-4 w-4' />
                 <span className='text-sm font-medium'>Visual Settings</span>
@@ -624,7 +697,7 @@ export function LookSelector({
             </Button>
             <Button
               onClick={handleCreateLook}
-              disabled={createLookMutation.isPending || isVoicesLoading}
+              disabled={createLookMutation.isPending}
             >
               {createLookMutation.isPending ? (
                 <>
