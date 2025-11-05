@@ -89,12 +89,8 @@ export function useTeamStats(tenantId: string) {
 export function useAddTeamMember(tenantId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: AddTeamMemberDto) => {
-      return await apiClient.post<TeamMember>(
-        `/tenants/${tenantId}/users`,
-        data
-      );
-    },
+    mutationFn: async (data: AddTeamMemberDto) =>
+      await apiClient.post<TeamMember>(`/tenants/${tenantId}/users`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['team', tenantId, 'members']
@@ -113,18 +109,17 @@ export function useUpdateTeamMember(tenantId: string) {
     }: {
       userId: string;
       data: UpdateTeamMemberDto;
-    }) => {
-      return await apiClient.put<TeamMember>(
+    }) =>
+      await apiClient.put<TeamMember>(
         `/tenants/${tenantId}/users/${userId}`,
         data
-      );
-    },
-    onSuccess: (_, variables) => {
+      ),
+    onSuccess: (_, v) => {
       queryClient.invalidateQueries({
         queryKey: ['team', tenantId, 'members']
       });
       queryClient.invalidateQueries({
-        queryKey: ['team', tenantId, 'members', variables.userId]
+        queryKey: ['team', tenantId, 'members', v.userId]
       });
       queryClient.invalidateQueries({ queryKey: ['team', tenantId, 'stats'] });
     }
@@ -134,9 +129,8 @@ export function useUpdateTeamMember(tenantId: string) {
 export function useRemoveTeamMember(tenantId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (userId: string) => {
-      await apiClient.delete(`/tenants/${tenantId}/users/${userId}`);
-    },
+    mutationFn: async (userId: string) =>
+      await apiClient.delete(`/tenants/${tenantId}/users/${userId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['team', tenantId, 'members']
@@ -155,18 +149,16 @@ export function useToggleTeamMemberStatus(tenantId: string) {
     }: {
       userId: string;
       isActive: boolean;
-    }) => {
-      return await apiClient.post(
-        `/tenants/${tenantId}/users/${userId}/status`,
-        { is_active: isActive }
-      );
-    },
-    onSuccess: (_, variables) => {
+    }) =>
+      await apiClient.post(`/tenants/${tenantId}/users/${userId}/status`, {
+        is_active: isActive
+      }),
+    onSuccess: (_, v) => {
       queryClient.invalidateQueries({
         queryKey: ['team', tenantId, 'members']
       });
       queryClient.invalidateQueries({
-        queryKey: ['team', tenantId, 'members', variables.userId]
+        queryKey: ['team', tenantId, 'members', v.userId]
       });
       queryClient.invalidateQueries({ queryKey: ['team', tenantId, 'stats'] });
     }

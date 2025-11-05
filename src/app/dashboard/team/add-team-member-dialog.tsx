@@ -42,13 +42,15 @@ type AddMemberFormData = z.infer<typeof addMemberSchema>;
 interface AddTeamMemberDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  tenantId: string;
 }
 
 export function AddTeamMemberDialog({
   open,
-  onOpenChange
+  onOpenChange,
+  tenantId
 }: AddTeamMemberDialogProps) {
-  const { mutateAsync: addMember, isPending } = useAddTeamMember();
+  const { mutateAsync: addMember, isPending } = useAddTeamMember(tenantId);
   const { data: roles } = useRoles();
   const { data: users } = useAdminUsers({ status: 'active' });
 

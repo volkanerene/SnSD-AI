@@ -45,14 +45,17 @@ interface EditTeamMemberDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   member: TeamMember;
+  tenantId: string;
 }
 
 export function EditTeamMemberDialog({
   open,
   onOpenChange,
-  member
+  member,
+  tenantId
 }: EditTeamMemberDialogProps) {
-  const { mutateAsync: updateMember, isPending } = useUpdateTeamMember();
+  const { mutateAsync: updateMember, isPending } =
+    useUpdateTeamMember(tenantId);
   const { data: roles } = useRoles();
 
   const form = useForm<EditMemberFormData>({

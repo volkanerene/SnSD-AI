@@ -41,11 +41,15 @@ import {
   TeamMember
 } from '@/hooks/useTeam';
 import { useRoles } from '@/hooks/useRoles';
+import { useProfile } from '@/hooks/useProfile';
 import { AddTeamMemberDialog } from './add-team-member-dialog';
 import { EditTeamMemberDialog } from './edit-team-member-dialog';
 import { toast } from 'sonner';
 
 export default function TeamPage() {
+  const { profile } = useProfile();
+  const tenantId = profile?.tenant_id ?? '';
+
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -60,11 +64,11 @@ export default function TeamPage() {
         : undefined
   };
 
-  const { data: members, isLoading } = useTeamMembers(filters);
-  const { data: stats } = useTeamStats();
+  const { data: members, isLoading } = useTeamMembers(tenantId, filters);
+  const { data: stats } = useTeamStats(tenantId);
   const { data: roles } = useRoles();
-  const { mutate: removeMember } = useRemoveTeamMember();
-  const { mutate: toggleStatus } = useToggleTeamMemberStatus();
+  const { mutate: removeMember } = useRemoveTeamMember(tenantId);
+  const { mutate: toggleStatus } = useToggleTeamMemberStatus(tenantId);
 
   const handleEdit = (member: TeamMember) => {
     setSelectedMember(member);
@@ -359,6 +363,7 @@ export default function TeamPage() {
       <AddTeamMemberDialog
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
+        tenantId={tenantId}
       />
 
       {selectedMember && (
@@ -366,6 +371,7 @@ export default function TeamPage() {
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
           member={selectedMember}
+          tenantId={tenantId}
         />
       )}
     </div>
