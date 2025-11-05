@@ -81,21 +81,7 @@ interface SyncLog {
 export default function MarcelGPTTrainingPage() {
   const featureEnabled = process.env.NEXT_PUBLIC_ENABLE_MARCEL_GPT === 'true';
 
-  if (!featureEnabled) {
-    return (
-      <PageContainer scrollable>
-        <Card>
-          <CardHeader>
-            <CardTitle>MarcelGPT Training Disabled</CardTitle>
-            <CardDescription>
-              Training workflows are disabled in this environment.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </PageContainer>
-    );
-  }
-
+  // All hooks must be called at the top level, before any early returns
   const { profile } = useProfile();
   const [reports, setReports] = useState<IncidentReport[]>([]);
   const [sessions, setSessions] = useState<TrainingSession[]>([]);
@@ -115,12 +101,28 @@ export default function MarcelGPTTrainingPage() {
   const [activeTab, setActiveTab] = useState('generator');
 
   useEffect(() => {
+    if (!featureEnabled) return;
     loadReports();
     loadSessions();
     loadSyncLogs();
     loadAvatars();
     loadVoices();
-  }, []);
+  }, [featureEnabled]);
+
+  if (!featureEnabled) {
+    return (
+      <PageContainer scrollable>
+        <Card>
+          <CardHeader>
+            <CardTitle>MarcelGPT Training Disabled</CardTitle>
+            <CardDescription>
+              Training workflows are disabled in this environment.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </PageContainer>
+    );
+  }
 
   const loadReports = async () => {
     try {
@@ -576,8 +578,8 @@ export default function MarcelGPTTrainingPage() {
                     No training sessions yet
                   </p>
                   <p className='text-muted-foreground mt-2 text-sm'>
-                    Click "Generate Training" to create your first AI-powered
-                    training video
+                    Click &quot;Generate Training&quot; to create your first
+                    AI-powered training video
                   </p>
                 </CardContent>
               </Card>
@@ -643,7 +645,7 @@ export default function MarcelGPTTrainingPage() {
                     No incident reports found
                   </p>
                   <p className='text-muted-foreground mt-2 text-sm'>
-                    Click "Sync SharePoint" to import incident reports
+                    Click &quot;Sync SharePoint&quot; to import incident reports
                   </p>
                 </CardContent>
               </Card>

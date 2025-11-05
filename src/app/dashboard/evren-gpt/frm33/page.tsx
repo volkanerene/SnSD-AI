@@ -126,7 +126,7 @@ export default function FRM33Page() {
               </p>
               <p className='text-sm text-blue-700 dark:text-blue-300'>
                 This form is filled by the Supervisor after FRM32 is completed.
-                Your evaluation will help verify the contractor's
+                Your evaluation will help verify the contractor&apos;s
                 self-assessment.
               </p>
             </div>

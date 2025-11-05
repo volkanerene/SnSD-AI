@@ -47,28 +47,28 @@ const baseNavItems: NavItem[] = [
         title: 'FRM32',
         url: '/dashboard/evren-gpt/frm32',
         icon: 'fileText',
-        shortcut: ['e', '3', '2'],
+        shortcut: ['f', '2'],
         requiredPermission: 'evaluations.fill_frm32'
       },
       {
         title: 'FRM33',
         url: '/dashboard/evren-gpt/frm33',
         icon: 'fileText',
-        shortcut: ['e', '3', '3'],
+        shortcut: ['f', '3'],
         requiredPermission: 'evaluations.fill_frm33'
       },
       {
         title: 'FRM34',
         url: '/dashboard/evren-gpt/frm34',
         icon: 'fileText',
-        shortcut: ['e', '3', '4'],
+        shortcut: ['f', '4'],
         requiredPermission: 'evaluations.fill_frm34'
       },
       {
         title: 'FRM35',
         url: '/dashboard/evren-gpt/frm35',
         icon: 'fileText',
-        shortcut: ['e', '3', '5'],
+        shortcut: ['f', '5'],
         requiredPermission: 'evaluations.fill_frm35'
       }
     ]
@@ -90,21 +90,21 @@ const baseNavItems: NavItem[] = [
       {
         title: 'Video Library',
         url: '/dashboard/marcel-gpt/library',
-        icon: 'library',
+        icon: 'video',
         shortcut: ['m', 'l'],
         requiredPermission: 'marcel_gpt.view_library'
       },
       {
         title: 'Training Builder',
         url: '/dashboard/marcel-gpt/training',
-        icon: 'graduationCap',
+        icon: 'fileText',
         shortcut: ['m', 't'],
         requiredPermission: 'marcel_gpt.view_training'
       },
       {
         title: 'My Videos',
         url: '/dashboard/marcel-gpt/my-videos',
-        icon: 'playCircle',
+        icon: 'video',
         shortcut: ['m', 'm'],
         requiredPermission: 'marcel_gpt.access'
       }

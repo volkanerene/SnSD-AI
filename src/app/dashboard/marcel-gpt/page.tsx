@@ -20,6 +20,9 @@ import { IconVideo, IconHistory, IconSettings } from '@tabler/icons-react';
 export default function MarcelGPTPage() {
   const featureEnabled = process.env.NEXT_PUBLIC_ENABLE_MARCEL_GPT === 'true';
 
+  // All hooks must be called at the top level, before any early returns
+  const [activeTab, setActiveTab] = useState('create');
+
   if (!featureEnabled) {
     return (
       <PageContainer scrollable>
@@ -37,8 +40,6 @@ export default function MarcelGPTPage() {
       </PageContainer>
     );
   }
-
-  const [activeTab, setActiveTab] = useState('create');
 
   return (
     <ProtectedRoute requiredPermission='modules.access_marcel_gpt'>

@@ -291,8 +291,8 @@ export default function EvaluationsPage() {
               </p>
               <p className='text-sm text-blue-700 dark:text-blue-300'>
                 Final Score = (FRM32 Score × 0.5) + (FRM35 Score × 0.5).
-                Reminders will be automatically sent to contractors who haven't
-                completed FRM32.
+                Reminders will be automatically sent to contractors who
+                haven&apos;t completed FRM32.
               </p>
             </div>
           </div>

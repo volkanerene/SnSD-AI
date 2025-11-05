@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -300,9 +301,12 @@ export default function ContractorSignupPage() {
             {/* Login Link */}
             <div className='text-center text-sm'>
               Already have an account?{' '}
-              <a href='/auth/sign-in' className='text-blue-600 hover:underline'>
+              <Link
+                href='/auth/sign-in'
+                className='text-blue-600 hover:underline'
+              >
                 Sign in
-              </a>
+              </Link>
             </div>
           </form>
         </CardContent>

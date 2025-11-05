@@ -50,6 +50,22 @@ interface VideoAssignment {
 export default function MyVideosPage() {
   const featureEnabled = process.env.NEXT_PUBLIC_ENABLE_MARCEL_GPT === 'true';
 
+  // All hooks must be called at the top level, before any early returns
+  const { profile } = useProfile();
+  const [assignments, setAssignments] = useState<VideoAssignment[]>([]);
+  const [selectedAssignment, setSelectedAssignment] =
+    useState<VideoAssignment | null>(null);
+  const [videoDialogOpen, setVideoDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const tenantId = profile?.tenant_id;
+
+  useEffect(() => {
+    if (!featureEnabled) return;
+    if (!tenantId) return;
+    loadAssignments(tenantId);
+  }, [featureEnabled, tenantId]);
+
   if (!featureEnabled) {
     return (
       <PageContainer scrollable>
@@ -64,20 +80,6 @@ export default function MyVideosPage() {
       </PageContainer>
     );
   }
-
-  const { profile } = useProfile();
-  const [assignments, setAssignments] = useState<VideoAssignment[]>([]);
-  const [selectedAssignment, setSelectedAssignment] =
-    useState<VideoAssignment | null>(null);
-  const [videoDialogOpen, setVideoDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const tenantId = profile?.tenant_id;
-
-  useEffect(() => {
-    if (!tenantId) return;
-    loadAssignments(tenantId);
-  }, [tenantId]);
 
   const loadAssignments = async (currentTenantId: string) => {
     try {
