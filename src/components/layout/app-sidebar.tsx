@@ -50,17 +50,6 @@ import * as React from 'react';
 import { Icons } from '../icons';
 import { OrgSwitcher } from '../org-switcher';
 import { toast } from 'sonner';
-export const company = {
-  name: 'Acme Inc',
-  logo: IconPhotoUp,
-  plan: 'Enterprise'
-};
-
-const tenants = [
-  { id: '1', name: 'Acme Inc' },
-  { id: '2', name: 'Beta Corp' },
-  { id: '3', name: 'Gamma Ltd' }
-];
 
 export default function AppSidebar() {
   const pathname = usePathname();
@@ -84,8 +73,6 @@ export default function AppSidebar() {
       toast.error(error.message || 'Failed to sign out');
     }
   };
-
-  const activeTenant = tenants[0];
 
   // Filter nav items based on user permissions
   const filteredNavItems = React.useMemo(() => {
@@ -192,13 +179,6 @@ export default function AppSidebar() {
 
   return (
     <Sidebar collapsible='icon'>
-      <SidebarHeader>
-        <OrgSwitcher
-          tenants={tenants}
-          defaultTenant={activeTenant}
-          onTenantSwitch={handleSwitchTenant}
-        />
-      </SidebarHeader>
       <SidebarContent className='overflow-x-hidden'>
         <SidebarGroup>
           <SidebarGroupLabel>Overview</SidebarGroupLabel>

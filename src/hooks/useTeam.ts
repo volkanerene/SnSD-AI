@@ -51,75 +51,61 @@ export interface TeamStats {
   by_role: Record<string, number>;
 }
 
-// ========================================
-// Queries
-// ========================================
+// useTeam.ts
 
-/**
- * Get team members for the current user's tenant
- */
-export function useTeamMembers(filters?: TeamMemberFilters) {
+export function useTeamMembers(tenantId: string, filters?: TeamMemberFilters) {
   return useQuery<TeamMember[]>({
-    queryKey: ['team', 'members', filters],
+    queryKey: ['team', tenantId, 'members', filters],
     queryFn: async () => {
-      const endpoint = `/tenants/my/users${buildQueryString(filters)}`;
+      const endpoint = `/tenants/${tenantId}/users${buildQueryString(filters)}`;
       return await apiClient.get<TeamMember[]>(endpoint);
-    }
-  });
-}
-
-/**
- * Get a specific team member by ID
- */
-export function useTeamMember(userId?: string) {
-  return useQuery<TeamMember>({
-    queryKey: ['team', 'members', userId],
-    queryFn: async () => {
-      return await apiClient.get<TeamMember>(`/tenants/my/users/${userId}`);
     },
-    enabled: !!userId
+    enabled: !!tenantId
   });
 }
 
-/**
- * Get team statistics
- */
-export function useTeamStats() {
-  return useQuery<TeamStats>({
-    queryKey: ['team', 'stats'],
+export function useTeamMember(tenantId: string, userId?: string) {
+  return useQuery<TeamMember>({
+    queryKey: ['team', tenantId, 'members', userId],
     queryFn: async () => {
-      return await apiClient.get<TeamStats>('/tenants/my/stats');
-    }
+      return await apiClient.get<TeamMember>(
+        `/tenants/${tenantId}/users/${userId}`
+      );
+    },
+    enabled: !!tenantId && !!userId
   });
 }
 
-// ========================================
-// Mutations
-// ========================================
+export function useTeamStats(tenantId: string) {
+  return useQuery<TeamStats>({
+    queryKey: ['team', tenantId, 'stats'],
+    queryFn: async () => {
+      return await apiClient.get<TeamStats>(`/tenants/${tenantId}/statistics`);
+    },
+    enabled: !!tenantId
+  });
+}
 
-/**
- * Add a user to the current tenant's team
- */
-export function useAddTeamMember() {
+export function useAddTeamMember(tenantId: string) {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (data: AddTeamMemberDto) => {
-      return await apiClient.post<TeamMember>('/tenants/my/users', data);
+      return await apiClient.post<TeamMember>(
+        `/tenants/${tenantId}/users`,
+        data
+      );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['team', 'members'] });
-      queryClient.invalidateQueries({ queryKey: ['team', 'stats'] });
+      queryClient.invalidateQueries({
+        queryKey: ['team', tenantId, 'members']
+      });
+      queryClient.invalidateQueries({ queryKey: ['team', tenantId, 'stats'] });
     }
   });
 }
 
-/**
- * Update a team member's details
- */
-export function useUpdateTeamMember() {
+export function useUpdateTeamMember(tenantId: string) {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async ({
       userId,
@@ -129,43 +115,39 @@ export function useUpdateTeamMember() {
       data: UpdateTeamMemberDto;
     }) => {
       return await apiClient.put<TeamMember>(
-        `/tenants/my/users/${userId}`,
+        `/tenants/${tenantId}/users/${userId}`,
         data
       );
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['team', 'members'] });
       queryClient.invalidateQueries({
-        queryKey: ['team', 'members', variables.userId]
+        queryKey: ['team', tenantId, 'members']
       });
-      queryClient.invalidateQueries({ queryKey: ['team', 'stats'] });
+      queryClient.invalidateQueries({
+        queryKey: ['team', tenantId, 'members', variables.userId]
+      });
+      queryClient.invalidateQueries({ queryKey: ['team', tenantId, 'stats'] });
     }
   });
 }
 
-/**
- * Remove a user from the current tenant's team
- */
-export function useRemoveTeamMember() {
+export function useRemoveTeamMember(tenantId: string) {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (userId: string) => {
-      await apiClient.delete(`/tenants/my/users/${userId}`);
+      await apiClient.delete(`/tenants/${tenantId}/users/${userId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['team', 'members'] });
-      queryClient.invalidateQueries({ queryKey: ['team', 'stats'] });
+      queryClient.invalidateQueries({
+        queryKey: ['team', tenantId, 'members']
+      });
+      queryClient.invalidateQueries({ queryKey: ['team', tenantId, 'stats'] });
     }
   });
 }
 
-/**
- * Activate or deactivate a team member
- */
-export function useToggleTeamMemberStatus() {
+export function useToggleTeamMemberStatus(tenantId: string) {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async ({
       userId,
@@ -174,16 +156,19 @@ export function useToggleTeamMemberStatus() {
       userId: string;
       isActive: boolean;
     }) => {
-      return await apiClient.post(`/tenants/my/users/${userId}/status`, {
-        is_active: isActive
-      });
+      return await apiClient.post(
+        `/tenants/${tenantId}/users/${userId}/status`,
+        { is_active: isActive }
+      );
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['team', 'members'] });
       queryClient.invalidateQueries({
-        queryKey: ['team', 'members', variables.userId]
+        queryKey: ['team', tenantId, 'members']
       });
-      queryClient.invalidateQueries({ queryKey: ['team', 'stats'] });
+      queryClient.invalidateQueries({
+        queryKey: ['team', tenantId, 'members', variables.userId]
+      });
+      queryClient.invalidateQueries({ queryKey: ['team', tenantId, 'stats'] });
     }
   });
 }
