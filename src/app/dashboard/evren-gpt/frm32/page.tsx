@@ -574,17 +574,36 @@ export default function FRM32Page() {
         return;
       }
 
-      const response = await fetch(
-        `https://api.snsdconsultant.com/frm32/submissions?session_id=${sessionId}&contractor_id=${contractorId}&cycle=${cycle}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-            'x-tenant-id': profile?.tenant_id || ''
-          }
-        }
-      );
+      // Try primary API URL first, then fallback
+      const apiUrls = [
+        process.env.NEXT_PUBLIC_API_URL,
+        'https://api.snsdconsultant.com', // Production fallback
+        'http://localhost:8000' // Local fallback
+      ].filter(Boolean) as string[];
 
-      if (response.ok) {
+      let response: Response | null = null;
+
+      for (const apiUrl of apiUrls) {
+        try {
+          response = await fetch(
+            `${apiUrl}/frm32/submissions?session_id=${sessionId}&contractor_id=${contractorId}&cycle=${cycle}`,
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem('token')}`,
+                'x-tenant-id': profile?.tenant_id || ''
+              }
+            }
+          );
+
+          if (response.ok) {
+            break; // Success
+          }
+        } catch (err) {
+          continue;
+        }
+      }
+
+      if (response && response.ok) {
         const data = await response.json();
         if (data && data.length > 0) {
           setAnswers(data[0].answers || {});
@@ -621,34 +640,59 @@ export default function FRM32Page() {
 
   const autoSaveDraft = async () => {
     try {
-      if (!sessionId || !contractorId) return;
-
-      const response = await fetch(
-        'https://api.snsdconsultant.com/frm32/submissions',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-            'x-tenant-id': profile?.tenant_id || ''
-          },
-          body: JSON.stringify({
-            form_id: 'frm32',
-            session_id: sessionId,
-            contractor_id: contractorId,
-            cycle,
-            answers,
-            status: 'draft'
-          })
-        }
-      );
-
-      if (response.ok) {
-        setSaveStatus('saved');
-        setTimeout(() => setSaveStatus('idle'), 2000);
+      if (!sessionId || !contractorId) {
+        setSaveStatus('idle');
+        return;
       }
+
+      // Try primary API URL first, then fallback
+      const apiUrls = [
+        process.env.NEXT_PUBLIC_API_URL,
+        'https://api.snsdconsultant.com', // Production fallback
+        'http://localhost:8000' // Local fallback
+      ].filter(Boolean) as string[];
+
+      let response: Response | null = null;
+      let lastError: string = '';
+
+      for (const apiUrl of apiUrls) {
+        try {
+          response = await fetch(`${apiUrl}/frm32/submissions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+              'x-tenant-id': profile?.tenant_id || ''
+            },
+            body: JSON.stringify({
+              form_id: 'frm32',
+              session_id: sessionId,
+              contractor_id: contractorId,
+              cycle,
+              answers,
+              status: 'draft'
+            })
+          });
+
+          if (response.ok) {
+            setSaveStatus('saved');
+            setTimeout(() => setSaveStatus('idle'), 2000);
+            return;
+          } else {
+            const errorData = await response.json().catch(() => ({}));
+            lastError = errorData.message || `API returned ${response.status}`;
+          }
+        } catch (err) {
+          lastError = `Failed to reach ${apiUrl}`;
+          continue;
+        }
+      }
+
+      // If we get here, all retries failed
+      console.error('Auto-save failed:', lastError);
+      setSaveStatus('idle');
     } catch (error) {
-      console.error('Auto-save failed:', error);
+      console.error('Auto-save error:', error);
       setSaveStatus('idle');
     }
   };
@@ -679,29 +723,52 @@ export default function FRM32Page() {
         throw new Error('Missing session or contractor information');
       }
 
-      // Submit form and trigger N8N workflow
-      const response = await fetch(
-        'https://api.snsdconsultant.com/frm32/submit',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-            'x-tenant-id': profile?.tenant_id || ''
-          },
-          body: JSON.stringify({
-            form_id: 'frm32',
-            session_id: sessionId,
-            contractor_id: contractorId,
-            cycle,
-            answers,
-            status: 'submitted'
-          })
-        }
-      );
+      // Try primary API URL first, then fallback
+      const apiUrls = [
+        process.env.NEXT_PUBLIC_API_URL,
+        'https://api.snsdconsultant.com', // Production fallback
+        'http://localhost:8000' // Local fallback
+      ].filter(Boolean) as string[];
 
-      if (!response.ok) {
-        throw new Error('Failed to submit form');
+      let response: Response | null = null;
+      let lastError: string = '';
+
+      for (const apiUrl of apiUrls) {
+        try {
+          response = await fetch(`${apiUrl}/frm32/submit`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+              'x-tenant-id': profile?.tenant_id || ''
+            },
+            body: JSON.stringify({
+              form_id: 'frm32',
+              session_id: sessionId,
+              contractor_id: contractorId,
+              cycle,
+              answers,
+              status: 'submitted'
+            })
+          });
+
+          if (response.ok) {
+            break;
+          } else {
+            const errorData = await response.json().catch(() => ({}));
+            lastError =
+              errorData.message ||
+              errorData.detail ||
+              `API returned ${response.status}`;
+          }
+        } catch (err) {
+          lastError = `Failed to reach ${apiUrl}`;
+          continue;
+        }
+      }
+
+      if (!response || !response.ok) {
+        throw new Error(lastError || 'Failed to submit form');
       }
 
       toast.success('Form submitted successfully!');
