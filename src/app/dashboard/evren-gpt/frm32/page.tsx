@@ -1,96 +1,545 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useProfile } from '@/hooks/useProfile';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, FileText } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import {
-  FRMQuestionnaire,
-  FRMQuestion
-} from '@/features/evren-gpt/components/frm-questionnaire';
 
-// Mock questions - these would come from backend/database
-const FRM32_QUESTIONS: FRMQuestion[] = [
+// All 80 FRM32 Questions extracted from frm32.html
+const FRM32_QUESTIONS = [
   {
-    id: 'q1',
-    question_number: 1,
-    question_text:
-      "Describe your company's safety policy and how it is communicated to all employees.",
-    required: true,
-    placeholder: 'Explain in detail...'
+    id: 'question_11A',
+    question_number: '1.1.A',
+    title:
+      'How are senior managers personally involved in HSE management for example objective-setting and monitoring?',
+    required: true
   },
   {
-    id: 'q2',
-    question_number: 2,
-    question_text:
-      'What safety training programs do you have in place for your employees?',
-    required: true,
-    placeholder: 'List training programs and frequency...'
+    id: 'question_11B',
+    question_number: '1.1.B',
+    title: 'Provide evidence of commitment at all levels of the organisation?',
+    required: true
   },
   {
-    id: 'q3',
-    question_number: 3,
-    question_text:
-      'How do you conduct risk assessments before starting a new project?',
-    required: true,
-    placeholder: 'Describe your risk assessment process...'
+    id: 'question_11C',
+    question_number: '1.1.C',
+    title: 'How do you promote a positive culture towards HSE matters?',
+    required: true
   },
   {
-    id: 'q4',
-    question_number: 4,
-    question_text:
-      'What personal protective equipment (PPE) do you provide to your workers?',
-    required: true,
-    placeholder: 'List PPE and distribution methods...'
+    id: 'question_21A',
+    question_number: '2.1.A',
+    title:
+      'Does your company have an HSE policy document? If the answer is YES please attach a copy.',
+    required: true
   },
   {
-    id: 'q5',
-    question_number: 5,
-    question_text:
-      'Describe your incident reporting and investigation procedures.',
-    required: true,
-    placeholder: 'Explain reporting process and investigation steps...'
+    id: 'question_21B',
+    question_number: '2.1.B',
+    title:
+      'Who has overall and final responsibility for HSE in your organisation?',
+    required: true
   },
   {
-    id: 'q6',
-    question_number: 6,
-    question_text:
-      'How do you ensure compliance with local safety regulations and standards?',
-    required: true,
-    placeholder: 'Detail compliance measures...'
+    id: 'question_21C',
+    question_number: '2.1.C',
+    title:
+      'Who is the most senior person in the organisation responsible for this policy being carried out at the premises and on site where his employees are working? Provide name and title.',
+    required: true
   },
   {
-    id: 'q7',
-    question_number: 7,
-    question_text: 'What emergency response procedures do you have in place?',
-    required: true,
-    placeholder: 'Describe emergency procedures...'
+    id: 'question_21D',
+    question_number: '2.1.D',
+    title:
+      'Itemise the methods by which you have drawn your policy statements to the attention of all your employees?',
+    required: true
   },
   {
-    id: 'q8',
-    question_number: 8,
-    question_text: 'How do you monitor and track safety performance metrics?',
-    required: true,
-    placeholder: 'List KPIs and tracking methods...'
+    id: 'question_21E',
+    question_number: '2.1.E',
+    title:
+      'What are your arrangements for advising employees of changes in the policy?',
+    required: true
   },
   {
-    id: 'q9',
-    question_number: 9,
-    question_text: 'Describe your contractor safety orientation process.',
-    required: false,
-    placeholder: 'Explain orientation steps (optional)...'
+    id: 'question_22A',
+    question_number: '2.2.A',
+    title:
+      'Does your company have strategic HSE objectives? If the answer is YES please attach a copy.',
+    required: true
   },
   {
-    id: 'q10',
-    question_number: 10,
-    question_text:
-      'What continuous improvement initiatives do you have for safety management?',
-    required: false,
-    placeholder: 'Describe improvement programs (optional)...'
+    id: 'question_22B',
+    question_number: '2.2.B',
+    title:
+      'Itemise the methods by which you have communicated your strategic HSE objectives to the attention of all your employees?',
+    required: true
+  },
+  {
+    id: 'question_31A',
+    question_number: '3.1.A',
+    title:
+      'How is your organisation structured to manage and communicate HSE effectively?',
+    required: true
+  },
+  {
+    id: 'question_31B',
+    question_number: '3.1.B',
+    title: 'Do HSE meetings promote HSE awareness?',
+    required: true
+  },
+  {
+    id: 'question_31C',
+    question_number: '3.1.C',
+    title: 'How are HSE objectives and targets communicated to the workforce?',
+    required: true
+  },
+  {
+    id: 'question_31D',
+    question_number: '3.1.D',
+    title:
+      'How do you ensure that HSE considerations are incorporated into daily work activities?',
+    required: true
+  },
+  {
+    id: 'question_32A',
+    question_number: '3.2.A',
+    title:
+      'Have the managers and supervisors at all levels who will plan, monitor, oversee and carry out the work received HSE training?',
+    required: true
+  },
+  {
+    id: 'question_32B',
+    question_number: '3.2.B',
+    title:
+      'If YES please give details. Where the training is given in-house please describe the content and duration of the training?',
+    required: true
+  },
+  {
+    id: 'question_32C',
+    question_number: '3.2.C',
+    title:
+      'What HSE training do you provide to new management and supervisory staff?',
+    required: true
+  },
+  {
+    id: 'question_32D',
+    question_number: '3.2.D',
+    title: 'What refresher training is provided and how often?',
+    required: true
+  },
+  {
+    id: 'question_32E',
+    question_number: '3.2.E',
+    title: 'What training records are maintained?',
+    required: true
+  },
+  {
+    id: 'question_33A',
+    question_number: '3.3.A',
+    title:
+      'What arrangements does your company have to ensure new employees have knowledge of hazards, risks, controls, procedures, etc?',
+    required: true
+  },
+  {
+    id: 'question_33B',
+    question_number: '3.3.B',
+    title: 'What refresher training do you provide and how often?',
+    required: true
+  },
+  {
+    id: 'question_33C',
+    question_number: '3.3.C',
+    title: 'What training records are maintained?',
+    required: true
+  },
+  {
+    id: 'question_34A',
+    question_number: '3.4.A',
+    title:
+      'Does your organisation have a competence system in place? If YES, please describe how the system works and what it covers?',
+    required: true
+  },
+  {
+    id: 'question_34B',
+    question_number: '3.4.B',
+    title: 'How do you assess competence and manage any gaps identified?',
+    required: true
+  },
+  {
+    id: 'question_35A',
+    question_number: '3.5.A',
+    title:
+      'Does your company have a contractor management process or system? If yes, provide details?',
+    required: true
+  },
+  {
+    id: 'question_35B',
+    question_number: '3.5.B',
+    title: 'How do you select contractors and subcontractors?',
+    required: true
+  },
+  {
+    id: 'question_35C',
+    question_number: '3.5.C',
+    title: 'How do you monitor contractor HSE performance?',
+    required: true
+  },
+  {
+    id: 'question_35D',
+    question_number: '3.5.D',
+    title: 'How do you communicate HSE requirements to contractors?',
+    required: true
+  },
+  {
+    id: 'question_36A',
+    question_number: '3.6.A',
+    title:
+      'How do you identify new industry or regulatory standards that may be applicable to your organisation and operations?',
+    required: true
+  },
+  {
+    id: 'question_36B',
+    question_number: '3.6.B',
+    title:
+      'How do you ensure compliance with applicable HSE standards and regulations?',
+    required: true
+  },
+  {
+    id: 'question_36C',
+    question_number: '3.6.C',
+    title:
+      'What process do you have for updating your HSE management system when standards change?',
+    required: true
+  },
+  {
+    id: 'question_41A',
+    question_number: '4.1.A',
+    title:
+      'How does your company identify hazards, assess risk, control and mitigation consideration in line with the scope of services your company provides?',
+    required: true
+  },
+  {
+    id: 'question_42A',
+    question_number: '4.2.A',
+    title:
+      'Do you have specific policies and programmes on specific health hazards e.g. substance abuse, noise, hazardous substances, ergonomics etc.?',
+    required: true
+  },
+  {
+    id: 'question_42B',
+    question_number: '4.2.B',
+    title:
+      'What type of health hazards are associated with the scope of your services?',
+    required: true
+  },
+  {
+    id: 'question_42C',
+    question_number: '4.2.C',
+    title: 'How do you monitor and control health hazards in the workplace?',
+    required: true
+  },
+  {
+    id: 'question_43A',
+    question_number: '4.3.A',
+    title:
+      'What type of safety hazards (mechanical guarding, work at height, lifting and hoisting, electrical, confined spaces etc.) are associated with the scope of your services?',
+    required: true
+  },
+  {
+    id: 'question_43B',
+    question_number: '4.3.B',
+    title: 'How do you control these safety hazards?',
+    required: true
+  },
+  {
+    id: 'question_44A',
+    question_number: '4.4.A',
+    title:
+      'What type of logistics hazards (land transport, air transport, marine transport, storage and warehousing etc.) are associated with the scope of your services?',
+    required: true
+  },
+  {
+    id: 'question_44B',
+    question_number: '4.4.B',
+    title:
+      'What systems are in place to control these hazards and monitor the effectiveness of these controls?',
+    required: true
+  },
+  {
+    id: 'question_45A',
+    question_number: '4.5.A',
+    title:
+      'What type of environmental hazards (chemical spill, atmospheric emissions, waste discharge etc.) are associated with the scope of your services?',
+    required: true
+  },
+  {
+    id: 'question_45B',
+    question_number: '4.5.B',
+    title: 'How do you control these environmental hazards?',
+    required: true
+  },
+  {
+    id: 'question_46A',
+    question_number: '4.6.A',
+    title:
+      'What type of security hazards (terrorism, hostage taking, robbery, hostile local population, civil unrest etc.) are associated with the scope of your services?',
+    required: true
+  },
+  {
+    id: 'question_46B',
+    question_number: '4.6.B',
+    title: 'How do you control these security hazards?',
+    required: true
+  },
+  {
+    id: 'question_47A',
+    question_number: '4.7.A',
+    title:
+      'What type of social hazards are associated with the scope of your services?',
+    required: true
+  },
+  {
+    id: 'question_47B',
+    question_number: '4.7.B',
+    title: 'How do you control these social hazards?',
+    required: true
+  },
+  {
+    id: 'question_51A',
+    question_number: '5.1.A',
+    title:
+      'Do you have a company HSE-MS manual (or operations manual with integrated HSE requirements)? If the answer is YES please attach a copy.',
+    required: true
+  },
+  {
+    id: 'question_52A',
+    question_number: '5.2.A',
+    title:
+      'How do you ensure that infrastructure, plant and equipment used within your operations meet the required HSE standards and are maintained in safe working condition?',
+    required: true
+  },
+  {
+    id: 'question_53A',
+    question_number: '5.3.A',
+    title:
+      'How do you manage changes and assess associated risks e.g. personnel, equipment, procedures, organisation, etc.?',
+    required: true
+  },
+  {
+    id: 'question_54A',
+    question_number: '5.4.A',
+    title:
+      'What arrangements does your company have for emergency planning and response?',
+    required: true
+  },
+  {
+    id: 'question_54B',
+    question_number: '5.4.B',
+    title: 'How often do you test your emergency response procedures?',
+    required: true
+  },
+  {
+    id: 'question_61A',
+    question_number: '6.1.A',
+    title:
+      'What arrangements does your organisation have for monitoring the implementation and operation of the HSE-MS?',
+    required: true
+  },
+  {
+    id: 'question_61B',
+    question_number: '6.1.B',
+    title:
+      'What arrangements does your organisation have for monitoring HSE performance?',
+    required: true
+  },
+  {
+    id: 'question_61C',
+    question_number: '6.1.C',
+    title:
+      'What arrangements does your organisation have for workplace inspection?',
+    required: true
+  },
+  {
+    id: 'question_61D',
+    question_number: '6.1.D',
+    title:
+      'What arrangements does your organisation have for safety observation programmes?',
+    required: true
+  },
+  {
+    id: 'question_61E',
+    question_number: '6.1.E',
+    title:
+      'What arrangements does your organisation have for environmental monitoring?',
+    required: true
+  },
+  {
+    id: 'question_61F',
+    question_number: '6.1.F',
+    title:
+      'What arrangements does your organisation have for health surveillance?',
+    required: true
+  },
+  {
+    id: 'question_62A',
+    question_number: '6.2.A',
+    title: 'See separate spreadsheet called Contractor Assessment KPI Data',
+    required: true
+  },
+  {
+    id: 'question_63A',
+    question_number: '6.3.A',
+    title: 'How is health performance monitored and recorded?',
+    required: true
+  },
+  {
+    id: 'question_63B',
+    question_number: '6.3.B',
+    title: 'How is safety performance monitored and recorded?',
+    required: true
+  },
+  {
+    id: 'question_63C',
+    question_number: '6.3.C',
+    title: 'How is environmental performance monitored and recorded?',
+    required: true
+  },
+  {
+    id: 'question_63D',
+    question_number: '6.3.D',
+    title: 'What performance indicators do you use to monitor HSE performance?',
+    required: true
+  },
+  {
+    id: 'question_63E',
+    question_number: '6.3.E',
+    title:
+      'How often is performance data reviewed and what actions are taken based on the results?',
+    required: true
+  },
+  {
+    id: 'question_63F',
+    question_number: '6.3.F',
+    title:
+      'How do you benchmark your HSE performance against industry standards?',
+    required: true
+  },
+  {
+    id: 'question_63G',
+    question_number: '6.3.G',
+    title: 'How do you communicate HSE performance results to stakeholders?',
+    required: true
+  },
+  {
+    id: 'question_64A',
+    question_number: '6.4.A',
+    title: 'What types of HSE incident are investigated?',
+    required: true
+  },
+  {
+    id: 'question_64B',
+    question_number: '6.4.B',
+    title: 'What is your procedure for incident investigation?',
+    required: true
+  },
+  {
+    id: 'question_64C',
+    question_number: '6.4.C',
+    title:
+      'How do you ensure that corrective actions are implemented and followed up?',
+    required: true
+  },
+  {
+    id: 'question_64D',
+    question_number: '6.4.D',
+    title: 'How do you share lessons learned from incidents?',
+    required: true
+  },
+  {
+    id: 'question_64E',
+    question_number: '6.4.E',
+    title: 'What system do you have for tracking and trending incident data?',
+    required: true
+  },
+  {
+    id: 'question_65A',
+    question_number: '6.5.A',
+    title:
+      'Has your company suffered any statutory notifiable incidents in the last five years? If YES, please give details.',
+    required: true
+  },
+  {
+    id: 'question_71A',
+    question_number: '7.1.A',
+    title:
+      'Do you have a written procedure for HSE auditing? If yes, please attach a copy.',
+    required: true
+  },
+  {
+    id: 'question_71B',
+    question_number: '7.1.B',
+    title: 'How often do you conduct HSE audits?',
+    required: true
+  },
+  {
+    id: 'question_71C',
+    question_number: '7.1.C',
+    title: 'Who conducts the audits and what are their qualifications?',
+    required: true
+  },
+  {
+    id: 'question_71D',
+    question_number: '7.1.D',
+    title:
+      'How do you follow up on audit findings and ensure corrective actions are completed?',
+    required: true
+  },
+  {
+    id: 'question_72A',
+    question_number: '7.2.A',
+    title:
+      'Do you have a written procedure for management review of the HSE-MS? If yes, please attach a copy.',
+    required: true
+  },
+  {
+    id: 'question_72B',
+    question_number: '7.2.B',
+    title: 'How often do you conduct management reviews of the HSE-MS?',
+    required: true
+  },
+  {
+    id: 'question_72C',
+    question_number: '7.2.C',
+    title:
+      'What information is considered during management review and how are decisions documented and communicated?',
+    required: true
+  },
+  {
+    id: 'question_81A',
+    question_number: '8.1.A',
+    title:
+      'Please provide information on any certification which you have received from certification bodies for your HSE-MS (e.g. ISO 14001, OHSAS 18001, ISO 45001, etc.). If you have certificates, please attach copies.',
+    required: true
+  },
+  {
+    id: 'question_82A',
+    question_number: '8.2.A',
+    title:
+      "Describe the nature and extent of your company's participation in relevant industry associations, professional bodies, or HSE forums.",
+    required: true
+  },
+  {
+    id: 'question_83A',
+    question_number: '8.3.A',
+    title:
+      'Does your organisation (globally, regionally or locally) have any HSE features or achievements which may be of relevance (e.g. awards, recognition, innovative practices, sustainability initiatives, etc.)?',
+    required: true
   }
 ];
 
@@ -99,15 +548,20 @@ export default function FRM32Page() {
   const searchParams = useSearchParams();
   const { profile } = useProfile();
 
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [initialAnswers, setInitialAnswers] = useState<Record<string, string>>(
-    {}
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>(
+    'idle'
   );
+  const [missingAnswers, setMissingAnswers] = useState<string[]>([]);
 
   const sessionId = searchParams.get('session');
   const contractorId = searchParams.get('contractor');
   const cycle = parseInt(searchParams.get('cycle') || '1');
+  const autoSaveTimer = useRef<NodeJS.Timeout>();
 
+  // Load existing answers
   useEffect(() => {
     loadExistingAnswers();
   }, [sessionId, contractorId, cycle]);
@@ -115,14 +569,13 @@ export default function FRM32Page() {
   const loadExistingAnswers = async () => {
     try {
       setIsLoading(true);
-
       if (!sessionId || !contractorId) {
         setIsLoading(false);
         return;
       }
 
       const response = await fetch(
-        `https://api.snsdconsultant.com/api/evren-gpt/forms/submissions?session_id=${sessionId}&contractor_id=${contractorId}&form_id=frm32&cycle=${cycle}`,
+        `https://api.snsdconsultant.com/frm32/submissions?session_id=${sessionId}&contractor_id=${contractorId}&cycle=${cycle}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -134,45 +587,44 @@ export default function FRM32Page() {
       if (response.ok) {
         const data = await response.json();
         if (data && data.length > 0) {
-          setInitialAnswers(data[0].answers || {});
+          setAnswers(data[0].answers || {});
         }
       }
     } catch (error) {
-      toast.error('Failed to load existing answers');
-      console.error(error);
+      console.error('Failed to load existing answers:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSave = async (answers: Record<string, string>) => {
-    try {
-      await fetch('https://api.snsdconsultant.com/api/evren-gpt/forms/submit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-          'x-tenant-id': profile?.tenant_id || ''
-        },
-        body: JSON.stringify({
-          form_id: 'frm32',
-          session_id: sessionId,
-          contractor_id: contractorId,
-          cycle,
-          answers,
-          status: 'draft' // Save as draft
-        })
-      });
-    } catch (error) {
-      console.error('Failed to save:', error);
-      throw error;
-    }
-  };
+  // Auto-save on answer change
+  const handleAnswerChange = useCallback(
+    (questionId: string, value: string) => {
+      setAnswers((prev) => ({
+        ...prev,
+        [questionId]: value
+      }));
 
-  const handleSubmit = async (answers: Record<string, string>) => {
+      // Clear existing timer
+      if (autoSaveTimer.current) {
+        clearTimeout(autoSaveTimer.current);
+      }
+
+      // Set new timer for auto-save (2 seconds after last change)
+      setSaveStatus('saving');
+      autoSaveTimer.current = setTimeout(() => {
+        autoSaveDraft();
+      }, 2000);
+    },
+    []
+  );
+
+  const autoSaveDraft = async () => {
     try {
+      if (!sessionId || !contractorId) return;
+
       const response = await fetch(
-        'https://api.snsdconsultant.com/api/evren-gpt/forms/submit',
+        'https://api.snsdconsultant.com/frm32/submissions',
         {
           method: 'POST',
           headers: {
@@ -185,7 +637,65 @@ export default function FRM32Page() {
             session_id: sessionId,
             contractor_id: contractorId,
             cycle,
-            answers
+            answers,
+            status: 'draft'
+          })
+        }
+      );
+
+      if (response.ok) {
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus('idle'), 2000);
+      }
+    } catch (error) {
+      console.error('Auto-save failed:', error);
+      setSaveStatus('idle');
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const missing: string[] = [];
+    FRM32_QUESTIONS.forEach((q) => {
+      if (q.required && (!answers[q.id] || answers[q.id].trim() === '')) {
+        missing.push(`${q.question_number} - ${q.title}`);
+      }
+    });
+
+    setMissingAnswers(missing);
+    return missing.length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) {
+      toast.error(
+        `Please answer all ${missingAnswers.length} required questions`
+      );
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      if (!sessionId || !contractorId) {
+        throw new Error('Missing session or contractor information');
+      }
+
+      // Submit form and trigger N8N workflow
+      const response = await fetch(
+        'https://api.snsdconsultant.com/frm32/submit',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'x-tenant-id': profile?.tenant_id || ''
+          },
+          body: JSON.stringify({
+            form_id: 'frm32',
+            session_id: sessionId,
+            contractor_id: contractorId,
+            cycle,
+            answers,
+            status: 'submitted'
           })
         }
       );
@@ -194,69 +704,163 @@ export default function FRM32Page() {
         throw new Error('Failed to submit form');
       }
 
-      // After successful submission, redirect
+      toast.success('Form submitted successfully!');
+
+      // Redirect to next page after 2 seconds
       setTimeout(() => {
-        router.push('/dashboard/evren-gpt');
+        router.push(
+          `/dashboard/evren-gpt?session=${sessionId}&contractor=${contractorId}`
+        );
       }, 2000);
     } catch (error) {
-      throw error;
+      console.error('Submission error:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to submit form'
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   if (isLoading) {
     return (
-      <div className='flex items-center justify-center p-8'>
-        <div className='text-muted-foreground'>Loading form...</div>
+      <div className='flex min-h-screen items-center justify-center p-8'>
+        <div className='flex flex-col items-center gap-2'>
+          <Loader2 className='h-8 w-8 animate-spin' />
+          <p className='text-muted-foreground'>Loading FRM32 Form...</p>
+        </div>
       </div>
     );
   }
 
+  const progressPercentage = Math.round(
+    (Object.values(answers).filter((a) => a?.trim()).length /
+      FRM32_QUESTIONS.length) *
+      100
+  );
+
   return (
-    <div className='space-y-4 p-4 pt-6 md:p-8'>
-      {/* Info Banner */}
-      <Card className='bg-blue-50 dark:bg-blue-950'>
+    <div className='mx-auto max-w-4xl space-y-6 p-4 pt-6 md:p-8'>
+      {/* Header */}
+      <div>
+        <h1 className='mb-2 text-3xl font-bold'>
+          FRM32 - HSE Capability Assessment
+        </h1>
+        <p className='text-muted-foreground'>
+          All questions are required. Your answers are automatically saved as
+          you type.
+        </p>
+      </div>
+
+      {/* Progress Bar */}
+      <Card>
         <CardContent className='pt-6'>
-          <div className='flex items-start gap-3'>
-            <FileText className='mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400' />
-            <div className='space-y-1'>
-              <p className='text-sm font-medium text-blue-900 dark:text-blue-100'>
-                FRM32 - Contractor Self-Assessment
-              </p>
-              <p className='text-sm text-blue-700 dark:text-blue-300'>
-                This form is filled by the Contractor Admin. Your answers will
-                be scored by AI (0, 3, 6, 10 points per question). After
-                submission, the Supervisor will be notified to complete FRM33.
-              </p>
+          <div className='space-y-2'>
+            <div className='flex items-center justify-between'>
+              <span className='text-sm font-medium'>Progress</span>
+              <Badge variant='outline'>{progressPercentage}%</Badge>
             </div>
+            <div className='bg-secondary h-2 w-full rounded-full'>
+              <div
+                className='bg-primary h-2 rounded-full transition-all duration-300'
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+            <p className='text-muted-foreground text-xs'>
+              {Object.values(answers).filter((a) => a?.trim()).length} of{' '}
+              {FRM32_QUESTIONS.length} questions answered
+            </p>
           </div>
         </CardContent>
       </Card>
 
-      {/* Permission Check Alert */}
-      {profile?.role_id !== 4 && (
-        <Alert variant='destructive'>
+      {/* Save Status */}
+      {saveStatus === 'saving' && (
+        <Alert>
           <AlertCircle className='h-4 w-4' />
-          <AlertDescription>
-            Only Contractor Admins can fill out FRM32. Your current role:{' '}
-            {profile?.role_id}
+          <AlertDescription>Saving your answers...</AlertDescription>
+        </Alert>
+      )}
+      {saveStatus === 'saved' && (
+        <Alert className='border-green-200 bg-green-50'>
+          <CheckCircle className='h-4 w-4 text-green-600' />
+          <AlertDescription className='text-green-800'>
+            Changes saved automatically
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Questionnaire */}
-      <FRMQuestionnaire
-        formId='frm32'
-        formTitle='FRM32 - Contractor Self-Assessment Form'
-        formDescription="Please answer all questions about your company's safety practices and procedures."
-        questions={FRM32_QUESTIONS}
-        sessionId={sessionId || undefined}
-        contractorId={contractorId || undefined}
-        cycle={cycle}
-        onSubmit={handleSubmit}
-        onSave={handleSave}
-        initialAnswers={initialAnswers}
-        readonly={profile?.role_id !== 4}
-      />
+      {/* Form Questions */}
+      <div className='space-y-4'>
+        {FRM32_QUESTIONS.map((question, index) => (
+          <Card key={question.id}>
+            <CardHeader className='pb-3'>
+              <div className='flex items-start justify-between gap-4'>
+                <div className='flex-1'>
+                  <CardTitle className='text-base'>
+                    {question.question_number}. {question.title}
+                  </CardTitle>
+                </div>
+                {question.required && (
+                  <Badge variant='destructive' className='ml-2'>
+                    Required
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <textarea
+                value={answers[question.id] || ''}
+                onChange={(e) =>
+                  handleAnswerChange(question.id, e.target.value)
+                }
+                placeholder='Please provide a detailed response...'
+                className='border-input bg-background text-foreground placeholder-muted-foreground focus:ring-primary h-32 w-full resize-none rounded-md border p-3 focus:border-transparent focus:ring-2 focus:outline-none'
+              />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Missing Answers Alert */}
+      {missingAnswers.length > 0 && (
+        <Alert variant='destructive'>
+          <AlertCircle className='h-4 w-4' />
+          <AlertDescription>
+            <p className='mb-2'>
+              Please answer the following {missingAnswers.length} required
+              questions:
+            </p>
+            <ul className='list-inside list-disc text-sm'>
+              {missingAnswers.slice(0, 5).map((q) => (
+                <li key={q}>{q}</li>
+              ))}
+              {missingAnswers.length > 5 && (
+                <li>...and {missingAnswers.length - 5} more</li>
+              )}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Submit Button */}
+      <div className='flex gap-4 pt-4'>
+        <Button
+          onClick={handleSubmit}
+          disabled={isSubmitting || progressPercentage < 100}
+          className='w-full'
+          size='lg'
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+              Submitting...
+            </>
+          ) : (
+            'Submit FRM32 Form'
+          )}
+        </Button>
+      </div>
     </div>
   );
 }

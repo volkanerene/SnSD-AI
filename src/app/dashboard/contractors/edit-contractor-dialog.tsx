@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -31,7 +31,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useContractors } from '@/hooks/useContractors';
 import { toast } from 'sonner';
-import type { ContractorCreate } from '@/types/api';
+import type { Contractor, ContractorUpdate } from '@/types/api';
 
 const contractorSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -54,37 +54,49 @@ const contractorSchema = z.object({
 
 type ContractorFormData = z.infer<typeof contractorSchema>;
 
-interface CreateContractorDialogProps {
+interface EditContractorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  contractor: Contractor;
   tenantId: string;
 }
 
-export function CreateContractorDialog({
+export function EditContractorDialog({
   open,
   onOpenChange,
+  contractor,
   tenantId
-}: CreateContractorDialogProps) {
+}: EditContractorDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { createContractorAsync } = useContractors({ tenantId });
+  const { updateContractorAsync } = useContractors({ tenantId });
 
   const form = useForm<ContractorFormData>({
     resolver: zodResolver(contractorSchema),
     defaultValues: {
-      country: 'TR',
-      status: 'active'
+      name: contractor.name || '',
+      legal_name: contractor.legal_name || '',
+      company_type:
+        (contractor.company_type as 'bireysel' | 'limited') || 'limited',
+      tax_number: contractor.tax_number || '',
+      contact_person: contractor.contact_person || '',
+      contact_email: contractor.contact_email || '',
+      contact_phone: contractor.contact_phone || '',
+      city: contractor.city || '',
+      country: contractor.country || 'TR',
+      address: contractor.address || '',
+      trade_registry_number: contractor.trade_registry_number || '',
+      status: contractor.status as 'active' | 'inactive' | 'blacklisted'
     }
   });
 
   const onSubmit = async (data: ContractorFormData) => {
     setIsSubmitting(true);
     try {
-      await createContractorAsync(data as ContractorCreate);
-      toast.success('Contractor created successfully');
-      form.reset();
+      await updateContractorAsync(contractor.id, data as ContractorUpdate);
+      toast.success('Contractor updated successfully');
       onOpenChange(false);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create contractor');
+      toast.error(error.message || 'Failed to update contractor');
     } finally {
       setIsSubmitting(false);
     }
@@ -94,9 +106,9 @@ export function CreateContractorDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-2xl'>
         <DialogHeader>
-          <DialogTitle>Add New Contractor</DialogTitle>
+          <DialogTitle>Edit Contractor</DialogTitle>
           <DialogDescription>
-            Enter the contractor&apos;s information to add them to your system.
+            Update the contractor&apos;s information.
           </DialogDescription>
         </DialogHeader>
 
@@ -315,7 +327,7 @@ export function CreateContractorDialog({
                 Cancel
               </Button>
               <Button type='submit' disabled={isSubmitting}>
-                {isSubmitting ? 'Creating...' : 'Create Contractor'}
+                {isSubmitting ? 'Updating...' : 'Update Contractor'}
               </Button>
             </DialogFooter>
           </form>

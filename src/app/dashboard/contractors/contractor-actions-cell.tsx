@@ -14,6 +14,7 @@ import { MoreHorizontal, Pencil, Trash, ChartBar, Mail } from 'lucide-react';
 import type { Contractor } from '@/types/api';
 import { ContractorScoresDialog } from './contractor-scores-dialog';
 import { SendDocumentsDialog } from './send-documents-dialog';
+import { EditContractorDialog } from './edit-contractor-dialog';
 
 interface ContractorActionsCellProps {
   contractor: Contractor;
@@ -24,6 +25,7 @@ export function ContractorActionsCell({
 }: ContractorActionsCellProps) {
   const [showScores, setShowScores] = useState(false);
   const [showSendDocs, setShowSendDocs] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
 
   return (
     <>
@@ -51,7 +53,7 @@ export function ContractorActionsCell({
             Send Documents
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setShowEdit(true)}>
             <Pencil className='mr-2 h-4 w-4' />
             Edit
           </DropdownMenuItem>
@@ -72,6 +74,13 @@ export function ContractorActionsCell({
         contractor={contractor}
         open={showSendDocs}
         onOpenChange={setShowSendDocs}
+      />
+
+      <EditContractorDialog
+        contractor={contractor}
+        open={showEdit}
+        onOpenChange={setShowEdit}
+        tenantId={contractor.tenant_id || ''}
       />
     </>
   );
