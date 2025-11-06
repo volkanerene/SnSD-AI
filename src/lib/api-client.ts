@@ -57,6 +57,11 @@ export class ApiClient {
       Object.assign(headers, authHeaders);
     }
 
+    // If body is FormData, remove Content-Type header to let browser set it with boundary
+    if (fetchOptions.body instanceof FormData) {
+      delete headers['Content-Type'];
+    }
+
     // Merge any additional headers from options
     if (fetchOptions.headers) {
       Object.assign(headers, fetchOptions.headers);
@@ -121,19 +126,25 @@ export class ApiClient {
 
   // POST request
   async post<T>(endpoint: string, data: any, options?: ApiOptions): Promise<T> {
+    // If data is FormData, pass it directly without JSON.stringify
+    const body = data instanceof FormData ? data : JSON.stringify(data);
+
     return this.request<T>(endpoint, {
       ...options,
       method: 'POST',
-      body: JSON.stringify(data)
+      body
     });
   }
 
   // PUT request
   async put<T>(endpoint: string, data: any, options?: ApiOptions): Promise<T> {
+    // If data is FormData, pass it directly without JSON.stringify
+    const body = data instanceof FormData ? data : JSON.stringify(data);
+
     return this.request<T>(endpoint, {
       ...options,
       method: 'PUT',
-      body: JSON.stringify(data)
+      body
     });
   }
 
@@ -148,10 +159,13 @@ export class ApiClient {
     data: any,
     options?: ApiOptions
   ): Promise<T> {
+    // If data is FormData, pass it directly without JSON.stringify
+    const body = data instanceof FormData ? data : JSON.stringify(data);
+
     return this.request<T>(endpoint, {
       ...options,
       method: 'PATCH',
-      body: JSON.stringify(data)
+      body
     });
   }
 }
