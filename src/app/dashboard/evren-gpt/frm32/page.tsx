@@ -654,7 +654,28 @@ export default function FRM32Page() {
   const loadExistingAnswers = async () => {
     try {
       setIsLoading(true);
+      const token = localStorage.getItem('token');
+      const tenantId = profile?.tenant_id;
+
+      console.log(
+        '[FRM32] Loading answers - sessionId:',
+        sessionId,
+        'contractorId:',
+        contractorId,
+        'token:',
+        token ? 'present' : 'missing',
+        'tenantId:',
+        tenantId
+      );
+
       if (!sessionId || !contractorId) {
+        console.log('[FRM32] Missing sessionId or contractorId');
+        setIsLoading(false);
+        return;
+      }
+
+      if (!token || !tenantId) {
+        console.log('[FRM32] Missing token or tenantId');
         setIsLoading(false);
         return;
       }
@@ -666,36 +687,56 @@ export default function FRM32Page() {
         'http://localhost:8000' // Local fallback
       ].filter(Boolean) as string[];
 
+      console.log('[FRM32] Trying API URLs:', apiUrls);
+
       let response: Response | null = null;
+      let lastError: string = '';
 
       for (const apiUrl of apiUrls) {
         try {
+          console.log(`[FRM32] Fetching from ${apiUrl}...`);
           response = await fetch(
             `${apiUrl}/frm32/submissions?session_id=${sessionId}&contractor_id=${contractorId}&cycle=${cycle}`,
             {
               headers: {
-                Authorization: `Bearer ${localStorage.getItem('token')}`,
-                'x-tenant-id': profile?.tenant_id || ''
+                Authorization: `Bearer ${token}`,
+                'x-tenant-id': tenantId
               }
             }
           );
 
+          console.log(
+            `[FRM32] Response status from ${apiUrl}:`,
+            response.status
+          );
+
           if (response.ok) {
+            console.log('[FRM32] Successfully loaded answers');
             break; // Success
+          } else {
+            const errorText = await response.text();
+            lastError = `${response.status}: ${errorText}`;
+            console.log(`[FRM32] Error from ${apiUrl}:`, lastError);
           }
         } catch (err) {
+          lastError = String(err);
+          console.log(`[FRM32] Failed to reach ${apiUrl}:`, err);
           continue;
         }
       }
 
       if (response && response.ok) {
         const data = await response.json();
+        console.log('[FRM32] Data loaded:', data);
         if (data && data.length > 0) {
+          console.log('[FRM32] Setting answers:', data[0].answers);
           setAnswers(data[0].answers || {});
         }
+      } else {
+        console.log('[FRM32] No valid response:', lastError);
       }
     } catch (error) {
-      console.error('Failed to load existing answers:', error);
+      console.error('[FRM32] Failed to load existing answers:', error);
     } finally {
       setIsLoading(false);
     }
@@ -725,7 +766,24 @@ export default function FRM32Page() {
 
   const autoSaveDraft = async () => {
     try {
+      const token = localStorage.getItem('token');
+      const tenantId = profile?.tenant_id;
+
+      console.log(
+        '[FRM32] Auto-save triggered - sessionId:',
+        sessionId,
+        'contractorId:',
+        contractorId
+      );
+
       if (!sessionId || !contractorId) {
+        console.log('[FRM32] Missing sessionId or contractorId for auto-save');
+        setSaveStatus('idle');
+        return;
+      }
+
+      if (!token || !tenantId) {
+        console.log('[FRM32] Missing token or tenantId for auto-save');
         setSaveStatus('idle');
         return;
       }
@@ -737,17 +795,20 @@ export default function FRM32Page() {
         'http://localhost:8000' // Local fallback
       ].filter(Boolean) as string[];
 
+      console.log('[FRM32] Auto-save URLs:', apiUrls);
+
       let response: Response | null = null;
       let lastError: string = '';
 
       for (const apiUrl of apiUrls) {
         try {
+          console.log(`[FRM32] Auto-saving to ${apiUrl}...`);
           response = await fetch(`${apiUrl}/frm32/submissions`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
-              'x-tenant-id': profile?.tenant_id || ''
+              Authorization: `Bearer ${token}`,
+              'x-tenant-id': tenantId
             },
             body: JSON.stringify({
               form_id: 'frm32',
@@ -759,25 +820,36 @@ export default function FRM32Page() {
             })
           });
 
+          console.log(
+            `[FRM32] Auto-save response status from ${apiUrl}:`,
+            response.status
+          );
+
           if (response.ok) {
+            console.log('[FRM32] Auto-save successful');
             setSaveStatus('saved');
             setTimeout(() => setSaveStatus('idle'), 2000);
             return;
           } else {
             const errorData = await response.json().catch(() => ({}));
-            lastError = errorData.message || `API returned ${response.status}`;
+            lastError =
+              errorData.message ||
+              errorData.detail ||
+              `API returned ${response.status}`;
+            console.log(`[FRM32] Auto-save error from ${apiUrl}:`, lastError);
           }
         } catch (err) {
-          lastError = `Failed to reach ${apiUrl}`;
+          lastError = `Failed to reach ${apiUrl}: ${String(err)}`;
+          console.log('[FRM32] Auto-save fetch error:', err);
           continue;
         }
       }
 
       // If we get here, all retries failed
-      console.error('Auto-save failed:', lastError);
+      console.error('[FRM32] Auto-save failed after all retries:', lastError);
       setSaveStatus('idle');
     } catch (error) {
-      console.error('Auto-save error:', error);
+      console.error('[FRM32] Auto-save error:', error);
       setSaveStatus('idle');
     }
   };
