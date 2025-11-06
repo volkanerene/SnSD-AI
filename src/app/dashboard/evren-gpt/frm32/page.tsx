@@ -13,29 +13,50 @@ import {
   AlertCircle,
   CheckCircle,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  FileUp
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FileUp } from 'lucide-react';
 
 // Document Item Component
 interface DocumentItemProps {
   number: string;
   title: string;
   required: boolean;
+  isUploaded: boolean;
+  isUploading: boolean;
+  onFileSelect: (file: File) => void;
 }
 
-function DocumentItem({ number, title, required }: DocumentItemProps) {
+function DocumentItem({
+  number,
+  title,
+  required,
+  isUploaded,
+  isUploading,
+  onFileSelect
+}: DocumentItemProps) {
   const fileInputId = `doc-${number}`;
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      onFileSelect(file);
+    }
+  };
 
   return (
     <div
       className={`rounded-lg border-2 p-4 ${
-        required ? 'border-red-200 bg-red-50' : 'border-blue-200 bg-blue-50'
+        isUploaded
+          ? 'border-green-300 bg-green-50 dark:border-green-800 dark:bg-green-950/30'
+          : required
+            ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/30'
+            : 'border-blue-300 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30'
       }`}
     >
       <div className='mb-3 flex items-start justify-between gap-3'>
@@ -43,25 +64,32 @@ function DocumentItem({ number, title, required }: DocumentItemProps) {
           <div className='mb-1 flex items-center gap-2'>
             <span
               className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-sm font-bold ${
-                required ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'
+                isUploaded
+                  ? 'bg-green-600 text-white dark:bg-green-700'
+                  : required
+                    ? 'bg-red-600 text-white dark:bg-red-700'
+                    : 'bg-blue-600 text-white dark:bg-blue-700'
               }`}
             >
               {number}
             </span>
-            <h4 className='text-sm font-semibold'>{title}</h4>
+            <h4 className='text-foreground text-sm font-semibold'>{title}</h4>
           </div>
           <div className='ml-8'>
             <span
               className={`inline-block rounded px-2 py-1 text-xs font-bold ${
-                required ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'
+                isUploaded
+                  ? 'bg-green-600 text-white dark:bg-green-700'
+                  : required
+                    ? 'bg-red-600 text-white dark:bg-red-700'
+                    : 'bg-blue-600 text-white dark:bg-blue-700'
               }`}
             >
-              {required ? 'REQUIRED' : 'OPTIONAL'}
+              {isUploaded ? 'UPLOADED' : required ? 'REQUIRED' : 'OPTIONAL'}
             </span>
           </div>
         </div>
       </div>
-
       <div className='ml-8'>
         <Label htmlFor={fileInputId} className='block cursor-pointer'>
           <Input
@@ -69,16 +97,34 @@ function DocumentItem({ number, title, required }: DocumentItemProps) {
             type='file'
             accept='.pdf,.doc,.docx,.jpg,.png'
             className='hidden'
+            onChange={handleFileChange}
+            disabled={isUploading}
           />
           <div
             className={`hover:border-opacity-70 rounded-lg border-2 border-dashed p-3 text-center transition-colors ${
-              required
-                ? 'border-red-400 hover:bg-red-100'
-                : 'border-blue-400 hover:bg-blue-100'
+              isUploaded
+                ? 'text-foreground border-green-400 hover:bg-green-100 dark:border-green-700 dark:hover:bg-green-900/30'
+                : required
+                  ? 'text-foreground border-red-400 hover:bg-red-100 dark:border-red-700 dark:hover:bg-red-900/30'
+                  : 'text-foreground border-blue-400 hover:bg-blue-100 dark:border-blue-700 dark:hover:bg-blue-900/30'
             }`}
           >
-            <FileUp className='mx-auto mb-1 h-5 w-5' />
-            <p className='text-xs font-medium'>📎 Upload</p>
+            {isUploading ? (
+              <>
+                <Loader2 className='mx-auto mb-1 h-5 w-5 animate-spin' />
+                <p className='text-xs font-medium'>Uploading...</p>
+              </>
+            ) : isUploaded ? (
+              <>
+                <CheckCircle className='mx-auto mb-1 h-5 w-5 text-green-600' />
+                <p className='text-xs font-medium'>Uploaded</p>
+              </>
+            ) : (
+              <>
+                <FileUp className='mx-auto mb-1 h-5 w-5' />
+                <p className='text-xs font-medium'>📎 Upload</p>
+              </>
+            )}
           </div>
         </Label>
       </div>
@@ -86,544 +132,34 @@ function DocumentItem({ number, title, required }: DocumentItemProps) {
   );
 }
 
-// All 80 FRM32 Questions extracted from frm32.html
-const FRM32_QUESTIONS = [
-  {
-    id: 'question_11A',
-    question_number: '1.1.A',
-    title:
-      'How are senior managers personally involved in HSE management for example objective-setting and monitoring?',
-    required: true
-  },
-  {
-    id: 'question_11B',
-    question_number: '1.1.B',
-    title: 'Provide evidence of commitment at all levels of the organisation?',
-    required: true
-  },
-  {
-    id: 'question_11C',
-    question_number: '1.1.C',
-    title: 'How do you promote a positive culture towards HSE matters?',
-    required: true
-  },
-  {
-    id: 'question_21A',
-    question_number: '2.1.A',
-    title:
-      'Does your company have an HSE policy document? If the answer is YES please attach a copy.',
-    required: true
-  },
-  {
-    id: 'question_21B',
-    question_number: '2.1.B',
-    title:
-      'Who has overall and final responsibility for HSE in your organisation?',
-    required: true
-  },
-  {
-    id: 'question_21C',
-    question_number: '2.1.C',
-    title:
-      'Who is the most senior person in the organisation responsible for this policy being carried out at the premises and on site where his employees are working? Provide name and title.',
-    required: true
-  },
-  {
-    id: 'question_21D',
-    question_number: '2.1.D',
-    title:
-      'Itemise the methods by which you have drawn your policy statements to the attention of all your employees?',
-    required: true
-  },
-  {
-    id: 'question_21E',
-    question_number: '2.1.E',
-    title:
-      'What are your arrangements for advising employees of changes in the policy?',
-    required: true
-  },
-  {
-    id: 'question_22A',
-    question_number: '2.2.A',
-    title:
-      'Does your company have strategic HSE objectives? If the answer is YES please attach a copy.',
-    required: true
-  },
-  {
-    id: 'question_22B',
-    question_number: '2.2.B',
-    title:
-      'Itemise the methods by which you have communicated your strategic HSE objectives to the attention of all your employees?',
-    required: true
-  },
-  {
-    id: 'question_31A',
-    question_number: '3.1.A',
-    title:
-      'How is your organisation structured to manage and communicate HSE effectively?',
-    required: true
-  },
-  {
-    id: 'question_31B',
-    question_number: '3.1.B',
-    title: 'Do HSE meetings promote HSE awareness?',
-    required: true
-  },
-  {
-    id: 'question_31C',
-    question_number: '3.1.C',
-    title: 'How are HSE objectives and targets communicated to the workforce?',
-    required: true
-  },
-  {
-    id: 'question_31D',
-    question_number: '3.1.D',
-    title:
-      'How do you ensure that HSE considerations are incorporated into daily work activities?',
-    required: true
-  },
-  {
-    id: 'question_32A',
-    question_number: '3.2.A',
-    title:
-      'Have the managers and supervisors at all levels who will plan, monitor, oversee and carry out the work received HSE training?',
-    required: true
-  },
-  {
-    id: 'question_32B',
-    question_number: '3.2.B',
-    title:
-      'If YES please give details. Where the training is given in-house please describe the content and duration of the training?',
-    required: true
-  },
-  {
-    id: 'question_32C',
-    question_number: '3.2.C',
-    title:
-      'What HSE training do you provide to new management and supervisory staff?',
-    required: true
-  },
-  {
-    id: 'question_32D',
-    question_number: '3.2.D',
-    title: 'What refresher training is provided and how often?',
-    required: true
-  },
-  {
-    id: 'question_32E',
-    question_number: '3.2.E',
-    title: 'What training records are maintained?',
-    required: true
-  },
-  {
-    id: 'question_33A',
-    question_number: '3.3.A',
-    title:
-      'What arrangements does your company have to ensure new employees have knowledge of hazards, risks, controls, procedures, etc?',
-    required: true
-  },
-  {
-    id: 'question_33B',
-    question_number: '3.3.B',
-    title: 'What refresher training do you provide and how often?',
-    required: true
-  },
-  {
-    id: 'question_33C',
-    question_number: '3.3.C',
-    title: 'What training records are maintained?',
-    required: true
-  },
-  {
-    id: 'question_34A',
-    question_number: '3.4.A',
-    title:
-      'Does your organisation have a competence system in place? If YES, please describe how the system works and what it covers?',
-    required: true
-  },
-  {
-    id: 'question_34B',
-    question_number: '3.4.B',
-    title: 'How do you assess competence and manage any gaps identified?',
-    required: true
-  },
-  {
-    id: 'question_35A',
-    question_number: '3.5.A',
-    title:
-      'Does your company have a contractor management process or system? If yes, provide details?',
-    required: true
-  },
-  {
-    id: 'question_35B',
-    question_number: '3.5.B',
-    title: 'How do you select contractors and subcontractors?',
-    required: true
-  },
-  {
-    id: 'question_35C',
-    question_number: '3.5.C',
-    title: 'How do you monitor contractor HSE performance?',
-    required: true
-  },
-  {
-    id: 'question_35D',
-    question_number: '3.5.D',
-    title: 'How do you communicate HSE requirements to contractors?',
-    required: true
-  },
-  {
-    id: 'question_36A',
-    question_number: '3.6.A',
-    title:
-      'How do you identify new industry or regulatory standards that may be applicable to your organisation and operations?',
-    required: true
-  },
-  {
-    id: 'question_36B',
-    question_number: '3.6.B',
-    title:
-      'How do you ensure compliance with applicable HSE standards and regulations?',
-    required: true
-  },
-  {
-    id: 'question_36C',
-    question_number: '3.6.C',
-    title:
-      'What process do you have for updating your HSE management system when standards change?',
-    required: true
-  },
-  {
-    id: 'question_41A',
-    question_number: '4.1.A',
-    title:
-      'How does your company identify hazards, assess risk, control and mitigation consideration in line with the scope of services your company provides?',
-    required: true
-  },
-  {
-    id: 'question_42A',
-    question_number: '4.2.A',
-    title:
-      'Do you have specific policies and programmes on specific health hazards e.g. substance abuse, noise, hazardous substances, ergonomics etc.?',
-    required: true
-  },
-  {
-    id: 'question_42B',
-    question_number: '4.2.B',
-    title:
-      'What type of health hazards are associated with the scope of your services?',
-    required: true
-  },
-  {
-    id: 'question_42C',
-    question_number: '4.2.C',
-    title: 'How do you monitor and control health hazards in the workplace?',
-    required: true
-  },
-  {
-    id: 'question_43A',
-    question_number: '4.3.A',
-    title:
-      'What type of safety hazards (mechanical guarding, work at height, lifting and hoisting, electrical, confined spaces etc.) are associated with the scope of your services?',
-    required: true
-  },
-  {
-    id: 'question_43B',
-    question_number: '4.3.B',
-    title: 'How do you control these safety hazards?',
-    required: true
-  },
-  {
-    id: 'question_44A',
-    question_number: '4.4.A',
-    title:
-      'What type of logistics hazards (land transport, air transport, marine transport, storage and warehousing etc.) are associated with the scope of your services?',
-    required: true
-  },
-  {
-    id: 'question_44B',
-    question_number: '4.4.B',
-    title:
-      'What systems are in place to control these hazards and monitor the effectiveness of these controls?',
-    required: true
-  },
-  {
-    id: 'question_45A',
-    question_number: '4.5.A',
-    title:
-      'What type of environmental hazards (chemical spill, atmospheric emissions, waste discharge etc.) are associated with the scope of your services?',
-    required: true
-  },
-  {
-    id: 'question_45B',
-    question_number: '4.5.B',
-    title: 'How do you control these environmental hazards?',
-    required: true
-  },
-  {
-    id: 'question_46A',
-    question_number: '4.6.A',
-    title:
-      'What type of security hazards (terrorism, hostage taking, robbery, hostile local population, civil unrest etc.) are associated with the scope of your services?',
-    required: true
-  },
-  {
-    id: 'question_46B',
-    question_number: '4.6.B',
-    title: 'How do you control these security hazards?',
-    required: true
-  },
-  {
-    id: 'question_47A',
-    question_number: '4.7.A',
-    title:
-      'What type of social hazards are associated with the scope of your services?',
-    required: true
-  },
-  {
-    id: 'question_47B',
-    question_number: '4.7.B',
-    title: 'How do you control these social hazards?',
-    required: true
-  },
-  {
-    id: 'question_51A',
-    question_number: '5.1.A',
-    title:
-      'Do you have a company HSE-MS manual (or operations manual with integrated HSE requirements)? If the answer is YES please attach a copy.',
-    required: true
-  },
-  {
-    id: 'question_52A',
-    question_number: '5.2.A',
-    title:
-      'How do you ensure that infrastructure, plant and equipment used within your operations meet the required HSE standards and are maintained in safe working condition?',
-    required: true
-  },
-  {
-    id: 'question_53A',
-    question_number: '5.3.A',
-    title:
-      'How do you manage changes and assess associated risks e.g. personnel, equipment, procedures, organisation, etc.?',
-    required: true
-  },
-  {
-    id: 'question_54A',
-    question_number: '5.4.A',
-    title:
-      'What arrangements does your company have for emergency planning and response?',
-    required: true
-  },
-  {
-    id: 'question_54B',
-    question_number: '5.4.B',
-    title: 'How often do you test your emergency response procedures?',
-    required: true
-  },
-  {
-    id: 'question_61A',
-    question_number: '6.1.A',
-    title:
-      'What arrangements does your organisation have for monitoring the implementation and operation of the HSE-MS?',
-    required: true
-  },
-  {
-    id: 'question_61B',
-    question_number: '6.1.B',
-    title:
-      'What arrangements does your organisation have for monitoring HSE performance?',
-    required: true
-  },
-  {
-    id: 'question_61C',
-    question_number: '6.1.C',
-    title:
-      'What arrangements does your organisation have for workplace inspection?',
-    required: true
-  },
-  {
-    id: 'question_61D',
-    question_number: '6.1.D',
-    title:
-      'What arrangements does your organisation have for safety observation programmes?',
-    required: true
-  },
-  {
-    id: 'question_61E',
-    question_number: '6.1.E',
-    title:
-      'What arrangements does your organisation have for environmental monitoring?',
-    required: true
-  },
-  {
-    id: 'question_61F',
-    question_number: '6.1.F',
-    title:
-      'What arrangements does your organisation have for health surveillance?',
-    required: true
-  },
-  {
-    id: 'question_62A',
-    question_number: '6.2.A',
-    title: 'See separate spreadsheet called Contractor Assessment KPI Data',
-    required: true
-  },
-  {
-    id: 'question_63A',
-    question_number: '6.3.A',
-    title: 'How is health performance monitored and recorded?',
-    required: true
-  },
-  {
-    id: 'question_63B',
-    question_number: '6.3.B',
-    title: 'How is safety performance monitored and recorded?',
-    required: true
-  },
-  {
-    id: 'question_63C',
-    question_number: '6.3.C',
-    title: 'How is environmental performance monitored and recorded?',
-    required: true
-  },
-  {
-    id: 'question_63D',
-    question_number: '6.3.D',
-    title: 'What performance indicators do you use to monitor HSE performance?',
-    required: true
-  },
-  {
-    id: 'question_63E',
-    question_number: '6.3.E',
-    title:
-      'How often is performance data reviewed and what actions are taken based on the results?',
-    required: true
-  },
-  {
-    id: 'question_63F',
-    question_number: '6.3.F',
-    title:
-      'How do you benchmark your HSE performance against industry standards?',
-    required: true
-  },
-  {
-    id: 'question_63G',
-    question_number: '6.3.G',
-    title: 'How do you communicate HSE performance results to stakeholders?',
-    required: true
-  },
-  {
-    id: 'question_64A',
-    question_number: '6.4.A',
-    title: 'What types of HSE incident are investigated?',
-    required: true
-  },
-  {
-    id: 'question_64B',
-    question_number: '6.4.B',
-    title: 'What is your procedure for incident investigation?',
-    required: true
-  },
-  {
-    id: 'question_64C',
-    question_number: '6.4.C',
-    title:
-      'How do you ensure that corrective actions are implemented and followed up?',
-    required: true
-  },
-  {
-    id: 'question_64D',
-    question_number: '6.4.D',
-    title: 'How do you share lessons learned from incidents?',
-    required: true
-  },
-  {
-    id: 'question_64E',
-    question_number: '6.4.E',
-    title: 'What system do you have for tracking and trending incident data?',
-    required: true
-  },
-  {
-    id: 'question_65A',
-    question_number: '6.5.A',
-    title:
-      'Has your company suffered any statutory notifiable incidents in the last five years? If YES, please give details.',
-    required: true
-  },
-  {
-    id: 'question_71A',
-    question_number: '7.1.A',
-    title:
-      'Do you have a written procedure for HSE auditing? If yes, please attach a copy.',
-    required: true
-  },
-  {
-    id: 'question_71B',
-    question_number: '7.1.B',
-    title: 'How often do you conduct HSE audits?',
-    required: true
-  },
-  {
-    id: 'question_71C',
-    question_number: '7.1.C',
-    title: 'Who conducts the audits and what are their qualifications?',
-    required: true
-  },
-  {
-    id: 'question_71D',
-    question_number: '7.1.D',
-    title:
-      'How do you follow up on audit findings and ensure corrective actions are completed?',
-    required: true
-  },
-  {
-    id: 'question_72A',
-    question_number: '7.2.A',
-    title:
-      'Do you have a written procedure for management review of the HSE-MS? If yes, please attach a copy.',
-    required: true
-  },
-  {
-    id: 'question_72B',
-    question_number: '7.2.B',
-    title: 'How often do you conduct management reviews of the HSE-MS?',
-    required: true
-  },
-  {
-    id: 'question_72C',
-    question_number: '7.2.C',
-    title:
-      'What information is considered during management review and how are decisions documented and communicated?',
-    required: true
-  },
-  {
-    id: 'question_81A',
-    question_number: '8.1.A',
-    title:
-      'Please provide information on any certification which you have received from certification bodies for your HSE-MS (e.g. ISO 14001, OHSAS 18001, ISO 45001, etc.). If you have certificates, please attach copies.',
-    required: true
-  },
-  {
-    id: 'question_82A',
-    question_number: '8.2.A',
-    title:
-      "Describe the nature and extent of your company's participation in relevant industry associations, professional bodies, or HSE forums.",
-    required: true
-  },
-  {
-    id: 'question_83A',
-    question_number: '8.3.A',
-    title:
-      'Does your organisation (globally, regionally or locally) have any HSE features or achievements which may be of relevance (e.g. awards, recognition, innovative practices, sustainability initiatives, etc.)?',
-    required: true
-  }
-];
+// --- Helpers ---
+function cycleToEvaluationPeriod(cycle: number, base = new Date()) {
+  const year = base.getFullYear();
+  return `${year}-${String(cycle).padStart(2, '0')}`; // "2025-01"
+}
+
+function getQuestionNumber(questionCode: string, k2Category: string): string {
+  // question_11A + 1.1 → 1.1.A
+  const letter = questionCode.replace(/^question_\d+/, '');
+  return `${k2Category}.${letter}`;
+}
+
+// FRM32 Questions will be loaded from API
+interface FRM32Question {
+  id: string;
+  question_code: string;
+  question_text_en: string;
+  k2_category: string;
+  is_required: boolean;
+  position: number;
+}
 
 export default function FRM32Page() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { profile } = useProfile();
+  const { profile, isLoading: isProfileLoading } = useProfile();
 
+  const [questions, setQuestions] = useState<FRM32Question[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -633,197 +169,297 @@ export default function FRM32Page() {
   const [missingAnswers, setMissingAnswers] = useState<string[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [tabValue, setTabValue] = useState('questions');
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [submissionId, setSubmissionId] = useState<string | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<Record<string, boolean>>(
+    {}
+  );
+  const [uploadingFiles, setUploadingFiles] = useState<Record<string, boolean>>(
+    {}
+  );
 
-  // Contractor ID comes from the logged-in user's profile (they ARE the contractor)
-  // Session ID comes from URL param or will be fetched from API
-  const urlSessionId = searchParams.get('session');
-  // Use contractor_id or fallback to profile id as the contractor identifier
   const contractorId = profile?.contractor_id || profile?.id;
   const tenantId = profile?.tenant_id;
-  const cycle = parseInt(searchParams.get('cycle') || '1');
+  const cycle = parseInt(searchParams.get('cycle') || '1', 10);
+  const evaluationPeriod = cycleToEvaluationPeriod(cycle);
+
   const autoSaveTimer = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  const currentQuestion = FRM32_QUESTIONS[currentQuestionIndex];
+  const currentQuestion = questions[currentQuestionIndex];
   const answeredCount = Object.values(answers).filter(
     (a) => a && a.trim()
   ).length;
-  const progressPercentage = Math.round(
-    (answeredCount / FRM32_QUESTIONS.length) * 100
-  );
+  const progressPercentage =
+    questions.length > 0
+      ? Math.round((answeredCount / questions.length) * 100)
+      : 0;
 
-  // Initialize sessionId from URL param or generate a new one
+  const ready = Boolean(contractorId && tenantId);
+
+  // Fetch questions from API
   useEffect(() => {
-    if (urlSessionId) {
-      setSessionId(urlSessionId);
-      console.log('[FRM32] Using sessionId from URL:', urlSessionId);
-    } else if (!sessionId) {
-      // Generate a new session ID if one doesn't exist
-      const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-      setSessionId(newSessionId);
-      console.log('[FRM32] Generated new sessionId:', newSessionId);
-    }
-  }, [urlSessionId]);
-
-  // Load existing answers when profile and sessionId are ready
-  useEffect(() => {
-    // Only load once profile is fully loaded with ID, tenant, and sessionId
-    if (contractorId && tenantId && sessionId) {
-      console.log('[FRM32] Profile and session ready, loading answers...');
-      loadExistingAnswers();
-    }
-  }, [contractorId, tenantId, sessionId]); // Include sessionId dependency
-
-  const loadExistingAnswers = async () => {
-    try {
-      setIsLoading(true);
-
-      console.log('[FRM32] ========== LOADING ANSWERS ==========');
-      console.log('[FRM32] contractorId:', contractorId);
-      console.log('[FRM32] sessionId (URL):', sessionId);
-      console.log('[FRM32] tenantId:', tenantId);
-
-      if (!contractorId || !tenantId) {
-        console.log('[FRM32] Missing contractor ID or tenant ID');
-        setIsLoading(false);
-        return;
-      }
-
+    async function fetchQuestions() {
+      if (!ready) return;
       try {
-        // Use apiClient which handles authentication internally
-        // Generate evaluation_period from cycle (e.g., "2025-01" for cycle 1)
-        const year = new Date().getFullYear();
-        const evaluationPeriod = `${year}-${String(cycle).padStart(2, '0')}`;
-
-        const data = await apiClient.get<any>(
-          `/frm32/submissions?contractor_id=${contractorId}&evaluation_period=${evaluationPeriod}&tenant_id=${tenantId}&session_id=${sessionId}`,
-          {
-            tenantId
-          }
+        const response = await apiClient.get<FRM32Question[]>(
+          '/frm32/questions',
+          { tenantId: tenantId! }
         );
-
-        console.log('[FRM32] Successfully loaded answers:', data);
-
-        if (data && data.length > 0) {
-          console.log('[FRM32] Setting answers:', data[0].answers);
-          setAnswers(data[0].answers || {});
-        } else {
-          console.log('[FRM32] No existing submissions found');
-        }
-      } catch (error: any) {
-        console.log('[FRM32] Load answers error:');
-        console.log('[FRM32] - status:', error.status);
-        console.log('[FRM32] - message:', error.message);
-        console.log('[FRM32] - response:', error.response);
-        // This is okay - might be first time contractor is filling the form
+        const fetchedQuestions = Array.isArray(response)
+          ? response
+          : [response];
+        setQuestions(fetchedQuestions);
+        console.log('[FRM32] Questions loaded:', fetchedQuestions.length);
+      } catch (e: any) {
+        console.error('[FRM32] Failed to load questions:', e?.message || e);
+        toast.error('Failed to load form questions');
       }
-    } catch (error) {
-      console.error('[FRM32] Failed to load existing answers:', error);
-    } finally {
-      setIsLoading(false);
     }
-  };
+    fetchQuestions();
+  }, [ready, tenantId]);
 
-  // Auto-save on answer change
+  // Debug: Log profile info on mount
+  useEffect(() => {
+    if (profile) {
+      console.log('[FRM32] Profile data:', {
+        id: profile?.id,
+        contractor_id: profile?.contractor_id,
+        tenant_id: profile?.tenant_id,
+        role_id: profile?.role_id
+      });
+      console.log('[FRM32] Resolved IDs:', {
+        contractorId,
+        tenantId,
+        ready
+      });
+    }
+  }, [profile, contractorId, tenantId, ready]);
+
+  // İlk yükleme: submission bul/oluştur + answers çek
+  useEffect(() => {
+    async function bootstrap() {
+      if (!ready || questions.length === 0) return;
+      setIsLoading(true);
+      try {
+        // 1) Var mı? (status filter is optional, just find by contractor_id and evaluation_period)
+        const existing = await apiClient.get<any[]>(
+          `/frm32/submissions?contractor_id=${contractorId}&evaluation_period=${evaluationPeriod}`,
+          { tenantId: tenantId! }
+        );
+        let sub = existing?.[0];
+
+        // 2) Yoksa oluştur
+        if (!sub) {
+          console.log('[FRM32] Creating new submission with:', {
+            contractor_id: contractorId,
+            evaluation_period: evaluationPeriod,
+            tenant_id: tenantId
+          });
+
+          sub = await apiClient.post<any>(
+            '/frm32/submissions',
+            {
+              contractor_id: contractorId,
+              evaluation_period: evaluationPeriod,
+              status: 'draft',
+              evaluation_type: 'periodic',
+              progress_percentage: 0,
+              answers: {},
+              attachments: [],
+              metadata: {}
+            },
+            { tenantId: tenantId! }
+          );
+          // sub is a single object after POST, not an array
+          if (Array.isArray(sub)) {
+            sub = sub[0];
+          }
+        }
+
+        const id = sub?.id || (Array.isArray(sub) ? sub[0]?.id : undefined);
+        if (!id) throw new Error('Submission could not be initialized');
+        setSubmissionId(id);
+
+        // 3) Answers are stored in the submission's answers JSONB field
+        // No separate /frm32/answers endpoint - answers are embedded in the submission
+        const answers = sub?.answers || {};
+        setAnswers(answers);
+
+        // 4) Initialize uploadedFiles from attachments (for page refresh persistence)
+        const attachments = sub?.attachments || [];
+        if (Array.isArray(attachments) && attachments.length > 0) {
+          const uploadedFilesMap: Record<string, boolean> = {};
+          attachments.forEach((att: any) => {
+            if (att.docId) {
+              uploadedFilesMap[att.docId] = true;
+            }
+          });
+          setUploadedFiles(uploadedFilesMap);
+          console.log(
+            '[FRM32] Initialized uploadedFiles from attachments:',
+            uploadedFilesMap
+          );
+        }
+
+        // Set currentQuestionIndex to first unanswered question
+        const firstUnansweredIndex = questions.findIndex(
+          (q) =>
+            !answers[q.question_code] || answers[q.question_code].trim() === ''
+        );
+        if (firstUnansweredIndex >= 0) {
+          setCurrentQuestionIndex(firstUnansweredIndex);
+        }
+
+        console.log(
+          '[FRM32] Bootstrap complete - submission:',
+          id,
+          'answers:',
+          answers,
+          'first unanswered:',
+          firstUnansweredIndex
+        );
+      } catch (e: any) {
+        const errorMessage =
+          e?.response?.data?.detail || e?.message || String(e);
+        console.error('[FRM32] bootstrap error:', {
+          message: errorMessage,
+          status: e?.response?.status,
+          data: e?.response?.data,
+          error: e
+        });
+        toast.error(`Failed to load form: ${errorMessage}`);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    bootstrap();
+  }, [ready, contractorId, tenantId, evaluationPeriod, questions]);
+
+  // Autosave tetikleyici
   const handleAnswerChange = useCallback(
     (questionId: string, value: string) => {
-      setAnswers((prev) => ({
-        ...prev,
-        [questionId]: value
-      }));
+      setAnswers((prev) => ({ ...prev, [questionId]: value }));
+      if (!ready || !submissionId) return;
 
-      // Clear existing timer
-      if (autoSaveTimer.current) {
-        clearTimeout(autoSaveTimer.current);
-      }
-
-      // Capture current values at time of user input
-      const currentContractorId = contractorId;
-      const currentTenantId = tenantId;
-      const currentSessionId = sessionId;
-      const currentAnswers = { ...answers, [questionId]: value };
-
-      // Set new timer for auto-save (2 seconds after last change)
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+      const snapshot = { ...answers, [questionId]: value };
       setSaveStatus('saving');
-      autoSaveTimer.current = setTimeout(() => {
-        autoSaveDraft(
-          currentContractorId,
-          currentTenantId,
-          currentSessionId,
-          currentAnswers
-        );
-      }, 2000);
+      autoSaveTimer.current = setTimeout(() => autoSaveDraft(snapshot), 2000);
     },
-    [contractorId, tenantId, sessionId] // Include these in deps so we capture latest values
+    [answers, ready, submissionId]
   );
 
-  const autoSaveDraft = async (
-    cId: string | undefined,
-    tId: string | undefined,
-    sId: string | null,
-    answersToSave: Record<string, string>
-  ) => {
+  // Autosave → update submission with answers JSONB
+  async function autoSaveDraft(answersToSave: Record<string, string>) {
+    if (!submissionId || !tenantId) {
+      setSaveStatus('idle');
+      return;
+    }
     try {
-      console.log('[FRM32] ========== AUTO-SAVE TRIGGERED ==========');
-      console.log('[FRM32] contractorId:', cId);
-      console.log('[FRM32] tenantId:', tId);
-      console.log('[FRM32] sessionId:', sId);
-      console.log('[FRM32] cycle:', cycle);
+      // Answers are stored in the submission's answers JSONB field
+      // Update the entire submission with the new answers
+      await apiClient.put(
+        `/frm32/submissions/${submissionId}`,
+        {
+          answers: answersToSave,
+          progress_percentage:
+            questions.length > 0
+              ? Math.round(
+                  (Object.values(answersToSave).filter((a) => a && a.trim())
+                    .length /
+                    questions.length) *
+                    100
+                )
+              : 0
+        },
+        { tenantId }
+      );
+      console.log('[FRM32] Autosave successful');
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 1200);
+    } catch (e: any) {
+      console.error('[FRM32] autosave error:', e?.message || e);
+      setSaveStatus('idle');
+    }
+  }
 
-      if (!cId || !tId || !sId) {
-        console.log(
-          '[FRM32] Missing contractorId, tenantId, or sessionId for auto-save'
-        );
-        setSaveStatus('idle');
+  // Handle document file uploads
+  const handleDocumentUpload = useCallback(
+    async (docId: string, file: File) => {
+      if (!submissionId || !tenantId) {
+        toast.error('Submission not initialized');
         return;
       }
 
-      try {
-        // Use apiClient which handles authentication internally
-        // Generate evaluation_period from cycle (e.g., "2025-01" for cycle 1)
-        const year = new Date().getFullYear();
-        const evaluationPeriod = `${year}-${String(cycle).padStart(2, '0')}`;
+      // Validate file size (10MB max)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        toast.error('File size exceeds 10MB limit');
+        return;
+      }
 
-        const response = await apiClient.post<{ submission_id: string }>(
-          '/frm32/submissions',
-          {
-            form_id: 'frm32',
-            session_id: sId,
-            contractor_id: cId,
-            tenant_id: tId,
-            evaluation_period: evaluationPeriod,
-            cycle,
-            answers: answersToSave,
-            status: 'draft'
-          },
-          { tenantId: tId }
+      // Validate file type
+      const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'image/jpeg',
+        'image/png'
+      ];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Invalid file type. Allowed: PDF, DOC, DOCX, JPG, PNG');
+        return;
+      }
+
+      setUploadingFiles((prev) => ({ ...prev, [docId]: true }));
+
+      try {
+        // Create FormData for file upload (only file, docId goes as query param)
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // Upload file via API with docId as query parameter
+        // Note: Do NOT set Content-Type header - let the browser set it automatically with boundary
+        await apiClient.post(
+          `/frm32/submissions/${submissionId}/upload?docId=${encodeURIComponent(docId)}`,
+          formData,
+          { tenantId }
         );
 
-        console.log('[FRM32] Auto-save response:', response);
-        console.log('[FRM32] Auto-save successful');
-        setSaveStatus('saved');
-        setTimeout(() => setSaveStatus('idle'), 2000);
-      } catch (error: any) {
-        console.log('[FRM32] Auto-save error:');
-        console.log('[FRM32] - status:', error.status);
-        console.log('[FRM32] - message:', error.message);
-        console.log('[FRM32] - response:', error.response);
-        setSaveStatus('idle');
+        // Update uploadedFiles state
+        setUploadedFiles((prev) => ({ ...prev, [docId]: true }));
+        toast.success(`${file.name} uploaded successfully`);
+
+        console.log('[FRM32] File uploaded:', {
+          docId,
+          fileName: file.name,
+          size: file.size
+        });
+      } catch (e: any) {
+        const errorMessage =
+          e?.response?.data?.detail || e?.message || 'Upload failed';
+        console.error('[FRM32] File upload error:', errorMessage);
+        toast.error(`Failed to upload file: ${errorMessage}`);
+      } finally {
+        setUploadingFiles((prev) => ({ ...prev, [docId]: false }));
       }
-    } catch (error) {
-      console.error('[FRM32] Auto-save error:', error);
-      setSaveStatus('idle');
-    }
-  };
+    },
+    [submissionId, tenantId]
+  );
 
   const validateForm = (): boolean => {
     const missing: string[] = [];
-    FRM32_QUESTIONS.forEach((q) => {
-      if (q.required && (!answers[q.id] || answers[q.id].trim() === '')) {
-        missing.push(`${q.question_number} - ${q.title}`);
+    questions.forEach((q) => {
+      if (
+        q.is_required &&
+        (!answers[q.question_code] || answers[q.question_code].trim() === '')
+      ) {
+        const questionNumber = getQuestionNumber(
+          q.question_code,
+          q.k2_category
+        );
+        missing.push(`${questionNumber} - ${q.question_text_en}`);
       }
     });
-
     setMissingAnswers(missing);
     return missing.length === 0;
   };
@@ -833,82 +469,77 @@ export default function FRM32Page() {
       toast.error(
         `Please answer all ${missingAnswers.length} required questions`
       );
+      setTabValue('all-questions');
+      return;
+    }
+    if (!submissionId || !tenantId) {
+      toast.error('Submission not initialized');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      if (!sessionId || !contractorId) {
-        throw new Error('Missing session or contractor information');
-      }
+      // 1) Update submission status to 'submitted'
+      const submissionData = {
+        status: 'submitted',
+        submitted_at: new Date().toISOString(),
+        progress_percentage: 100
+      };
 
-      // Try primary API URL first, then fallback
-      const apiUrls = [
-        process.env.NEXT_PUBLIC_API_URL,
-        'https://api.snsdconsultant.com', // Production fallback
-        'http://localhost:8000' // Local fallback
-      ].filter(Boolean) as string[];
-
-      let response: Response | null = null;
-      let lastError: string = '';
-
-      for (const apiUrl of apiUrls) {
-        try {
-          response = await fetch(`${apiUrl}/frm32/submit`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
-              'x-tenant-id': profile?.tenant_id || ''
-            },
-            body: JSON.stringify({
-              form_id: 'frm32',
-              session_id: sessionId,
-              contractor_id: contractorId,
-              cycle,
-              answers,
-              status: 'submitted'
-            })
-          });
-
-          if (response.ok) {
-            break;
-          } else {
-            const errorData = await response.json().catch(() => ({}));
-            lastError =
-              errorData.message ||
-              errorData.detail ||
-              `API returned ${response.status}`;
-          }
-        } catch (err) {
-          lastError = `Failed to reach ${apiUrl}`;
-          continue;
-        }
-      }
-
-      if (!response || !response.ok) {
-        throw new Error(lastError || 'Failed to submit form');
-      }
-
-      toast.success('Form submitted successfully!');
-
-      // Redirect to next page after 2 seconds
-      setTimeout(() => {
-        router.push(
-          `/dashboard/evren-gpt?session=${sessionId}&contractor=${contractorId}`
-        );
-      }, 2000);
-    } catch (error) {
-      console.error('Submission error:', error);
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to submit form'
+      await apiClient.put(
+        `/frm32/submissions/${submissionId}`,
+        submissionData,
+        { tenantId }
       );
+
+      console.log('[FRM32] Submission successful:', {
+        id: submissionId,
+        contractor_id: contractorId,
+        evaluation_period: evaluationPeriod,
+        status: 'submitted'
+      });
+
+      // 2) Trigger N8N webhook for supervisor notification
+      // This webhook will:
+      // - Send email to supervisor
+      // - Create follow-up forms (FRM33, FRM34, FRM35)
+      // - Log submission to audit
+      try {
+        await fetch('https://9tml6o6w.rpcld.cc/webhook/submit-frm32', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            submission_id: submissionId,
+            contractor_id: contractorId,
+            evaluation_period: evaluationPeriod,
+            tenant_id: tenantId,
+            contractor_name: profile?.full_name,
+            answers_count: Object.keys(answers).length,
+            submitted_at: new Date().toISOString()
+          })
+        });
+      } catch (webhookError) {
+        console.warn('[FRM32] N8N webhook notification failed:', webhookError);
+        // Don't fail submission if webhook fails
+      }
+
+      toast.success(
+        'Form submitted successfully! Supervisor will be notified.'
+      );
+      setTimeout(() => {
+        router.push('/dashboard/evren-gpt');
+      }, 2000);
+    } catch (e: any) {
+      console.error('[FRM32] submit error:', e?.message || e);
+      toast.error(e?.message || 'Failed to submit form');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (isLoading) {
+  const pageLoading = isProfileLoading || isLoading;
+
+  if (pageLoading) {
     return (
       <div className='flex min-h-screen items-center justify-center p-8'>
         <div className='flex flex-col items-center gap-2'>
@@ -919,42 +550,71 @@ export default function FRM32Page() {
     );
   }
 
-  const canGoNext = currentQuestionIndex < FRM32_QUESTIONS.length - 1;
+  const canGoNext = currentQuestionIndex < questions.length - 1;
   const canGoPrev = currentQuestionIndex > 0;
 
   return (
-    <div className='mx-auto max-w-4xl space-y-6 p-4 pt-6 md:p-8'>
-      {/* Header */}
-      <div>
-        <h1 className='mb-2 text-3xl font-bold'>
-          FRM32 - HSE Capability Assessment
-        </h1>
-        <p className='text-muted-foreground'>
-          All questions are required. Your answers are automatically saved as
-          you type.
-        </p>
+    <div className='mx-auto max-w-6xl space-y-6 p-4 pt-6 md:p-8'>
+      {/* Header with Company Info */}
+      <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
+        <div className='md:col-span-2'>
+          <h1 className='mb-2 text-3xl font-bold'>
+            FRM32 - HSE Capability Assessment
+          </h1>
+          <p className='text-muted-foreground'>
+            All questions are required. Your answers are automatically saved as
+            you type.
+          </p>
+        </div>
+        <Card className='bg-muted/50'>
+          <CardHeader className='pb-3'>
+            <CardTitle className='text-sm'>Submission Details</CardTitle>
+          </CardHeader>
+          <CardContent className='space-y-2 text-sm'>
+            <div>
+              <p className='text-muted-foreground text-xs font-medium'>
+                Contractor
+              </p>
+              <p className='font-semibold'>{profile?.full_name || 'N/A'}</p>
+            </div>
+            <div>
+              <p className='text-muted-foreground text-xs font-medium'>
+                Assessment Period
+              </p>
+              <p className='font-semibold'>{evaluationPeriod}</p>
+            </div>
+            <div>
+              <p className='text-muted-foreground text-xs font-medium'>
+                Tax ID
+              </p>
+              <p className='font-semibold'>TBD</p>
+            </div>
+            <div>
+              <p className='text-muted-foreground text-xs font-medium'>
+                Status
+              </p>
+              <Badge
+                variant={progressPercentage === 100 ? 'default' : 'secondary'}
+              >
+                {progressPercentage}% Complete
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Progress Bar */}
-      <Card>
-        <CardContent className='pt-6'>
-          <div className='space-y-2'>
-            <div className='flex items-center justify-between'>
-              <span className='text-sm font-medium'>Progress</span>
-              <Badge variant='outline'>{progressPercentage}%</Badge>
-            </div>
-            <div className='bg-secondary h-2 w-full rounded-full'>
-              <div
-                className='bg-primary h-2 rounded-full transition-all duration-300'
-                style={{ width: `${progressPercentage}%` }}
-              />
-            </div>
-            <p className='text-muted-foreground text-xs'>
-              {answeredCount} of {FRM32_QUESTIONS.length} questions answered
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className='space-y-2'>
+        <div className='bg-secondary h-2 w-full rounded-full'>
+          <div
+            className='bg-primary h-2 rounded-full transition-all duration-300'
+            style={{ width: `${progressPercentage}%` }}
+          />
+        </div>
+        <p className='text-muted-foreground text-xs'>
+          {answeredCount} of {questions.length} questions answered
+        </p>
+      </div>
 
       {/* Save Status */}
       {saveStatus === 'saving' && (
@@ -972,52 +632,65 @@ export default function FRM32Page() {
         </Alert>
       )}
 
+      {!ready && (
+        <Alert>
+          <AlertCircle className='h-4 w-4' />
+          <AlertDescription>
+            Loading your profile… Autosave is disabled until your profile loads.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Tabs */}
       <Tabs value={tabValue} onValueChange={setTabValue}>
-        <TabsList className='grid w-full grid-cols-2'>
-          <TabsTrigger value='questions'>Questions</TabsTrigger>
+        <TabsList className='grid w-full grid-cols-3'>
+          <TabsTrigger value='questions'>Current Question</TabsTrigger>
+          <TabsTrigger value='all-questions'>All Questions</TabsTrigger>
           <TabsTrigger value='files'>File Uploads</TabsTrigger>
         </TabsList>
 
-        {/* Questions Tab */}
+        {/* Current Question */}
         <TabsContent value='questions' className='space-y-6'>
-          {/* Section Header */}
-          <div className='mb-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 p-4 text-white'>
-            <h3 className='text-lg font-semibold'>Company Information</h3>
-            <p className='mt-1 text-sm opacity-90'>
-              Provide detailed information about your organization&apos;s HSE
-              practices
-            </p>
-          </div>
-
-          {/* Current Question */}
           <Card>
             <CardHeader className='pb-3'>
               <div className='flex items-start justify-between gap-4'>
                 <div className='flex-1'>
                   <div className='text-muted-foreground mb-2 text-sm font-medium'>
-                    Question {currentQuestionIndex + 1} of{' '}
-                    {FRM32_QUESTIONS.length}
+                    Question {currentQuestionIndex + 1} of {questions.length}
                   </div>
                   <CardTitle className='text-lg'>
-                    {currentQuestion.question_number}. {currentQuestion.title}
+                    {currentQuestion &&
+                      getQuestionNumber(
+                        currentQuestion.question_code,
+                        currentQuestion.k2_category
+                      )}
+                    . {currentQuestion?.question_text_en}
                   </CardTitle>
                 </div>
-                {currentQuestion.required && (
+                {currentQuestion?.is_required && (
                   <Badge variant='destructive'>Required</Badge>
                 )}
               </div>
             </CardHeader>
             <CardContent className='space-y-4'>
               <Textarea
-                value={answers[currentQuestion.id] || ''}
+                value={
+                  currentQuestion
+                    ? answers[currentQuestion.question_code] || ''
+                    : ''
+                }
                 onChange={(e) =>
-                  handleAnswerChange(currentQuestion.id, e.target.value)
+                  currentQuestion &&
+                  handleAnswerChange(
+                    currentQuestion.question_code,
+                    e.target.value
+                  )
                 }
                 placeholder='Please provide a detailed response...'
                 className='min-h-40'
+                disabled={!ready || !submissionId || !currentQuestion}
               />
-              {answers[currentQuestion.id] && (
+              {currentQuestion && answers[currentQuestion.question_code] && (
                 <p className='flex items-center gap-1 text-xs text-green-600'>
                   <CheckCircle className='h-3 w-3' /> Answer saved
                 </p>
@@ -1025,7 +698,6 @@ export default function FRM32Page() {
             </CardContent>
           </Card>
 
-          {/* Navigation Buttons */}
           <div className='flex gap-4'>
             <Button
               onClick={() =>
@@ -1042,7 +714,7 @@ export default function FRM32Page() {
             <Button
               onClick={() =>
                 setCurrentQuestionIndex(
-                  Math.min(FRM32_QUESTIONS.length - 1, currentQuestionIndex + 1)
+                  Math.min(questions.length - 1, currentQuestionIndex + 1)
                 )
               }
               disabled={!canGoNext}
@@ -1056,7 +728,55 @@ export default function FRM32Page() {
           </div>
         </TabsContent>
 
-        {/* File Uploads Tab */}
+        {/* All Questions Grid */}
+        <TabsContent value='all-questions' className='space-y-6'>
+          <Card>
+            <CardHeader>
+              <CardTitle>All {questions.length} Questions</CardTitle>
+              <p className='text-muted-foreground mt-2 text-sm'>
+                {answeredCount} answered
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className='grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3'>
+                {questions.map((q, idx) => {
+                  const isAnswered =
+                    answers[q.question_code] && answers[q.question_code].trim();
+                  return (
+                    <button
+                      key={q.question_code}
+                      onClick={() => {
+                        setCurrentQuestionIndex(idx);
+                        setTabValue('questions');
+                      }}
+                      className={`rounded-lg border-2 p-3 text-left transition-colors ${
+                        isAnswered
+                          ? 'text-foreground border-green-600 bg-green-100 hover:bg-green-200 dark:border-green-500 dark:bg-green-900/30 dark:hover:bg-green-900/50'
+                          : 'text-foreground border-gray-300 bg-gray-100 hover:bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      <div className='flex items-start justify-between gap-2'>
+                        <div className='flex-1'>
+                          <p className='text-xs font-bold text-gray-700 dark:text-gray-200'>
+                            {getQuestionNumber(q.question_code, q.k2_category)}
+                          </p>
+                          <p className='line-clamp-2 text-xs text-gray-700 dark:text-gray-300'>
+                            {q.question_text_en}
+                          </p>
+                        </div>
+                        {isAnswered && (
+                          <CheckCircle className='h-4 w-4 flex-shrink-0 text-green-600 dark:text-green-400' />
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Files */}
         <TabsContent value='files' className='space-y-6'>
           <Card>
             <CardHeader className='pb-3'>
@@ -1070,96 +790,157 @@ export default function FRM32Page() {
             </CardHeader>
             <CardContent>
               <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-                <DocumentItem number='1' title='HSE Policy' required={true} />
+                <DocumentItem
+                  number='1'
+                  title='HSE Policy'
+                  required={true}
+                  isUploaded={uploadedFiles['doc-1'] || false}
+                  isUploading={uploadingFiles['doc-1'] || false}
+                  onFileSelect={(file) => handleDocumentUpload('doc-1', file)}
+                />
                 <DocumentItem
                   number='2'
                   title='ISO Certificates'
                   required={false}
+                  isUploaded={uploadedFiles['doc-2'] || false}
+                  isUploading={uploadingFiles['doc-2'] || false}
+                  onFileSelect={(file) => handleDocumentUpload('doc-2', file)}
                 />
                 <DocumentItem
                   number='3'
                   title='HSE Management System Document'
                   required={false}
+                  isUploaded={uploadedFiles['doc-3'] || false}
+                  isUploading={uploadingFiles['doc-3'] || false}
+                  onFileSelect={(file) => handleDocumentUpload('doc-3', file)}
                 />
                 <DocumentItem
                   number='4'
                   title='HSE Organization Chart'
                   required={true}
+                  isUploaded={uploadedFiles['doc-4'] || false}
+                  isUploading={uploadingFiles['doc-4'] || false}
+                  onFileSelect={(file) => handleDocumentUpload('doc-4', file)}
                 />
                 <DocumentItem
                   number='5'
                   title='Company Organization Chart'
                   required={false}
+                  isUploaded={uploadedFiles['doc-5'] || false}
+                  isUploading={uploadingFiles['doc-5'] || false}
+                  onFileSelect={(file) => handleDocumentUpload('doc-5', file)}
                 />
                 <DocumentItem
                   number='6'
                   title='CVs of HSE Officers'
                   required={true}
+                  isUploaded={uploadedFiles['doc-6'] || false}
+                  isUploading={uploadingFiles['doc-6'] || false}
+                  onFileSelect={(file) => handleDocumentUpload('doc-6', file)}
                 />
                 <DocumentItem
                   number='7'
                   title='Training Records - Basic HSE Training'
                   required={true}
+                  isUploaded={uploadedFiles['doc-7'] || false}
+                  isUploading={uploadingFiles['doc-7'] || false}
+                  onFileSelect={(file) => handleDocumentUpload('doc-7', file)}
                 />
                 <DocumentItem
                   number='7.1'
                   title='Training Records - Emergency Procedures'
                   required={true}
+                  isUploaded={uploadedFiles['doc-7.1'] || false}
+                  isUploading={uploadingFiles['doc-7.1'] || false}
+                  onFileSelect={(file) => handleDocumentUpload('doc-7.1', file)}
                 />
                 <DocumentItem
                   number='8'
                   title='Incident & Accident Records'
                   required={true}
+                  isUploaded={uploadedFiles['doc-8'] || false}
+                  isUploading={uploadingFiles['doc-8'] || false}
+                  onFileSelect={(file) => handleDocumentUpload('doc-8', file)}
                 />
                 <DocumentItem
                   number='9'
                   title='Risk Assessment Records'
                   required={false}
+                  isUploaded={uploadedFiles['doc-9'] || false}
+                  isUploading={uploadingFiles['doc-9'] || false}
+                  onFileSelect={(file) => handleDocumentUpload('doc-9', file)}
                 />
                 <DocumentItem
                   number='10'
                   title='HAZOP or FMEA Studies'
                   required={false}
+                  isUploaded={uploadedFiles['doc-10'] || false}
+                  isUploading={uploadingFiles['doc-10'] || false}
+                  onFileSelect={(file) => handleDocumentUpload('doc-10', file)}
                 />
                 <DocumentItem
                   number='11'
                   title='HSE Procedures Document'
                   required={true}
+                  isUploaded={uploadedFiles['doc-11'] || false}
+                  isUploading={uploadingFiles['doc-11'] || false}
+                  onFileSelect={(file) => handleDocumentUpload('doc-11', file)}
                 />
                 <DocumentItem
                   number='12'
                   title='Inspection & Maintenance Records'
                   required={true}
+                  isUploaded={uploadedFiles['doc-12'] || false}
+                  isUploading={uploadingFiles['doc-12'] || false}
+                  onFileSelect={(file) => handleDocumentUpload('doc-12', file)}
                 />
                 <DocumentItem
                   number='13'
                   title='PPE & Licenses'
                   required={true}
+                  isUploaded={uploadedFiles['doc-13'] || false}
+                  isUploading={uploadingFiles['doc-13'] || false}
+                  onFileSelect={(file) => handleDocumentUpload('doc-13', file)}
                 />
                 <DocumentItem
                   number='14'
                   title='Environmental Programs & Records'
                   required={false}
+                  isUploaded={uploadedFiles['doc-14'] || false}
+                  isUploading={uploadingFiles['doc-14'] || false}
+                  onFileSelect={(file) => handleDocumentUpload('doc-14', file)}
                 />
                 <DocumentItem
                   number='15'
                   title='HSE Audit Reports'
                   required={false}
+                  isUploaded={uploadedFiles['doc-15'] || false}
+                  isUploading={uploadingFiles['doc-15'] || false}
+                  onFileSelect={(file) => handleDocumentUpload('doc-15', file)}
                 />
                 <DocumentItem
                   number='16'
                   title='Contractor HSE Records'
                   required={false}
+                  isUploaded={uploadedFiles['doc-16'] || false}
+                  isUploading={uploadingFiles['doc-16'] || false}
+                  onFileSelect={(file) => handleDocumentUpload('doc-16', file)}
                 />
                 <DocumentItem
                   number='17'
                   title='Regulatory Compliance Records'
                   required={false}
+                  isUploaded={uploadedFiles['doc-17'] || false}
+                  isUploading={uploadingFiles['doc-17'] || false}
+                  onFileSelect={(file) => handleDocumentUpload('doc-17', file)}
                 />
                 <DocumentItem
                   number='18'
                   title='HSE Performance Metrics & Reports'
                   required={false}
+                  isUploaded={uploadedFiles['doc-18'] || false}
+                  isUploading={uploadingFiles['doc-18'] || false}
+                  onFileSelect={(file) => handleDocumentUpload('doc-18', file)}
                 />
               </div>
             </CardContent>
@@ -1167,14 +948,15 @@ export default function FRM32Page() {
         </TabsContent>
       </Tabs>
 
-      {/* Submit Button - Only show on last question or all answered */}
-      {progressPercentage === 100 && (
-        <div className='pt-4'>
+      {/* Submit */}
+      {progressPercentage === 100 ? (
+        <div className='space-y-3 pt-4'>
           <Button
             onClick={handleSubmit}
             disabled={isSubmitting}
             className='w-full'
             size='lg'
+            variant='default'
           >
             {isSubmitting ? (
               <>
@@ -1182,19 +964,25 @@ export default function FRM32Page() {
                 Submitting...
               </>
             ) : (
-              'Submit FRM32 Form'
+              <>
+                <CheckCircle className='mr-2 h-4 w-4' />
+                Submit FRM32 Form
+              </>
             )}
           </Button>
+          <p className='text-muted-foreground text-center text-xs'>
+            Your supervisor will be notified and can begin reviewing other forms
+          </p>
         </div>
-      )}
-
-      {/* Completion Warning */}
-      {progressPercentage < 100 && (
+      ) : (
         <Alert variant='default'>
           <AlertCircle className='h-4 w-4' />
           <AlertDescription>
-            Please answer all {FRM32_QUESTIONS.length - answeredCount} remaining
-            questions before submitting the form.
+            Please answer all{' '}
+            <strong>
+              {questions.length - answeredCount} remaining questions
+            </strong>{' '}
+            before submitting the form.
           </AlertDescription>
         </Alert>
       )}
