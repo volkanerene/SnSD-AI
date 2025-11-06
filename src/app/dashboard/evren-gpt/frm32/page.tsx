@@ -728,23 +728,32 @@ export default function FRM32Page() {
         clearTimeout(autoSaveTimer.current);
       }
 
+      // Capture current contractor and tenant IDs at time of user input
+      const currentContractorId = contractorId;
+      const currentTenantId = tenantId;
+      const currentAnswers = { ...answers, [questionId]: value };
+
       // Set new timer for auto-save (2 seconds after last change)
       setSaveStatus('saving');
       autoSaveTimer.current = setTimeout(() => {
-        autoSaveDraft();
+        autoSaveDraft(currentContractorId, currentTenantId, currentAnswers);
       }, 2000);
     },
-    []
+    [contractorId, tenantId] // Include these in deps so we capture latest values
   );
 
-  const autoSaveDraft = async () => {
+  const autoSaveDraft = async (
+    cId: string | undefined,
+    tId: string | undefined,
+    answersToSave: Record<string, string>
+  ) => {
     try {
       console.log('[FRM32] ========== AUTO-SAVE TRIGGERED ==========');
-      console.log('[FRM32] contractorId:', contractorId);
-      console.log('[FRM32] tenantId:', tenantId);
+      console.log('[FRM32] contractorId:', cId);
+      console.log('[FRM32] tenantId:', tId);
       console.log('[FRM32] cycle:', cycle);
 
-      if (!contractorId || !tenantId) {
+      if (!cId || !tId) {
         console.log('[FRM32] Missing contractorId or tenantId for auto-save');
         setSaveStatus('idle');
         return;
@@ -755,12 +764,12 @@ export default function FRM32Page() {
         const response = await apiClient.post<{ submission_id: string }>(
           '/frm32/submissions',
           {
-            contractor_id: contractorId,
+            contractor_id: cId,
             cycle,
-            answers,
+            answers: answersToSave,
             status: 'draft'
           },
-          { tenantId }
+          { tenantId: tId }
         );
 
         console.log('[FRM32] Auto-save response:', response);
