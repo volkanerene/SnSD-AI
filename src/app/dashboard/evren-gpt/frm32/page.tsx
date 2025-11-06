@@ -632,38 +632,14 @@ export default function FRM32Page() {
   const [missingAnswers, setMissingAnswers] = useState<string[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [tabValue, setTabValue] = useState('questions');
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
-  // Get sessionId and contractorId from URL params or localStorage
+  // Contractor ID comes from the logged-in user's profile (they ARE the contractor)
+  // Session ID comes from URL param or will be fetched from API
   const urlSessionId = searchParams.get('session');
-  const urlContractorId = searchParams.get('contractor');
-
-  const sessionId =
-    urlSessionId ||
-    (typeof window !== 'undefined'
-      ? localStorage.getItem('frm32_session_id')
-      : null);
-  const contractorId =
-    urlContractorId ||
-    (typeof window !== 'undefined'
-      ? localStorage.getItem('frm32_contractor_id')
-      : null);
+  const contractorId = profile?.contractor_id || profile?.user_id;
   const cycle = parseInt(searchParams.get('cycle') || '1');
   const autoSaveTimer = useRef<NodeJS.Timeout>();
-
-  // Save sessionId and contractorId to localStorage when they come from URL
-  useEffect(() => {
-    if (urlSessionId && typeof window !== 'undefined') {
-      localStorage.setItem('frm32_session_id', urlSessionId);
-      console.log('[FRM32] Saved sessionId to localStorage:', urlSessionId);
-    }
-    if (urlContractorId && typeof window !== 'undefined') {
-      localStorage.setItem('frm32_contractor_id', urlContractorId);
-      console.log(
-        '[FRM32] Saved contractorId to localStorage:',
-        urlContractorId
-      );
-    }
-  }, [urlSessionId, urlContractorId]);
 
   const currentQuestion = FRM32_QUESTIONS[currentQuestionIndex];
   const answeredCount = Object.values(answers).filter(
@@ -676,7 +652,15 @@ export default function FRM32Page() {
   // Load existing answers
   useEffect(() => {
     loadExistingAnswers();
-  }, [sessionId, contractorId, cycle]);
+  }, [contractorId, profile?.tenant_id]);
+
+  // Initialize sessionId from URL param
+  useEffect(() => {
+    if (urlSessionId) {
+      setSessionId(urlSessionId);
+      console.log('[FRM32] Using sessionId from URL:', urlSessionId);
+    }
+  }, [urlSessionId]);
 
   const loadExistingAnswers = async () => {
     try {
@@ -684,21 +668,62 @@ export default function FRM32Page() {
       const token = localStorage.getItem('token');
       const tenantId = profile?.tenant_id;
 
-      console.log('[FRM32] ========== LOAD EXISTING ANSWERS ==========');
-      console.log('[FRM32] sessionId:', sessionId);
+      console.log('[FRM32] ========== LOADING ANSWERS ==========');
       console.log('[FRM32] contractorId:', contractorId);
+      console.log('[FRM32] sessionId:', sessionId);
       console.log('[FRM32] token present:', !!token);
       console.log('[FRM32] tenantId:', tenantId);
-      console.log('[FRM32] cycle:', cycle);
 
-      if (!sessionId || !contractorId) {
-        console.log('[FRM32] Missing sessionId or contractorId');
+      if (!contractorId) {
+        console.log(
+          '[FRM32] Contractor not logged in yet. Waiting for profile...'
+        );
         setIsLoading(false);
         return;
       }
 
       if (!token || !tenantId) {
         console.log('[FRM32] Missing token or tenantId');
+        setIsLoading(false);
+        return;
+      }
+
+      // If sessionId not provided via URL, get active session from API
+      let activeSessionId = sessionId;
+      if (!activeSessionId) {
+        console.log(
+          '[FRM32] No sessionId provided, fetching active session...'
+        );
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/frm32/sessions?contractor_id=${contractorId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'x-tenant-id': tenantId
+            }
+          }
+        );
+
+        if (response.ok) {
+          const sessions = await response.json();
+          if (sessions && sessions.length > 0) {
+            activeSessionId = sessions[0].session_id;
+            setSessionId(activeSessionId);
+            console.log('[FRM32] Found active session:', activeSessionId);
+          } else {
+            console.log('[FRM32] No active session found for this contractor');
+            setIsLoading(false);
+            return;
+          }
+        } else {
+          console.log('[FRM32] Failed to fetch sessions:', response.status);
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      if (!activeSessionId) {
+        console.log('[FRM32] No sessionId available');
         setIsLoading(false);
         return;
       }
@@ -719,7 +744,7 @@ export default function FRM32Page() {
         try {
           console.log(`[FRM32] Fetching from ${apiUrl}...`);
           response = await fetch(
-            `${apiUrl}/frm32/submissions?session_id=${sessionId}&contractor_id=${contractorId}&cycle=${cycle}`,
+            `${apiUrl}/frm32/submissions?session_id=${activeSessionId}&contractor_id=${contractorId}&cycle=${cycle}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
