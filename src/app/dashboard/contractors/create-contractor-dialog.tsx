@@ -32,6 +32,7 @@ import { Button } from '@/components/ui/button';
 import { useContractors } from '@/hooks/useContractors';
 import { toast } from 'sonner';
 import type { ContractorCreate } from '@/types/api';
+import { COUNTRY_CODES, getDefaultCountry } from '@/lib/country-codes';
 
 const contractorSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -44,7 +45,13 @@ const contractorSchema = z.object({
     .regex(/^\d{10}$/, 'Tax number must be exactly 10 digits'),
   contact_person: z.string().min(2, 'Contact person is required'),
   contact_email: z.string().email('Valid email is required'),
-  contact_phone: z.string().min(5, 'Phone number is required'),
+  country_code: z
+    .string()
+    .startsWith('+', 'Country code is required')
+    .min(2, 'Country code is required'),
+  contact_phone: z
+    .string()
+    .regex(/^\d{1,10}$/, 'Phone number must be 1-10 digits'),
   city: z.string().min(2, 'City is required'),
   country: z.string().default('TR'),
   address: z.string().optional(),
@@ -68,10 +75,12 @@ export function CreateContractorDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { createContractorAsync } = useContractors({ tenantId });
 
+  const defaultCountry = getDefaultCountry();
   const form = useForm<ContractorFormData>({
     resolver: zodResolver(contractorSchema),
     defaultValues: {
       country: 'TR',
+      country_code: defaultCountry.code,
       status: 'active'
     }
   });
@@ -224,12 +233,42 @@ export function CreateContractorDialog({
 
               <FormField
                 control={form.control}
+                name='country_code'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Country Code</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder='Select country' />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className='max-h-60'>
+                        {COUNTRY_CODES.map((country) => (
+                          <SelectItem key={country.code} value={country.code}>
+                            <span className='mr-2'>{country.flag}</span>
+                            {country.country} ({country.code})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name='contact_phone'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Contact Phone</FormLabel>
+                    <FormLabel>Phone Number (max 10 digits)</FormLabel>
                     <FormControl>
-                      <Input placeholder='+90 532 123 4567' {...field} />
+                      <Input
+                        placeholder='5321234567'
+                        maxLength={10}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

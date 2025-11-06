@@ -138,6 +138,7 @@ export interface Contractor {
   trade_registry_number: string | null;
   contact_person: string;
   contact_email: string;
+  country_code?: string; // Phone country code (e.g., +90)
   contact_phone: string;
   address: string | null;
   city: string;
@@ -160,6 +161,7 @@ export interface ContractorCreate {
   tax_number: string;
   contact_person: string;
   contact_email: string;
+  country_code: string; // Phone country code (e.g., +90)
   contact_phone: string;
   city: string;
   country?: string;
