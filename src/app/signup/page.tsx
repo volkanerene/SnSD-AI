@@ -56,16 +56,44 @@ export default function ContractorSignupPage() {
           return;
         }
 
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/contractor/signup/verify?session_id=${sessionId}&contractor_id=${contractorId}`,
-          {
-            method: 'GET'
-          }
-        );
+        // Try primary API URL first, then fallback
+        const apiUrls = [
+          process.env.NEXT_PUBLIC_API_URL,
+          'https://api.snsdconsultant.com', // Production fallback
+          'http://localhost:8000' // Local fallback
+        ].filter(Boolean) as string[];
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          setError(errorData.detail || 'Failed to verify signup link');
+        let response: Response | null = null;
+        let lastError: string = '';
+
+        for (const apiUrl of apiUrls) {
+          try {
+            response = await fetch(
+              `${apiUrl}/contractor/signup/verify?session_id=${sessionId}&contractor_id=${contractorId}`,
+              {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json'
+                }
+              }
+            );
+
+            if (response.ok) {
+              break; // Success - use this response
+            } else {
+              const errorData = await response.json().catch(() => ({}));
+              lastError = errorData.detail || `API returned ${response.status}`;
+            }
+          } catch (err) {
+            lastError = `Failed to reach ${apiUrl}`;
+            continue;
+          }
+        }
+
+        if (!response || !response.ok) {
+          setError(
+            lastError || 'Failed to verify signup link. Please try again later.'
+          );
           setLoading(false);
           return;
         }
@@ -74,6 +102,7 @@ export default function ContractorSignupPage() {
         setVerifyData(data);
         setLoading(false);
       } catch (err) {
+        console.error('Verification error:', err);
         setError('An error occurred while verifying your signup link');
         setLoading(false);
       }
@@ -115,26 +144,46 @@ export default function ContractorSignupPage() {
     }
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/contractor/signup/register`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            email: verifyData?.contractor_email,
-            password: formData.password,
-            password_confirm: formData.passwordConfirm,
-            session_id: sessionId,
-            contractor_id: contractorId
-          })
-        }
-      );
+      // Try primary API URL first, then fallback
+      const apiUrls = [
+        process.env.NEXT_PUBLIC_API_URL,
+        'https://api.snsdconsultant.com', // Production fallback
+        'http://localhost:8000' // Local fallback
+      ].filter(Boolean) as string[];
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        setError(errorData.detail || 'Registration failed');
+      let response: Response | null = null;
+      let lastError: string = '';
+
+      for (const apiUrl of apiUrls) {
+        try {
+          response = await fetch(`${apiUrl}/contractor/signup/register`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              email: verifyData?.contractor_email,
+              password: formData.password,
+              password_confirm: formData.passwordConfirm,
+              session_id: sessionId,
+              contractor_id: contractorId
+            })
+          });
+
+          if (response.ok) {
+            break; // Success - use this response
+          } else {
+            const errorData = await response.json().catch(() => ({}));
+            lastError = errorData.detail || `API returned ${response.status}`;
+          }
+        } catch (err) {
+          lastError = `Failed to reach ${apiUrl}`;
+          continue;
+        }
+      }
+
+      if (!response || !response.ok) {
+        setError(lastError || 'Registration failed. Please try again later.');
         setSubmitting(false);
         return;
       }
@@ -142,11 +191,15 @@ export default function ContractorSignupPage() {
       setSuccess(true);
       setSubmitting(false);
 
+      // Store contractor ID in session for redirect
+      sessionStorage.setItem('newContractorId', contractorId || '');
+
       // Redirect to login after 2 seconds
       setTimeout(() => {
         router.push('/auth/sign-in');
       }, 2000);
     } catch (err) {
+      console.error('Registration error:', err);
       setError('An error occurred during registration');
       setSubmitting(false);
     }
