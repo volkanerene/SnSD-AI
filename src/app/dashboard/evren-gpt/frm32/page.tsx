@@ -19,6 +19,71 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { FileUp } from 'lucide-react';
+
+// Document Item Component
+interface DocumentItemProps {
+  number: string;
+  title: string;
+  required: boolean;
+}
+
+function DocumentItem({ number, title, required }: DocumentItemProps) {
+  const fileInputId = `doc-${number}`;
+
+  return (
+    <div
+      className={`rounded-lg border-2 p-4 ${
+        required ? 'border-red-200 bg-red-50' : 'border-blue-200 bg-blue-50'
+      }`}
+    >
+      <div className='mb-3 flex items-start justify-between gap-3'>
+        <div>
+          <div className='mb-1 flex items-center gap-2'>
+            <span
+              className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-sm font-bold ${
+                required ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'
+              }`}
+            >
+              {number}
+            </span>
+            <h4 className='text-sm font-semibold'>{title}</h4>
+          </div>
+          <div className='ml-8'>
+            <span
+              className={`inline-block rounded px-2 py-1 text-xs font-bold ${
+                required ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'
+              }`}
+            >
+              {required ? 'REQUIRED' : 'OPTIONAL'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className='ml-8'>
+        <Label htmlFor={fileInputId} className='block cursor-pointer'>
+          <Input
+            id={fileInputId}
+            type='file'
+            accept='.pdf,.doc,.docx,.jpg,.png'
+            className='hidden'
+          />
+          <div
+            className={`hover:border-opacity-70 rounded-lg border-2 border-dashed p-3 text-center transition-colors ${
+              required
+                ? 'border-red-400 hover:bg-red-100'
+                : 'border-blue-400 hover:bg-blue-100'
+            }`}
+          >
+            <FileUp className='mx-auto mb-1 h-5 w-5' />
+            <p className='text-xs font-medium'>📎 Upload</p>
+          </div>
+        </Label>
+      </div>
+    </div>
+  );
+}
 
 // All 80 FRM32 Questions extracted from frm32.html
 const FRM32_QUESTIONS = [
@@ -882,6 +947,15 @@ export default function FRM32Page() {
 
         {/* Questions Tab */}
         <TabsContent value='questions' className='space-y-6'>
+          {/* Section Header */}
+          <div className='mb-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 p-4 text-white'>
+            <h3 className='text-lg font-semibold'>Company Information</h3>
+            <p className='mt-1 text-sm opacity-90'>
+              Provide detailed information about your organization&apos;s HSE
+              practices
+            </p>
+          </div>
+
           {/* Current Question */}
           <Card>
             <CardHeader className='pb-3'>
@@ -951,32 +1025,109 @@ export default function FRM32Page() {
         {/* File Uploads Tab */}
         <TabsContent value='files' className='space-y-6'>
           <Card>
-            <CardHeader>
-              <CardTitle>Document Uploads</CardTitle>
-            </CardHeader>
-            <CardContent className='space-y-4'>
-              <div className='rounded-lg border-2 border-dashed p-8 text-center'>
-                <Label className='block cursor-pointer'>
-                  <Input
-                    type='file'
-                    multiple
-                    accept='.pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg'
-                    className='hidden'
-                    disabled={isSubmitting}
-                  />
-                  <div className='space-y-2'>
-                    <p className='font-medium'>
-                      Drag and drop files or click to browse
-                    </p>
-                    <p className='text-muted-foreground text-sm'>
-                      Supported: PDF, DOC, DOCX, XLS, XLSX, PNG, JPG
-                    </p>
-                  </div>
-                </Label>
-              </div>
-              <p className='text-muted-foreground text-xs'>
-                Upload supporting documents for your answers (optional)
+            <CardHeader className='pb-3'>
+              <CardTitle className='text-xl'>
+                Required Documents (18 Total)
+              </CardTitle>
+              <p className='text-muted-foreground mt-2 text-sm'>
+                Upload required documents. Optional documents can improve your
+                assessment score.
               </p>
+            </CardHeader>
+            <CardContent>
+              <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+                <DocumentItem number='1' title='HSE Policy' required={true} />
+                <DocumentItem
+                  number='2'
+                  title='ISO Certificates'
+                  required={false}
+                />
+                <DocumentItem
+                  number='3'
+                  title='HSE Management System Document'
+                  required={false}
+                />
+                <DocumentItem
+                  number='4'
+                  title='HSE Organization Chart'
+                  required={true}
+                />
+                <DocumentItem
+                  number='5'
+                  title='Company Organization Chart'
+                  required={false}
+                />
+                <DocumentItem
+                  number='6'
+                  title='CVs of HSE Officers'
+                  required={true}
+                />
+                <DocumentItem
+                  number='7'
+                  title='Training Records - Basic HSE Training'
+                  required={true}
+                />
+                <DocumentItem
+                  number='7.1'
+                  title='Training Records - Emergency Procedures'
+                  required={true}
+                />
+                <DocumentItem
+                  number='8'
+                  title='Incident & Accident Records'
+                  required={true}
+                />
+                <DocumentItem
+                  number='9'
+                  title='Risk Assessment Records'
+                  required={false}
+                />
+                <DocumentItem
+                  number='10'
+                  title='HAZOP or FMEA Studies'
+                  required={false}
+                />
+                <DocumentItem
+                  number='11'
+                  title='HSE Procedures Document'
+                  required={true}
+                />
+                <DocumentItem
+                  number='12'
+                  title='Inspection & Maintenance Records'
+                  required={true}
+                />
+                <DocumentItem
+                  number='13'
+                  title='PPE & Licenses'
+                  required={true}
+                />
+                <DocumentItem
+                  number='14'
+                  title='Environmental Programs & Records'
+                  required={false}
+                />
+                <DocumentItem
+                  number='15'
+                  title='HSE Audit Reports'
+                  required={false}
+                />
+                <DocumentItem
+                  number='16'
+                  title='Contractor HSE Records'
+                  required={false}
+                />
+                <DocumentItem
+                  number='17'
+                  title='Regulatory Compliance Records'
+                  required={false}
+                />
+                <DocumentItem
+                  number='18'
+                  title='HSE Performance Metrics & Reports'
+                  required={false}
+                />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
