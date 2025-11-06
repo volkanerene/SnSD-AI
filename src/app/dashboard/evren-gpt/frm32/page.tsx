@@ -642,7 +642,7 @@ export default function FRM32Page() {
   const contractorId = profile?.contractor_id || profile?.id;
   const tenantId = profile?.tenant_id;
   const cycle = parseInt(searchParams.get('cycle') || '1');
-  const autoSaveTimer = useRef<NodeJS.Timeout>();
+  const autoSaveTimer = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const currentQuestion = FRM32_QUESTIONS[currentQuestionIndex];
   const answeredCount = Object.values(answers).filter(
@@ -702,6 +702,11 @@ export default function FRM32Page() {
           console.log('[FRM32] No existing submissions found');
         }
       } catch (error: any) {
+        console.log('[FRM32] Load answers error details:');
+        console.log('[FRM32] - error.message:', error.message);
+        console.log('[FRM32] - error.response:', error.response);
+        console.log('[FRM32] - error.status:', error.status);
+        console.log('[FRM32] - full error:', error);
         console.log(
           '[FRM32] Could not load answers (might be first submission):',
           error.message
@@ -777,6 +782,11 @@ export default function FRM32Page() {
         setSaveStatus('saved');
         setTimeout(() => setSaveStatus('idle'), 2000);
       } catch (error: any) {
+        console.log('[FRM32] Auto-save error details:');
+        console.log('[FRM32] - error.message:', error.message);
+        console.log('[FRM32] - error.response:', error.response);
+        console.log('[FRM32] - error.status:', error.status);
+        console.log('[FRM32] - full error:', error);
         console.log(
           '[FRM32] Could not auto-save (retrying next time):',
           error.message
