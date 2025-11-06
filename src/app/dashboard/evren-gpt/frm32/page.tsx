@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useProfile } from '@/hooks/useProfile';
+import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -637,7 +638,8 @@ export default function FRM32Page() {
   // Contractor ID comes from the logged-in user's profile (they ARE the contractor)
   // Session ID comes from URL param or will be fetched from API
   const urlSessionId = searchParams.get('session');
-  const contractorId = profile?.contractor_id || profile?.user_id;
+  // Use contractor_id or fallback to profile id as the contractor identifier
+  const contractorId = profile?.contractor_id || profile?.id;
   const cycle = parseInt(searchParams.get('cycle') || '1');
   const autoSaveTimer = useRef<NodeJS.Timeout>();
 
@@ -649,11 +651,6 @@ export default function FRM32Page() {
     (answeredCount / FRM32_QUESTIONS.length) * 100
   );
 
-  // Load existing answers
-  useEffect(() => {
-    loadExistingAnswers();
-  }, [contractorId, profile?.tenant_id]);
-
   // Initialize sessionId from URL param
   useEffect(() => {
     if (urlSessionId) {
@@ -661,6 +658,14 @@ export default function FRM32Page() {
       console.log('[FRM32] Using sessionId from URL:', urlSessionId);
     }
   }, [urlSessionId]);
+
+  // Load existing answers when profile and contractor are available
+  useEffect(() => {
+    // Only load if profile is loaded and we have contractor ID
+    if (profile && contractorId && profile.tenant_id) {
+      loadExistingAnswers();
+    }
+  }, [contractorId, profile?.tenant_id, profile?.id]);
 
   const loadExistingAnswers = async () => {
     try {
@@ -670,23 +675,33 @@ export default function FRM32Page() {
 
       console.log('[FRM32] ========== LOADING ANSWERS ==========');
       console.log('[FRM32] contractorId:', contractorId);
+      console.log('[FRM32] profile.id:', profile?.id);
+      console.log('[FRM32] profile.contractor_id:', profile?.contractor_id);
       console.log('[FRM32] sessionId:', sessionId);
       console.log('[FRM32] token present:', !!token);
       console.log('[FRM32] tenantId:', tenantId);
+      console.log('[FRM32] profile loaded:', !!profile);
+
+      if (!profile) {
+        console.log('[FRM32] Profile not loaded yet');
+        setIsLoading(false);
+        return;
+      }
 
       if (!contractorId) {
-        console.log(
-          '[FRM32] Contractor not logged in yet. Waiting for profile...'
-        );
+        console.log('[FRM32] Missing contractor ID');
         setIsLoading(false);
         return;
       }
 
-      if (!token || !tenantId) {
-        console.log('[FRM32] Missing token or tenantId');
+      if (!tenantId) {
+        console.log('[FRM32] Missing tenantId');
         setIsLoading(false);
         return;
       }
+
+      // Note: token might not be in localStorage if using API client's internal auth
+      // The API client handles authentication internally
 
       // If sessionId not provided via URL, get active session from API
       let activeSessionId = sessionId;

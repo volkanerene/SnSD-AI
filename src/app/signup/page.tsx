@@ -99,6 +99,21 @@ export default function ContractorSignupPage() {
         }
 
         const data: SignupVerifyResponse = await response.json();
+
+        // Check if contractor is already registered (already has an account)
+        if (data.valid === false || !data.valid) {
+          console.log(
+            '[Signup] Contractor already registered, redirecting to signin'
+          );
+          setError('This contractor account is already registered.');
+          // Redirect to signin after 2 seconds
+          setTimeout(() => {
+            router.push('/auth/sign-in');
+          }, 2000);
+          setLoading(false);
+          return;
+        }
+
         setVerifyData(data);
         setLoading(false);
       } catch (err) {
