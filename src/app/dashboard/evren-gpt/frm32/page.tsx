@@ -633,10 +633,37 @@ export default function FRM32Page() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [tabValue, setTabValue] = useState('questions');
 
-  const sessionId = searchParams.get('session');
-  const contractorId = searchParams.get('contractor');
+  // Get sessionId and contractorId from URL params or localStorage
+  const urlSessionId = searchParams.get('session');
+  const urlContractorId = searchParams.get('contractor');
+
+  const sessionId =
+    urlSessionId ||
+    (typeof window !== 'undefined'
+      ? localStorage.getItem('frm32_session_id')
+      : null);
+  const contractorId =
+    urlContractorId ||
+    (typeof window !== 'undefined'
+      ? localStorage.getItem('frm32_contractor_id')
+      : null);
   const cycle = parseInt(searchParams.get('cycle') || '1');
   const autoSaveTimer = useRef<NodeJS.Timeout>();
+
+  // Save sessionId and contractorId to localStorage when they come from URL
+  useEffect(() => {
+    if (urlSessionId && typeof window !== 'undefined') {
+      localStorage.setItem('frm32_session_id', urlSessionId);
+      console.log('[FRM32] Saved sessionId to localStorage:', urlSessionId);
+    }
+    if (urlContractorId && typeof window !== 'undefined') {
+      localStorage.setItem('frm32_contractor_id', urlContractorId);
+      console.log(
+        '[FRM32] Saved contractorId to localStorage:',
+        urlContractorId
+      );
+    }
+  }, [urlSessionId, urlContractorId]);
 
   const currentQuestion = FRM32_QUESTIONS[currentQuestionIndex];
   const answeredCount = Object.values(answers).filter(
@@ -657,16 +684,12 @@ export default function FRM32Page() {
       const token = localStorage.getItem('token');
       const tenantId = profile?.tenant_id;
 
-      console.log(
-        '[FRM32] Loading answers - sessionId:',
-        sessionId,
-        'contractorId:',
-        contractorId,
-        'token:',
-        token ? 'present' : 'missing',
-        'tenantId:',
-        tenantId
-      );
+      console.log('[FRM32] ========== LOAD EXISTING ANSWERS ==========');
+      console.log('[FRM32] sessionId:', sessionId);
+      console.log('[FRM32] contractorId:', contractorId);
+      console.log('[FRM32] token present:', !!token);
+      console.log('[FRM32] tenantId:', tenantId);
+      console.log('[FRM32] cycle:', cycle);
 
       if (!sessionId || !contractorId) {
         console.log('[FRM32] Missing sessionId or contractorId');
@@ -769,12 +792,11 @@ export default function FRM32Page() {
       const token = localStorage.getItem('token');
       const tenantId = profile?.tenant_id;
 
-      console.log(
-        '[FRM32] Auto-save triggered - sessionId:',
-        sessionId,
-        'contractorId:',
-        contractorId
-      );
+      console.log('[FRM32] ========== AUTO-SAVE TRIGGERED ==========');
+      console.log('[FRM32] sessionId:', sessionId);
+      console.log('[FRM32] contractorId:', contractorId);
+      console.log('[FRM32] token present:', !!token);
+      console.log('[FRM32] tenantId:', tenantId);
 
       if (!sessionId || !contractorId) {
         console.log('[FRM32] Missing sessionId or contractorId for auto-save');
