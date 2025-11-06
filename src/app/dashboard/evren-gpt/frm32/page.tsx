@@ -652,22 +652,27 @@ export default function FRM32Page() {
     (answeredCount / FRM32_QUESTIONS.length) * 100
   );
 
-  // Initialize sessionId from URL param
+  // Initialize sessionId from URL param or generate a new one
   useEffect(() => {
     if (urlSessionId) {
       setSessionId(urlSessionId);
       console.log('[FRM32] Using sessionId from URL:', urlSessionId);
+    } else if (!sessionId) {
+      // Generate a new session ID if one doesn't exist
+      const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      setSessionId(newSessionId);
+      console.log('[FRM32] Generated new sessionId:', newSessionId);
     }
   }, [urlSessionId]);
 
-  // Load existing answers when profile is fully loaded
+  // Load existing answers when profile and sessionId are ready
   useEffect(() => {
-    // Only load once profile is fully loaded with ID and tenant
-    if (contractorId && tenantId) {
-      console.log('[FRM32] Profile loaded, loading answers...');
+    // Only load once profile is fully loaded with ID, tenant, and sessionId
+    if (contractorId && tenantId && sessionId) {
+      console.log('[FRM32] Profile and session ready, loading answers...');
       loadExistingAnswers();
     }
-  }, [contractorId, tenantId]); // Stable dependencies
+  }, [contractorId, tenantId, sessionId]); // Include sessionId dependency
 
   const loadExistingAnswers = async () => {
     try {
@@ -691,7 +696,7 @@ export default function FRM32Page() {
         const evaluationPeriod = `${year}-${String(cycle).padStart(2, '0')}`;
 
         const data = await apiClient.get<any>(
-          `/frm32/submissions?contractor_id=${contractorId}&evaluation_period=${evaluationPeriod}&tenant_id=${tenantId}`,
+          `/frm32/submissions?contractor_id=${contractorId}&evaluation_period=${evaluationPeriod}&tenant_id=${tenantId}&session_id=${sessionId}`,
           {
             tenantId
           }
@@ -732,33 +737,43 @@ export default function FRM32Page() {
         clearTimeout(autoSaveTimer.current);
       }
 
-      // Capture current contractor and tenant IDs at time of user input
+      // Capture current values at time of user input
       const currentContractorId = contractorId;
       const currentTenantId = tenantId;
+      const currentSessionId = sessionId;
       const currentAnswers = { ...answers, [questionId]: value };
 
       // Set new timer for auto-save (2 seconds after last change)
       setSaveStatus('saving');
       autoSaveTimer.current = setTimeout(() => {
-        autoSaveDraft(currentContractorId, currentTenantId, currentAnswers);
+        autoSaveDraft(
+          currentContractorId,
+          currentTenantId,
+          currentSessionId,
+          currentAnswers
+        );
       }, 2000);
     },
-    [contractorId, tenantId] // Include these in deps so we capture latest values
+    [contractorId, tenantId, sessionId] // Include these in deps so we capture latest values
   );
 
   const autoSaveDraft = async (
     cId: string | undefined,
     tId: string | undefined,
+    sId: string | null,
     answersToSave: Record<string, string>
   ) => {
     try {
       console.log('[FRM32] ========== AUTO-SAVE TRIGGERED ==========');
       console.log('[FRM32] contractorId:', cId);
       console.log('[FRM32] tenantId:', tId);
+      console.log('[FRM32] sessionId:', sId);
       console.log('[FRM32] cycle:', cycle);
 
-      if (!cId || !tId) {
-        console.log('[FRM32] Missing contractorId or tenantId for auto-save');
+      if (!cId || !tId || !sId) {
+        console.log(
+          '[FRM32] Missing contractorId, tenantId, or sessionId for auto-save'
+        );
         setSaveStatus('idle');
         return;
       }
@@ -772,9 +787,12 @@ export default function FRM32Page() {
         const response = await apiClient.post<{ submission_id: string }>(
           '/frm32/submissions',
           {
+            form_id: 'frm32',
+            session_id: sId,
             contractor_id: cId,
             tenant_id: tId,
             evaluation_period: evaluationPeriod,
+            cycle,
             answers: answersToSave,
             status: 'draft'
           },
