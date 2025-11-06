@@ -265,7 +265,9 @@ export interface FRM32SubmissionUpdate {
 export interface FRM32Answer {
   id: UUID;
   submission_id: UUID;
-  question_id: UUID;
+  // ÖNEMLİ: Frontend'te 'question_11A' gibi stringler kullanılıyor.
+  // Bu yüzden question_id UUID değil, string olmalı.
+  question_id: string;
   answer_value: any;
   score: number | null;
   attachments: JsonObject[] | null;
@@ -276,7 +278,8 @@ export interface FRM32Answer {
 
 export interface FRM32AnswerCreate {
   submission_id: UUID;
-  question_id: UUID;
+  // Aynı gerekçe: string
+  question_id: string;
   answer_value: any;
   attachments?: JsonObject[];
   notes?: string;
@@ -346,6 +349,8 @@ export interface ContractorFilters extends PaginationParams {
 export interface SubmissionFilters extends PaginationParams {
   status?: SubmissionStatus;
   contractor_id?: UUID;
+  // Backend'e eklediğimiz filtre: evaluation_period
+  evaluation_period?: string;
 }
 
 export interface PaymentFilters extends PaginationParams {

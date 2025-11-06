@@ -14,12 +14,12 @@ export function useSubmissions(tenantId: string, filters?: SubmissionFilters) {
   if (filters?.status) queryString.append('status', filters.status);
   if (filters?.contractor_id)
     queryString.append('contractor_id', filters.contractor_id);
+  if (filters?.evaluation_period)
+    queryString.append('evaluation_period', filters.evaluation_period); // <<< eklendi
   if (filters?.limit) queryString.append('limit', filters.limit.toString());
   if (filters?.offset) queryString.append('offset', filters.offset.toString());
 
-  const endpoint = `/frm32/submissions${
-    queryString.toString() ? `?${queryString}` : ''
-  }`;
+  const endpoint = `/frm32/submissions${queryString.toString() ? `?${queryString}` : ''}`;
 
   const {
     data: submissions,
@@ -33,9 +33,7 @@ export function useSubmissions(tenantId: string, filters?: SubmissionFilters) {
 
   const createSubmission = useMutation({
     mutationFn: (data: FRM32SubmissionCreate) =>
-      apiClient.post<FRM32Submission>('/frm32/submissions', data, {
-        tenantId
-      }),
+      apiClient.post<FRM32Submission>('/frm32/submissions', data, { tenantId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['submissions', tenantId] });
     }
