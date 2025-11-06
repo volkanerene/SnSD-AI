@@ -7,8 +7,18 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import {
+  Loader2,
+  AlertCircle,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
 import { toast } from 'sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 // All 80 FRM32 Questions extracted from frm32.html
 const FRM32_QUESTIONS = [
@@ -555,11 +565,21 @@ export default function FRM32Page() {
     'idle'
   );
   const [missingAnswers, setMissingAnswers] = useState<string[]>([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [tabValue, setTabValue] = useState('questions');
 
   const sessionId = searchParams.get('session');
   const contractorId = searchParams.get('contractor');
   const cycle = parseInt(searchParams.get('cycle') || '1');
   const autoSaveTimer = useRef<NodeJS.Timeout>();
+
+  const currentQuestion = FRM32_QUESTIONS[currentQuestionIndex];
+  const answeredCount = Object.values(answers).filter(
+    (a) => a && a.trim()
+  ).length;
+  const progressPercentage = Math.round(
+    (answeredCount / FRM32_QUESTIONS.length) * 100
+  );
 
   // Load existing answers
   useEffect(() => {
@@ -800,11 +820,8 @@ export default function FRM32Page() {
     );
   }
 
-  const progressPercentage = Math.round(
-    (Object.values(answers).filter((a) => a?.trim()).length /
-      FRM32_QUESTIONS.length) *
-      100
-  );
+  const canGoNext = currentQuestionIndex < FRM32_QUESTIONS.length - 1;
+  const canGoPrev = currentQuestionIndex > 0;
 
   return (
     <div className='mx-auto max-w-4xl space-y-6 p-4 pt-6 md:p-8'>
@@ -834,8 +851,7 @@ export default function FRM32Page() {
               />
             </div>
             <p className='text-muted-foreground text-xs'>
-              {Object.values(answers).filter((a) => a?.trim()).length} of{' '}
-              {FRM32_QUESTIONS.length} questions answered
+              {answeredCount} of {FRM32_QUESTIONS.length} questions answered
             </p>
           </div>
         </CardContent>
@@ -857,77 +873,146 @@ export default function FRM32Page() {
         </Alert>
       )}
 
-      {/* Form Questions */}
-      <div className='space-y-4'>
-        {FRM32_QUESTIONS.map((question, index) => (
-          <Card key={question.id}>
+      {/* Tabs */}
+      <Tabs value={tabValue} onValueChange={setTabValue}>
+        <TabsList className='grid w-full grid-cols-2'>
+          <TabsTrigger value='questions'>Questions</TabsTrigger>
+          <TabsTrigger value='files'>File Uploads</TabsTrigger>
+        </TabsList>
+
+        {/* Questions Tab */}
+        <TabsContent value='questions' className='space-y-6'>
+          {/* Current Question */}
+          <Card>
             <CardHeader className='pb-3'>
               <div className='flex items-start justify-between gap-4'>
                 <div className='flex-1'>
-                  <CardTitle className='text-base'>
-                    {question.question_number}. {question.title}
+                  <div className='text-muted-foreground mb-2 text-sm font-medium'>
+                    Question {currentQuestionIndex + 1} of{' '}
+                    {FRM32_QUESTIONS.length}
+                  </div>
+                  <CardTitle className='text-lg'>
+                    {currentQuestion.question_number}. {currentQuestion.title}
                   </CardTitle>
                 </div>
-                {question.required && (
-                  <Badge variant='destructive' className='ml-2'>
-                    Required
-                  </Badge>
+                {currentQuestion.required && (
+                  <Badge variant='destructive'>Required</Badge>
                 )}
               </div>
             </CardHeader>
-            <CardContent>
-              <textarea
-                value={answers[question.id] || ''}
+            <CardContent className='space-y-4'>
+              <Textarea
+                value={answers[currentQuestion.id] || ''}
                 onChange={(e) =>
-                  handleAnswerChange(question.id, e.target.value)
+                  handleAnswerChange(currentQuestion.id, e.target.value)
                 }
                 placeholder='Please provide a detailed response...'
-                className='border-input bg-background text-foreground placeholder-muted-foreground focus:ring-primary h-32 w-full resize-none rounded-md border p-3 focus:border-transparent focus:ring-2 focus:outline-none'
+                className='min-h-40'
               />
+              {answers[currentQuestion.id] && (
+                <p className='flex items-center gap-1 text-xs text-green-600'>
+                  <CheckCircle className='h-3 w-3' /> Answer saved
+                </p>
+              )}
             </CardContent>
           </Card>
-        ))}
-      </div>
 
-      {/* Missing Answers Alert */}
-      {missingAnswers.length > 0 && (
-        <Alert variant='destructive'>
+          {/* Navigation Buttons */}
+          <div className='flex gap-4'>
+            <Button
+              onClick={() =>
+                setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))
+              }
+              disabled={!canGoPrev}
+              variant='outline'
+              size='lg'
+              className='flex-1'
+            >
+              <ChevronLeft className='mr-2 h-4 w-4' />
+              Previous
+            </Button>
+            <Button
+              onClick={() =>
+                setCurrentQuestionIndex(
+                  Math.min(FRM32_QUESTIONS.length - 1, currentQuestionIndex + 1)
+                )
+              }
+              disabled={!canGoNext}
+              variant='outline'
+              size='lg'
+              className='flex-1'
+            >
+              Next
+              <ChevronRight className='ml-2 h-4 w-4' />
+            </Button>
+          </div>
+        </TabsContent>
+
+        {/* File Uploads Tab */}
+        <TabsContent value='files' className='space-y-6'>
+          <Card>
+            <CardHeader>
+              <CardTitle>Document Uploads</CardTitle>
+            </CardHeader>
+            <CardContent className='space-y-4'>
+              <div className='rounded-lg border-2 border-dashed p-8 text-center'>
+                <Label className='block cursor-pointer'>
+                  <Input
+                    type='file'
+                    multiple
+                    accept='.pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg'
+                    className='hidden'
+                    disabled={isSubmitting}
+                  />
+                  <div className='space-y-2'>
+                    <p className='font-medium'>
+                      Drag and drop files or click to browse
+                    </p>
+                    <p className='text-muted-foreground text-sm'>
+                      Supported: PDF, DOC, DOCX, XLS, XLSX, PNG, JPG
+                    </p>
+                  </div>
+                </Label>
+              </div>
+              <p className='text-muted-foreground text-xs'>
+                Upload supporting documents for your answers (optional)
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Submit Button - Only show on last question or all answered */}
+      {progressPercentage === 100 && (
+        <div className='pt-4'>
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className='w-full'
+            size='lg'
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                Submitting...
+              </>
+            ) : (
+              'Submit FRM32 Form'
+            )}
+          </Button>
+        </div>
+      )}
+
+      {/* Completion Warning */}
+      {progressPercentage < 100 && (
+        <Alert variant='default'>
           <AlertCircle className='h-4 w-4' />
           <AlertDescription>
-            <p className='mb-2'>
-              Please answer the following {missingAnswers.length} required
-              questions:
-            </p>
-            <ul className='list-inside list-disc text-sm'>
-              {missingAnswers.slice(0, 5).map((q) => (
-                <li key={q}>{q}</li>
-              ))}
-              {missingAnswers.length > 5 && (
-                <li>...and {missingAnswers.length - 5} more</li>
-              )}
-            </ul>
+            Please answer all {FRM32_QUESTIONS.length - answeredCount} remaining
+            questions before submitting the form.
           </AlertDescription>
         </Alert>
       )}
-
-      {/* Submit Button */}
-      <div className='flex gap-4 pt-4'>
-        <Button
-          onClick={handleSubmit}
-          disabled={isSubmitting || progressPercentage < 100}
-          className='w-full'
-          size='lg'
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-              Submitting...
-            </>
-          ) : (
-            'Submit FRM32 Form'
-          )}
-        </Button>
-      </div>
     </div>
   );
 }
