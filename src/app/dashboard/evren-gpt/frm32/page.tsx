@@ -702,15 +702,10 @@ export default function FRM32Page() {
           console.log('[FRM32] No existing submissions found');
         }
       } catch (error: any) {
-        console.log('[FRM32] Load answers error details:');
-        console.log('[FRM32] - error.message:', error.message);
-        console.log('[FRM32] - error.response:', error.response);
-        console.log('[FRM32] - error.status:', error.status);
-        console.log('[FRM32] - full error:', error);
-        console.log(
-          '[FRM32] Could not load answers (might be first submission):',
-          error.message
-        );
+        console.log('[FRM32] Load answers error:');
+        console.log('[FRM32] - status:', error.status);
+        console.log('[FRM32] - message:', error.message);
+        console.log('[FRM32] - response:', error.response);
         // This is okay - might be first time contractor is filling the form
       }
     } catch (error) {
@@ -782,15 +777,10 @@ export default function FRM32Page() {
         setSaveStatus('saved');
         setTimeout(() => setSaveStatus('idle'), 2000);
       } catch (error: any) {
-        console.log('[FRM32] Auto-save error details:');
-        console.log('[FRM32] - error.message:', error.message);
-        console.log('[FRM32] - error.response:', error.response);
-        console.log('[FRM32] - error.status:', error.status);
-        console.log('[FRM32] - full error:', error);
-        console.log(
-          '[FRM32] Could not auto-save (retrying next time):',
-          error.message
-        );
+        console.log('[FRM32] Auto-save error:');
+        console.log('[FRM32] - status:', error.status);
+        console.log('[FRM32] - message:', error.message);
+        console.log('[FRM32] - response:', error.response);
         setSaveStatus('idle');
       }
     } catch (error) {

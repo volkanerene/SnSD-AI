@@ -75,10 +75,35 @@ export class ApiClient {
     });
 
     if (!response.ok) {
-      const error: ApiError = await response.json().catch(() => ({
+      const errorData = await response.json().catch(() => ({
         detail: `HTTP ${response.status}: ${response.statusText}`
       }));
-      throw new Error(error.detail);
+
+      // Handle different error formats
+      let errorMessage: string;
+
+      if (typeof errorData.detail === 'string') {
+        errorMessage = errorData.detail;
+      } else if (Array.isArray(errorData.detail)) {
+        // Handle array of validation errors
+        errorMessage = errorData.detail
+          .map((err: any) => {
+            if (typeof err === 'string') return err;
+            if (err.msg) return err.msg;
+            if (err.message) return err.message;
+            return JSON.stringify(err);
+          })
+          .join('; ');
+      } else if (typeof errorData.detail === 'object') {
+        errorMessage = JSON.stringify(errorData.detail);
+      } else {
+        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      }
+
+      const error = new Error(errorMessage);
+      (error as any).status = response.status;
+      (error as any).response = errorData;
+      throw error;
     }
 
     // Handle 204 No Content
