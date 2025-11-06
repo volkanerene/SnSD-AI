@@ -37,9 +37,7 @@ import { COUNTRY_CODES, getDefaultCountry } from '@/lib/country-codes';
 const contractorSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   legal_name: z.string().min(2, 'Legal name is required'),
-  company_type: z.enum(['bireysel', 'limited'], {
-    errorMap: () => ({ message: 'Company type must be selected' })
-  }),
+  company_type: z.enum(['bireysel', 'limited']),
   tax_number: z
     .string()
     .regex(/^\d{10}$/, 'Tax number must be exactly 10 digits'),
