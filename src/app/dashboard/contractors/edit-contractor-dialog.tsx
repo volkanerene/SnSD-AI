@@ -29,7 +29,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { useContractors } from '@/hooks/useContractors';
+import { useContractor } from '@/hooks/useContractors';
 import { toast } from 'sonner';
 import type { Contractor, ContractorUpdate } from '@/types/api';
 
@@ -68,7 +68,7 @@ export function EditContractorDialog({
   tenantId
 }: EditContractorDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { updateContractorAsync } = useContractors({ tenantId });
+  const { updateContractorAsync } = useContractor(contractor.id, tenantId);
 
   const form = useForm<ContractorFormData>({
     resolver: zodResolver(contractorSchema),
@@ -92,7 +92,7 @@ export function EditContractorDialog({
   const onSubmit = async (data: ContractorFormData) => {
     setIsSubmitting(true);
     try {
-      await updateContractorAsync(contractor.id, data as ContractorUpdate);
+      await updateContractorAsync(data as ContractorUpdate);
       toast.success('Contractor updated successfully');
       onOpenChange(false);
     } catch (error: any) {
