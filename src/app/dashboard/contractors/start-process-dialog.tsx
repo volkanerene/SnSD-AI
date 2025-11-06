@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -32,6 +33,7 @@ export function StartProcessDialog({
   tenantId,
   onSuccess
 }: StartProcessDialogProps) {
+  const router = useRouter();
   const [message, setMessage] = useState('');
   const [isStarting, setIsStarting] = useState(false);
 
@@ -72,9 +74,35 @@ export function StartProcessDialog({
         tenantId
       });
 
-      toast.success(
-        `Successfully started EvrenGPT process for ${selectedContractorIds.length} contractor(s). Session ID: ${data.session_id}`
-      );
+      console.log('[StartProcessDialog] Session created:', data.session_id);
+
+      // Store session ID and contractor ID in localStorage for FRM32 form
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('frm32_session_id', data.session_id);
+        // If single contractor, also store the contractor ID and navigate directly to FRM32
+        if (selectedContractorIds.length === 1) {
+          localStorage.setItem('frm32_contractor_id', selectedContractorIds[0]);
+          console.log(
+            '[StartProcessDialog] Navigating to FRM32 with session:',
+            data.session_id,
+            'contractor:',
+            selectedContractorIds[0]
+          );
+          // Navigate to FRM32 form with parameters
+          router.push(
+            `/dashboard/evren-gpt/frm32?session=${data.session_id}&contractor=${selectedContractorIds[0]}`
+          );
+        } else {
+          // Multiple contractors - navigate to evaluations page
+          console.log(
+            '[StartProcessDialog] Multiple contractors selected, navigating to evaluations'
+          );
+          toast.success(
+            `Successfully started EvrenGPT process for ${selectedContractorIds.length} contractor(s).`
+          );
+          router.push('/dashboard/evaluations');
+        }
+      }
 
       onSuccess();
       onOpenChange(false);
