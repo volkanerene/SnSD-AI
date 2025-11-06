@@ -133,6 +133,7 @@ export interface Contractor {
   tenant_name?: string; // Tenant name for display purposes
   name: string;
   legal_name: string;
+  company_type?: 'bireysel' | 'limited'; // Bireysel (Individual) or Limited Company
   tax_number: string;
   trade_registry_number: string | null;
   contact_person: string;
@@ -155,6 +156,7 @@ export interface Contractor {
 export interface ContractorCreate {
   name: string;
   legal_name: string;
+  company_type: 'bireysel' | 'limited';
   tax_number: string;
   contact_person: string;
   contact_email: string;
