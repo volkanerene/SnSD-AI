@@ -686,8 +686,12 @@ export default function FRM32Page() {
 
       try {
         // Use apiClient which handles authentication internally
+        // Generate evaluation_period from cycle (e.g., "2025-01" for cycle 1)
+        const year = new Date().getFullYear();
+        const evaluationPeriod = `${year}-${String(cycle).padStart(2, '0')}`;
+
         const data = await apiClient.get<any>(
-          `/frm32/submissions?contractor_id=${contractorId}&cycle=${cycle}`,
+          `/frm32/submissions?contractor_id=${contractorId}&evaluation_period=${evaluationPeriod}&tenant_id=${tenantId}`,
           {
             tenantId
           }
@@ -761,11 +765,16 @@ export default function FRM32Page() {
 
       try {
         // Use apiClient which handles authentication internally
+        // Generate evaluation_period from cycle (e.g., "2025-01" for cycle 1)
+        const year = new Date().getFullYear();
+        const evaluationPeriod = `${year}-${String(cycle).padStart(2, '0')}`;
+
         const response = await apiClient.post<{ submission_id: string }>(
           '/frm32/submissions',
           {
             contractor_id: cId,
-            cycle,
+            tenant_id: tId,
+            evaluation_period: evaluationPeriod,
             answers: answersToSave,
             status: 'draft'
           },
