@@ -640,6 +640,7 @@ export default function FRM32Page() {
   const urlSessionId = searchParams.get('session');
   // Use contractor_id or fallback to profile id as the contractor identifier
   const contractorId = profile?.contractor_id || profile?.id;
+  const tenantId = profile?.tenant_id;
   const cycle = parseInt(searchParams.get('cycle') || '1');
   const autoSaveTimer = useRef<NodeJS.Timeout>();
 
@@ -659,144 +660,53 @@ export default function FRM32Page() {
     }
   }, [urlSessionId]);
 
-  // Load existing answers when profile and contractor are available
+  // Load existing answers when profile is fully loaded
   useEffect(() => {
-    // Only load if profile is loaded and we have contractor ID
-    if (profile && contractorId && profile.tenant_id) {
+    // Only load once profile is fully loaded with ID and tenant
+    if (contractorId && tenantId) {
+      console.log('[FRM32] Profile loaded, loading answers...');
       loadExistingAnswers();
     }
-  }, [contractorId, profile?.tenant_id, profile?.id]);
+  }, [contractorId, tenantId]); // Stable dependencies
 
   const loadExistingAnswers = async () => {
     try {
       setIsLoading(true);
-      const token = localStorage.getItem('token');
-      const tenantId = profile?.tenant_id;
 
       console.log('[FRM32] ========== LOADING ANSWERS ==========');
       console.log('[FRM32] contractorId:', contractorId);
-      console.log('[FRM32] profile.id:', profile?.id);
-      console.log('[FRM32] profile.contractor_id:', profile?.contractor_id);
-      console.log('[FRM32] sessionId:', sessionId);
-      console.log('[FRM32] token present:', !!token);
+      console.log('[FRM32] sessionId (URL):', sessionId);
       console.log('[FRM32] tenantId:', tenantId);
-      console.log('[FRM32] profile loaded:', !!profile);
 
-      if (!profile) {
-        console.log('[FRM32] Profile not loaded yet');
+      if (!contractorId || !tenantId) {
+        console.log('[FRM32] Missing contractor ID or tenant ID');
         setIsLoading(false);
         return;
       }
 
-      if (!contractorId) {
-        console.log('[FRM32] Missing contractor ID');
-        setIsLoading(false);
-        return;
-      }
-
-      if (!tenantId) {
-        console.log('[FRM32] Missing tenantId');
-        setIsLoading(false);
-        return;
-      }
-
-      // Note: token might not be in localStorage if using API client's internal auth
-      // The API client handles authentication internally
-
-      // If sessionId not provided via URL, get active session from API
-      let activeSessionId = sessionId;
-      if (!activeSessionId) {
-        console.log(
-          '[FRM32] No sessionId provided, fetching active session...'
-        );
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/frm32/sessions?contractor_id=${contractorId}`,
+      try {
+        // Use apiClient which handles authentication internally
+        const data = await apiClient.get<any>(
+          `/frm32/submissions?contractor_id=${contractorId}&cycle=${cycle}`,
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'x-tenant-id': tenantId
-            }
+            tenantId
           }
         );
 
-        if (response.ok) {
-          const sessions = await response.json();
-          if (sessions && sessions.length > 0) {
-            activeSessionId = sessions[0].session_id;
-            setSessionId(activeSessionId);
-            console.log('[FRM32] Found active session:', activeSessionId);
-          } else {
-            console.log('[FRM32] No active session found for this contractor');
-            setIsLoading(false);
-            return;
-          }
-        } else {
-          console.log('[FRM32] Failed to fetch sessions:', response.status);
-          setIsLoading(false);
-          return;
-        }
-      }
+        console.log('[FRM32] Successfully loaded answers:', data);
 
-      if (!activeSessionId) {
-        console.log('[FRM32] No sessionId available');
-        setIsLoading(false);
-        return;
-      }
-
-      // Try primary API URL first, then fallback
-      const apiUrls = [
-        process.env.NEXT_PUBLIC_API_URL,
-        'https://api.snsdconsultant.com', // Production fallback
-        'http://localhost:8000' // Local fallback
-      ].filter(Boolean) as string[];
-
-      console.log('[FRM32] Trying API URLs:', apiUrls);
-
-      let response: Response | null = null;
-      let lastError: string = '';
-
-      for (const apiUrl of apiUrls) {
-        try {
-          console.log(`[FRM32] Fetching from ${apiUrl}...`);
-          response = await fetch(
-            `${apiUrl}/frm32/submissions?session_id=${activeSessionId}&contractor_id=${contractorId}&cycle=${cycle}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                'x-tenant-id': tenantId
-              }
-            }
-          );
-
-          console.log(
-            `[FRM32] Response status from ${apiUrl}:`,
-            response.status
-          );
-
-          if (response.ok) {
-            console.log('[FRM32] Successfully loaded answers');
-            break; // Success
-          } else {
-            const errorText = await response.text();
-            lastError = `${response.status}: ${errorText}`;
-            console.log(`[FRM32] Error from ${apiUrl}:`, lastError);
-          }
-        } catch (err) {
-          lastError = String(err);
-          console.log(`[FRM32] Failed to reach ${apiUrl}:`, err);
-          continue;
-        }
-      }
-
-      if (response && response.ok) {
-        const data = await response.json();
-        console.log('[FRM32] Data loaded:', data);
         if (data && data.length > 0) {
           console.log('[FRM32] Setting answers:', data[0].answers);
           setAnswers(data[0].answers || {});
+        } else {
+          console.log('[FRM32] No existing submissions found');
         }
-      } else {
-        console.log('[FRM32] No valid response:', lastError);
+      } catch (error: any) {
+        console.log(
+          '[FRM32] Could not load answers (might be first submission):',
+          error.message
+        );
+        // This is okay - might be first time contractor is filling the form
       }
     } catch (error) {
       console.error('[FRM32] Failed to load existing answers:', error);
@@ -829,87 +739,41 @@ export default function FRM32Page() {
 
   const autoSaveDraft = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const tenantId = profile?.tenant_id;
-
       console.log('[FRM32] ========== AUTO-SAVE TRIGGERED ==========');
-      console.log('[FRM32] sessionId:', sessionId);
       console.log('[FRM32] contractorId:', contractorId);
-      console.log('[FRM32] token present:', !!token);
       console.log('[FRM32] tenantId:', tenantId);
+      console.log('[FRM32] cycle:', cycle);
 
-      if (!sessionId || !contractorId) {
-        console.log('[FRM32] Missing sessionId or contractorId for auto-save');
+      if (!contractorId || !tenantId) {
+        console.log('[FRM32] Missing contractorId or tenantId for auto-save');
         setSaveStatus('idle');
         return;
       }
 
-      if (!token || !tenantId) {
-        console.log('[FRM32] Missing token or tenantId for auto-save');
+      try {
+        // Use apiClient which handles authentication internally
+        const response = await apiClient.post<{ submission_id: string }>(
+          '/frm32/submissions',
+          {
+            contractor_id: contractorId,
+            cycle,
+            answers,
+            status: 'draft'
+          },
+          { tenantId }
+        );
+
+        console.log('[FRM32] Auto-save response:', response);
+        console.log('[FRM32] Auto-save successful');
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus('idle'), 2000);
+      } catch (error: any) {
+        console.log(
+          '[FRM32] Could not auto-save (retrying next time):',
+          error.message
+        );
         setSaveStatus('idle');
-        return;
       }
-
-      // Try primary API URL first, then fallback
-      const apiUrls = [
-        process.env.NEXT_PUBLIC_API_URL,
-        'https://api.snsdconsultant.com', // Production fallback
-        'http://localhost:8000' // Local fallback
-      ].filter(Boolean) as string[];
-
-      console.log('[FRM32] Auto-save URLs:', apiUrls);
-
-      let response: Response | null = null;
-      let lastError: string = '';
-
-      for (const apiUrl of apiUrls) {
-        try {
-          console.log(`[FRM32] Auto-saving to ${apiUrl}...`);
-          response = await fetch(`${apiUrl}/frm32/submissions`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-              'x-tenant-id': tenantId
-            },
-            body: JSON.stringify({
-              form_id: 'frm32',
-              session_id: sessionId,
-              contractor_id: contractorId,
-              cycle,
-              answers,
-              status: 'draft'
-            })
-          });
-
-          console.log(
-            `[FRM32] Auto-save response status from ${apiUrl}:`,
-            response.status
-          );
-
-          if (response.ok) {
-            console.log('[FRM32] Auto-save successful');
-            setSaveStatus('saved');
-            setTimeout(() => setSaveStatus('idle'), 2000);
-            return;
-          } else {
-            const errorData = await response.json().catch(() => ({}));
-            lastError =
-              errorData.message ||
-              errorData.detail ||
-              `API returned ${response.status}`;
-            console.log(`[FRM32] Auto-save error from ${apiUrl}:`, lastError);
-          }
-        } catch (err) {
-          lastError = `Failed to reach ${apiUrl}: ${String(err)}`;
-          console.log('[FRM32] Auto-save fetch error:', err);
-          continue;
-        }
-      }
-
-      // If we get here, all retries failed
-      console.error('[FRM32] Auto-save failed after all retries:', lastError);
-      setSaveStatus('idle');
     } catch (error) {
       console.error('[FRM32] Auto-save error:', error);
       setSaveStatus('idle');
