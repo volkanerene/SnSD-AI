@@ -161,6 +161,22 @@ export default function ContractorSignupPage() {
         const errorData = await response.json().catch(() => ({}));
         const errorMessage =
           errorData.detail || `Registration failed: ${response.status}`;
+
+        // If email already registered, redirect to sign-in
+        if (
+          errorMessage.includes('already registered') ||
+          errorMessage.includes('already exists')
+        ) {
+          setError(
+            'This email is already registered. Redirecting to sign-in...'
+          );
+          setTimeout(() => {
+            router.push('/auth/sign-in');
+          }, 1500);
+          setSubmitting(false);
+          return;
+        }
+
         setError(errorMessage);
         setSubmitting(false);
         return;

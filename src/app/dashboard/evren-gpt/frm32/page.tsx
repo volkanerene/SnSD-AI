@@ -324,9 +324,18 @@ export default function FRM32Page() {
           message: errorMessage,
           status: e?.response?.status,
           data: e?.response?.data,
+          contractorId,
+          tenantId,
+          evaluationPeriod,
           error: e
         });
-        toast.error(`Failed to load form: ${errorMessage}`);
+        console.error('[FRM32] Check contractor exists with IDs:', {
+          contractor_id: contractorId,
+          tenant_id: tenantId
+        });
+        toast.error(
+          `Failed to load form: ${errorMessage} (contractor: ${contractorId})`
+        );
       } finally {
         setIsLoading(false);
       }
