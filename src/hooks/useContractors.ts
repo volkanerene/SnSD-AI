@@ -113,7 +113,7 @@ export function useContractor(contractorId: UUID, tenantId?: string) {
   // Update contractor mutation
   const updateContractorMutation = useMutation({
     mutationFn: async (data: ContractorUpdate) => {
-      return apiClient.patch<Contractor>(`/contractors/${contractorId}`, data, {
+      return apiClient.put<Contractor>(`/contractors/${contractorId}`, data, {
         tenantId
       });
     },
