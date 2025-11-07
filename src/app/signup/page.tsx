@@ -47,53 +47,34 @@ export default function ContractorSignupPage() {
   // Verify session and contractor on mount
   useEffect(() => {
     const verifySignup = async () => {
+      if (!sessionId || !contractorId) {
+        setError(
+          'Invalid signup link. Missing session or contractor information.'
+        );
+        setLoading(false);
+        return;
+      }
+
+      // Use production API URL - no localhost fallback
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL || 'https://api.snsdconsultant.com';
+
       try {
-        if (!sessionId || !contractorId) {
-          setError(
-            'Invalid signup link. Missing session or contractor information.'
-          );
-          setLoading(false);
-          return;
-        }
-
-        // Try primary API URL first, then fallback
-        const apiUrls = [
-          process.env.NEXT_PUBLIC_API_URL,
-          'https://api.snsdconsultant.com', // Production fallback
-          'http://localhost:8000' // Local fallback
-        ].filter(Boolean) as string[];
-
-        let response: Response | null = null;
-        let lastError: string = '';
-
-        for (const apiUrl of apiUrls) {
-          try {
-            response = await fetch(
-              `${apiUrl}/contractor/signup/verify?session_id=${sessionId}&contractor_id=${contractorId}`,
-              {
-                method: 'GET',
-                headers: {
-                  'Content-Type': 'application/json'
-                }
-              }
-            );
-
-            if (response.ok) {
-              break; // Success - use this response
-            } else {
-              const errorData = await response.json().catch(() => ({}));
-              lastError = errorData.detail || `API returned ${response.status}`;
+        const response = await fetch(
+          `${apiUrl}/contractor/signup/verify?session_id=${sessionId}&contractor_id=${contractorId}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
             }
-          } catch (err) {
-            lastError = `Failed to reach ${apiUrl}`;
-            continue;
           }
-        }
+        );
 
-        if (!response || !response.ok) {
-          setError(
-            lastError || 'Failed to verify signup link. Please try again later.'
-          );
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          const errorMessage =
+            errorData.detail || `API returned ${response.status}`;
+          setError(errorMessage);
           setLoading(false);
           return;
         }
@@ -118,7 +99,7 @@ export default function ContractorSignupPage() {
         setLoading(false);
       } catch (err) {
         console.error('Verification error:', err);
-        setError('An error occurred while verifying your signup link');
+        setError('Failed to verify signup link. Please try again later.');
         setLoading(false);
       }
     };
@@ -158,47 +139,29 @@ export default function ContractorSignupPage() {
       return;
     }
 
+    const apiUrl =
+      process.env.NEXT_PUBLIC_API_URL || 'https://api.snsdconsultant.com';
+
     try {
-      // Try primary API URL first, then fallback
-      const apiUrls = [
-        process.env.NEXT_PUBLIC_API_URL,
-        'https://api.snsdconsultant.com', // Production fallback
-        'http://localhost:8000' // Local fallback
-      ].filter(Boolean) as string[];
+      const response = await fetch(`${apiUrl}/contractor/signup/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: verifyData?.contractor_email,
+          password: formData.password,
+          password_confirm: formData.passwordConfirm,
+          session_id: sessionId,
+          contractor_id: contractorId
+        })
+      });
 
-      let response: Response | null = null;
-      let lastError: string = '';
-
-      for (const apiUrl of apiUrls) {
-        try {
-          response = await fetch(`${apiUrl}/contractor/signup/register`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              email: verifyData?.contractor_email,
-              password: formData.password,
-              password_confirm: formData.passwordConfirm,
-              session_id: sessionId,
-              contractor_id: contractorId
-            })
-          });
-
-          if (response.ok) {
-            break; // Success - use this response
-          } else {
-            const errorData = await response.json().catch(() => ({}));
-            lastError = errorData.detail || `API returned ${response.status}`;
-          }
-        } catch (err) {
-          lastError = `Failed to reach ${apiUrl}`;
-          continue;
-        }
-      }
-
-      if (!response || !response.ok) {
-        setError(lastError || 'Registration failed. Please try again later.');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage =
+          errorData.detail || `Registration failed: ${response.status}`;
+        setError(errorMessage);
         setSubmitting(false);
         return;
       }
@@ -215,7 +178,9 @@ export default function ContractorSignupPage() {
       }, 2000);
     } catch (err) {
       console.error('Registration error:', err);
-      setError('An error occurred during registration');
+      setError(
+        'Failed to reach the API. Please check your connection and try again.'
+      );
       setSubmitting(false);
     }
   };
