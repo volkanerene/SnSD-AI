@@ -80,8 +80,7 @@ export const COUNTRY_CODES: CountryCode[] = [
   { code: '+57', country: 'Colombia', flag: '🇨🇴', shortCode: 'CO' },
   { code: '+54', country: 'Argentina', flag: '🇦🇷', shortCode: 'AR' },
   { code: '+51', country: 'Peru', flag: '🇵🇪', shortCode: 'PE' },
-  { code: '+52', country: 'Mexico', flag: '🇲🇽', shortCode: 'MX' },
-  { code: '+1', country: 'Canada', flag: '🇨🇦', shortCode: 'CA' }
+  { code: '+52', country: 'Mexico', flag: '🇲🇽', shortCode: 'MX' }
 ];
 
 export const getCountryByCode = (code: string): CountryCode | undefined => {

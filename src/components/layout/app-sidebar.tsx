@@ -56,8 +56,11 @@ export default function AppSidebar() {
   const { isOpen } = useMediaQuery();
   const { user, signOutAsync } = useAuth();
   const { profile, isLoading: profileLoading } = useProfile();
-  const { hasPermission, isLoading: permissionsLoading } =
-    usePermissionContext();
+  const {
+    permissions,
+    roleId,
+    isLoading: permissionsLoading
+  } = usePermissionContext();
   const router = useRouter();
 
   const handleSwitchTenant = (_tenantId: string) => {
@@ -76,18 +79,35 @@ export default function AppSidebar() {
 
   // Filter nav items based on user permissions
   const filteredNavItems = React.useMemo(() => {
+    console.log('[Sidebar] Computing filtered items:', {
+      profileLoading,
+      permissionsLoading,
+      hasProfile: !!profile?.role_id,
+      roleId: profile?.role_id,
+      permissionCount: permissions?.length ?? 0,
+      isSupervisor: roleId === 5
+    });
+
     // Show loading state - don't show any items while loading
     if (profileLoading || permissionsLoading) {
+      console.log('[Sidebar] Still loading, returning empty array');
       return [];
     }
 
     // If profile or permissions not loaded yet, return empty
-    if (!profile?.role_id) {
+    if (!profile?.role_id || !permissions) {
+      console.log('[Sidebar] No profile or role_id or permissions');
       return [];
     }
 
     const result = navItems
       .map((item) => {
+        // Hide EvrenGPT menu for supervisor (role_id 5)
+        if (item.title === 'EvrenGPT' && roleId === 5) {
+          console.log('[Sidebar] Hiding EvrenGPT for supervisor');
+          return null;
+        }
+
         // Filter sub-items if they exist
         if (item.items && item.items.length > 0) {
           const filteredSubItems = item.items
@@ -97,7 +117,9 @@ export default function AppSidebar() {
                 const filteredNestedItems = subItem.items.filter(
                   (nestedItem) => {
                     if (nestedItem.requiredPermission) {
-                      return hasPermission(nestedItem.requiredPermission);
+                      return permissions.includes(
+                        nestedItem.requiredPermission
+                      );
                     }
                     return canAccessRoute(profile.role_id!, nestedItem.url);
                   }
@@ -112,7 +134,7 @@ export default function AppSidebar() {
 
               // Check permission if requiredPermission is specified
               if (subItem.requiredPermission) {
-                return hasPermission(subItem.requiredPermission)
+                return permissions.includes(subItem.requiredPermission)
                   ? subItem
                   : null;
               }
@@ -150,10 +172,15 @@ export default function AppSidebar() {
           return true;
         }
 
-        // Check permission if requiredPermission is specified
+        // Check permission if requiredPermission is specified - if user has permission, show it
         if (item.requiredPermission) {
-          const hasAccess = hasPermission(item.requiredPermission);
-          if (!hasAccess) return false;
+          const hasAccess = permissions.includes(item.requiredPermission);
+          console.log('[Sidebar] Permission check:', {
+            title: item.title,
+            requiredPermission: item.requiredPermission,
+            hasAccess
+          });
+          return hasAccess; // Return immediately based on permission check
         }
 
         // Hide admin-only items for non-admins (role_id > 2)
@@ -170,8 +197,17 @@ export default function AppSidebar() {
         return canAccessRoute(profile.role_id, item.url);
       });
 
+    console.log('[Sidebar] Filtered nav items:', {
+      totalItems: navItems.length,
+      filteredItems: result.length,
+      items: result.map((i) => ({
+        title: i.title,
+        requiredPermission: i.requiredPermission
+      }))
+    });
+
     return result;
-  }, [profile, profileLoading, permissionsLoading, hasPermission]);
+  }, [profile, profileLoading, permissionsLoading, permissions, roleId]);
 
   React.useEffect(() => {
     // Side effects based on sidebar state changes

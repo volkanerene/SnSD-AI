@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useProfile } from '@/hooks/useProfile';
 import { apiClient } from '@/lib/api-client';
@@ -186,6 +186,24 @@ interface FRM32Question {
   position: number;
 }
 
+type ScoreOption = '0' | '3' | '6' | '10';
+
+interface K2Comment {
+  en: string;
+  tr: string;
+}
+
+interface K2Metric {
+  k2_code: string;
+  scope_en: string;
+  scope_tr: string;
+  weight_percentage: number;
+  comments: Record<ScoreOption, K2Comment>;
+  score?: number | null;
+  selected_comment_en?: string | null;
+  selected_comment_tr?: string | null;
+}
+
 export default function FRM32Page() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -193,7 +211,6 @@ export default function FRM32Page() {
 
   const [questions, setQuestions] = useState<FRM32Question[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [scores, setScores] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>(
@@ -209,7 +226,15 @@ export default function FRM32Page() {
   const [uploadingFiles, setUploadingFiles] = useState<Record<string, boolean>>(
     {}
   );
+  const [attachmentDetails, setAttachmentDetails] = useState<
+    Record<string, { filename: string; file_url?: string }>
+  >({});
   const [viewMode, setViewMode] = useState<'single' | 'all'>('single');
+  const [k2Metrics, setK2Metrics] = useState<K2Metric[]>([]);
+  const [k2Scores, setK2Scores] = useState<Record<string, number>>({});
+  const [k2Saving, setK2Saving] = useState<Record<string, boolean>>({});
+  const [finalScore, setFinalScore] = useState<number | null>(null);
+  const [isK2Loading, setIsK2Loading] = useState(false);
 
   // For supervisors, contractor_id can come from URL params, for contractors it's from their profile
   const submissionParam = searchParams.get('submission');
@@ -222,8 +247,9 @@ export default function FRM32Page() {
   const cycle = parseInt(searchParams.get('cycle') || '1', 10);
   const evaluationPeriod = cycleToEvaluationPeriod(cycle);
 
-  // Detect supervisor (role_id 5)
-  const isSupervisor = profile?.role_id === 5;
+  const roleId = profile?.role_id;
+  const isSupervisor =
+    roleId === 5 || (typeof roleId === 'number' && roleId <= 3);
 
   // If submission parameter is provided, fetch it to get contractor_id
   useEffect(() => {
@@ -255,6 +281,17 @@ export default function FRM32Page() {
     profile?.contractor_id
   ]);
 
+  // Whenever the authenticated contractor profile becomes available, sync it into local state
+  useEffect(() => {
+    if (
+      !supervisorContractorId &&
+      profile?.contractor_id &&
+      resolvedContractorId !== profile.contractor_id
+    ) {
+      setResolvedContractorId(profile.contractor_id);
+    }
+  }, [profile?.contractor_id, supervisorContractorId, resolvedContractorId]);
+
   const autoSaveTimer = useRef<NodeJS.Timeout | undefined>(undefined);
   const currentQuestion = questions[currentQuestionIndex];
   const answeredCount = Object.values(answers).filter(
@@ -266,12 +303,6 @@ export default function FRM32Page() {
       : 0;
 
   // Calculate total score
-  const totalScore = Object.values(scores).reduce(
-    (sum, score) => sum + (score || 0),
-    0
-  );
-  const maxScore = questions.length * 9;
-
   const ready = Boolean(contractorId && tenantId && !isProfileLoading);
 
   const requiredDocuments = [
@@ -289,6 +320,17 @@ export default function FRM32Page() {
   const missingRequiredFiles = requiredDocuments.filter(
     (docId) => !uploadedFiles[docId]
   );
+  const questionsByK2 = useMemo(() => {
+    const map: Record<string, FRM32Question[]> = {};
+    questions.forEach((question) => {
+      const key = question.k2_category || 'unknown';
+      if (!map[key]) {
+        map[key] = [];
+      }
+      map[key].push(question);
+    });
+    return map;
+  }, [questions]);
 
   // Fetch questions
   useEffect(() => {
@@ -385,41 +427,42 @@ export default function FRM32Page() {
         const answers = sub?.answers || {};
         setAnswers(answers);
 
-        const scores = sub?.scores || {};
-        setScores(scores);
+        setFinalScore(
+          typeof sub?.final_score === 'number' ? sub.final_score : null
+        );
 
         const attachments = sub?.attachments || [];
         if (Array.isArray(attachments) && attachments.length > 0) {
           const uploadedFilesMap: Record<string, boolean> = {};
+          const attachmentMeta: Record<
+            string,
+            { filename: string; file_url?: string }
+          > = {};
           attachments.forEach((att: any) => {
             if (att.docId) {
               uploadedFilesMap[att.docId] = true;
+              attachmentMeta[att.docId] = {
+                filename: att.filename || att.docId,
+                file_url: att.file_url
+              };
             }
           });
           setUploadedFiles(uploadedFilesMap);
+          setAttachmentDetails(attachmentMeta);
+        } else {
+          setUploadedFiles({});
+          setAttachmentDetails({});
         }
 
-        // For supervisors, resume from next unscored question; for contractors, next unanswered
-        let initialIndex = 0;
-        if (isSupervisor) {
-          // Find first unscored question
-          initialIndex = questions.findIndex(
-            (q) =>
-              !scores[q.question_code] ||
-              scores[q.question_code] === undefined ||
-              scores[q.question_code] === null
-          );
-        } else {
-          // Find first unanswered question
-          initialIndex = questions.findIndex(
-            (q) =>
-              !answers[q.question_code] ||
-              answers[q.question_code].trim() === ''
-          );
+        // Resume from first unanswered question
+        let initialIndex = questions.findIndex(
+          (q) =>
+            !answers[q.question_code] || answers[q.question_code].trim() === ''
+        );
+        if (initialIndex < 0) {
+          initialIndex = 0;
         }
-        if (initialIndex >= 0) {
-          setCurrentQuestionIndex(initialIndex);
-        }
+        setCurrentQuestionIndex(initialIndex);
 
         console.log('[FRM32] Bootstrap complete - submission:', id);
       } catch (e: any) {
@@ -458,19 +501,6 @@ export default function FRM32Page() {
     [answers, ready, submissionId, isSupervisor]
   );
 
-  const handleScoreChange = useCallback(
-    (questionId: string, score: number) => {
-      setScores((prev) => ({ ...prev, [questionId]: score }));
-      if (!ready || !submissionId || !isSupervisor) return;
-
-      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-      const snapshot = { ...scores, [questionId]: score };
-      setSaveStatus('saving');
-      autoSaveTimer.current = setTimeout(() => autoSaveScores(snapshot), 2000);
-    },
-    [scores, ready, submissionId, isSupervisor]
-  );
-
   async function autoSaveDraft(answersToSave: Record<string, string>) {
     if (!submissionId || !tenantId) {
       setSaveStatus('idle');
@@ -497,27 +527,6 @@ export default function FRM32Page() {
       setTimeout(() => setSaveStatus('idle'), 1200);
     } catch (e: any) {
       console.error('[FRM32] autosave error:', e?.message || e);
-      setSaveStatus('idle');
-    }
-  }
-
-  async function autoSaveScores(scoresToSave: Record<string, number>) {
-    if (!submissionId || !tenantId) {
-      setSaveStatus('idle');
-      return;
-    }
-    try {
-      await apiClient.put(
-        `/frm32/submissions/${submissionId}`,
-        {
-          scores: scoresToSave
-        },
-        { tenantId }
-      );
-      setSaveStatus('saved');
-      setTimeout(() => setSaveStatus('idle'), 1200);
-    } catch (e: any) {
-      console.error('[FRM32] autosave scores error:', e?.message || e);
       setSaveStatus('idle');
     }
   }
@@ -553,13 +562,23 @@ export default function FRM32Page() {
         const formData = new FormData();
         formData.append('file', file);
 
-        await apiClient.post(
+        const uploadResult = await apiClient.post(
           `/frm32/submissions/${submissionId}/upload?docId=${encodeURIComponent(docId)}`,
           formData,
           { tenantId }
         );
 
         setUploadedFiles((prev) => ({ ...prev, [docId]: true }));
+        setAttachmentDetails((prev) => ({
+          ...prev,
+          [docId]: {
+            filename:
+              (uploadResult as any)?.filename ||
+              file.name ||
+              `Document ${docId}`,
+            file_url: (uploadResult as any)?.file_url
+          }
+        }));
         toast.success(`${file.name} uploaded successfully`);
       } catch (e: any) {
         const errorMessage =
@@ -573,16 +592,112 @@ export default function FRM32Page() {
     [submissionId, tenantId]
   );
 
-  const handleDownloadFile = async (docId: string) => {
-    if (!submissionId || !tenantId) return;
+  const loadK2Scores = useCallback(async () => {
+    if (!isSupervisor || !submissionId || !tenantId) return;
+    setIsK2Loading(true);
+    try {
+      const response = await apiClient.get<{
+        scores: K2Metric[];
+        final_score?: number;
+      }>(`/frm32/submissions/${submissionId}/k2-scores`, {
+        tenantId
+      });
+      const metrics = response.scores || [];
+      setK2Metrics(metrics);
+      const map: Record<string, number> = {};
+      metrics.forEach((metric) => {
+        if (typeof metric.score === 'number') {
+          map[metric.k2_code] = metric.score;
+        }
+      });
+      setK2Scores(map);
+      if (typeof response.final_score === 'number') {
+        setFinalScore(response.final_score);
+      }
+    } catch (e: any) {
+      console.error('[FRM32] Failed to load K2 scores:', e?.message || e);
+      toast.error('Failed to load scoring data');
+    } finally {
+      setIsK2Loading(false);
+    }
+  }, [isSupervisor, submissionId, tenantId]);
+
+  const handleK2ScoreChange = async (k2Code: string, score: number) => {
+    if (!submissionId || !tenantId || !isSupervisor) return;
+    setK2Scores((prev) => ({ ...prev, [k2Code]: score }));
+    setK2Saving((prev) => ({ ...prev, [k2Code]: true }));
+    setK2Metrics((prev) =>
+      prev.map((metric) =>
+        metric.k2_code === k2Code
+          ? {
+              ...metric,
+              score,
+              selected_comment_en:
+                metric.comments[String(score) as ScoreOption]?.en,
+              selected_comment_tr:
+                metric.comments[String(score) as ScoreOption]?.tr
+            }
+          : metric
+      )
+    );
 
     try {
-      // For now, this is a placeholder. In production, you'd implement actual file download
-      toast.info('Download feature coming soon');
+      const response = await apiClient.put<{
+        scores: K2Metric[];
+        final_score?: number;
+      }>(
+        `/frm32/submissions/${submissionId}/k2-scores`,
+        {
+          k2_code: k2Code,
+          score
+        },
+        { tenantId }
+      );
+      const metrics = response.scores || [];
+      setK2Metrics(metrics);
+      const map: Record<string, number> = {};
+      metrics.forEach((metric) => {
+        if (typeof metric.score === 'number') {
+          map[metric.k2_code] = metric.score;
+        }
+      });
+      setK2Scores(map);
+      if (typeof response.final_score === 'number') {
+        setFinalScore(response.final_score);
+      }
+      toast.success('Score saved');
     } catch (e: any) {
-      toast.error('Failed to download file');
+      console.error('[FRM32] Failed to save K2 score:', e?.message || e);
+      toast.error(e?.message || 'Failed to save score');
+      loadK2Scores();
+    } finally {
+      setK2Saving((prev) => ({ ...prev, [k2Code]: false }));
     }
   };
+
+  const handleDownloadFile = (docId: string) => {
+    const attachment = attachmentDetails[docId];
+    if (!attachment || !attachment.file_url) {
+      toast.error('File not available for download yet');
+      return;
+    }
+    try {
+      window.open(attachment.file_url, '_blank', 'noopener');
+    } catch (e: any) {
+      console.error('[FRM32] download error:', e?.message || e);
+      toast.error('Failed to open file');
+    }
+  };
+
+  useEffect(() => {
+    loadK2Scores();
+  }, [loadK2Scores]);
+
+  useEffect(() => {
+    if (isSupervisor && tabValue === 'questions') {
+      setTabValue('scores');
+    }
+  }, [isSupervisor, tabValue]);
 
   const validateForm = (): boolean => {
     const missing: string[] = [];
@@ -626,16 +741,9 @@ export default function FRM32Page() {
 
     setIsSubmitting(true);
     try {
-      const submissionData = {
-        status: 'submitted',
-        submitted_at: new Date().toISOString(),
-        progress_percentage: 100,
-        scores: scores
-      };
-
-      await apiClient.put(
-        `/frm32/submissions/${submissionId}`,
-        submissionData,
+      await apiClient.post(
+        `/frm32/submissions/${submissionId}/submit`,
+        {},
         { tenantId }
       );
 
@@ -683,6 +791,12 @@ export default function FRM32Page() {
 
   const canGoNext = currentQuestionIndex < questions.length - 1;
   const canGoPrev = currentQuestionIndex > 0;
+  const completedK2Count = Object.values(k2Scores).filter(
+    (value) => typeof value === 'number'
+  ).length;
+  const totalK2Count = k2Metrics.length;
+  const supervisorScoreDisplay =
+    finalScore !== null ? `${finalScore.toFixed(2)} / 100` : '--';
 
   return (
     <div className='mx-auto max-w-6xl space-y-6 p-4 pt-6 md:p-8'>
@@ -690,9 +804,9 @@ export default function FRM32Page() {
         <Alert className='border-blue-300 bg-blue-50'>
           <AlertCircle className='h-4 w-4 text-blue-600' />
           <AlertDescription className='text-blue-800'>
-            <strong>Supervisor Mode:</strong> You can review answers and provide
-            scores (0/3/6/9 per question), but cannot edit answers or upload
-            files.
+            <strong>Supervisor Mode:</strong> Review contractor answers and
+            score each K2 category (0/3/6/10). You cannot edit contractor
+            answers or upload files.
           </AlertDescription>
         </Alert>
       )}
@@ -710,25 +824,35 @@ export default function FRM32Page() {
         </div>
         <Card className='bg-muted/50'>
           <CardHeader className='pb-3'>
-            <CardTitle className='text-sm'>Score Summary</CardTitle>
+            <CardTitle className='text-sm'>
+              {isSupervisor ? 'Score Summary' : 'Progress'}
+            </CardTitle>
           </CardHeader>
           <CardContent className='space-y-3 text-sm'>
-            <div>
-              <p className='text-muted-foreground text-xs font-medium'>
-                Total Score
-              </p>
-              <p className='text-2xl font-bold'>
-                {totalScore}/{maxScore}
-              </p>
-            </div>
-            {isSupervisor && (
+            {isSupervisor ? (
+              <>
+                <div>
+                  <p className='text-muted-foreground text-xs font-medium'>
+                    Final Score
+                  </p>
+                  <p className='text-2xl font-bold'>{supervisorScoreDisplay}</p>
+                </div>
+                <div>
+                  <p className='text-muted-foreground text-xs font-medium'>
+                    Scored K2
+                  </p>
+                  <p className='font-semibold'>
+                    {completedK2Count}/{totalK2Count || 0}
+                  </p>
+                </div>
+              </>
+            ) : (
               <div>
                 <p className='text-muted-foreground text-xs font-medium'>
-                  Scored Questions
+                  Answered
                 </p>
-                <p className='font-semibold'>
-                  {Object.values(scores).filter((s) => s).length}/
-                  {questions.length}
+                <p className='text-2xl font-bold'>
+                  {answeredCount}/{questions.length}
                 </p>
               </div>
             )}
@@ -762,280 +886,256 @@ export default function FRM32Page() {
       )}
 
       <Tabs value={tabValue} onValueChange={setTabValue}>
-        <TabsList className='grid w-full grid-cols-4'>
-          <TabsTrigger value='questions' className='flex items-center gap-2'>
-            {viewMode === 'single' ? (
-              <>
-                <Eye className='h-4 w-4' />
-                <span className='hidden sm:inline'>Current</span>
-              </>
-            ) : (
-              <>
-                <List className='h-4 w-4' />
-                <span className='hidden sm:inline'>All</span>
-              </>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value='all-questions'>All Questions</TabsTrigger>
+        <TabsList className='flex w-full flex-wrap gap-2 md:grid md:grid-cols-3'>
+          {!isSupervisor && (
+            <>
+              <TabsTrigger
+                value='questions'
+                className='flex items-center gap-2'
+              >
+                {viewMode === 'single' ? (
+                  <>
+                    <Eye className='h-4 w-4' />
+                    <span className='hidden sm:inline'>Current</span>
+                  </>
+                ) : (
+                  <>
+                    <List className='h-4 w-4' />
+                    <span className='hidden sm:inline'>All</span>
+                  </>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value='all-questions'>All Questions</TabsTrigger>
+            </>
+          )}
+
           <TabsTrigger value='files'>File Uploads</TabsTrigger>
-          <TabsTrigger value='summary'>Summary</TabsTrigger>
+
+          {isSupervisor && (
+            <>
+              <TabsTrigger value='scores'>Scoring</TabsTrigger>
+              <TabsTrigger value='summary'>Summary</TabsTrigger>
+            </>
+          )}
         </TabsList>
 
-        {/* Single Question View */}
-        <TabsContent value='questions' className='space-y-6'>
-          <div className='flex gap-2'>
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={() =>
-                setViewMode(viewMode === 'single' ? 'all' : 'single')
-              }
-              className='ml-auto'
-            >
+        {!isSupervisor && (
+          <>
+            {/* Single Question View */}
+            <TabsContent value='questions' className='space-y-6'>
+              <div className='flex gap-2'>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={() =>
+                    setViewMode(viewMode === 'single' ? 'all' : 'single')
+                  }
+                  className='ml-auto'
+                >
+                  {viewMode === 'single' ? (
+                    <>
+                      <List className='mr-2 h-4 w-4' />
+                      View All
+                    </>
+                  ) : (
+                    <>
+                      <Eye className='mr-2 h-4 w-4' />
+                      Single View
+                    </>
+                  )}
+                </Button>
+              </div>
+
               {viewMode === 'single' ? (
                 <>
-                  <List className='mr-2 h-4 w-4' />
-                  View All
+                  <Card>
+                    <CardHeader className='pb-3'>
+                      <div className='flex items-start justify-between gap-4'>
+                        <div className='flex-1'>
+                          <div className='text-muted-foreground mb-2 text-sm font-medium'>
+                            Question {currentQuestionIndex + 1} of{' '}
+                            {questions.length}
+                          </div>
+                          <CardTitle className='text-lg'>
+                            {currentQuestion &&
+                              getQuestionNumber(
+                                currentQuestion.question_code,
+                                currentQuestion.k2_category
+                              )}
+                            . {currentQuestion?.question_text_en}
+                          </CardTitle>
+                        </div>
+                        {currentQuestion?.is_required && (
+                          <Badge variant='destructive'>Required</Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className='space-y-4'>
+                      <Textarea
+                        value={
+                          currentQuestion
+                            ? answers[currentQuestion.question_code] || ''
+                            : ''
+                        }
+                        onChange={(e) =>
+                          currentQuestion &&
+                          handleAnswerChange(
+                            currentQuestion.question_code,
+                            e.target.value
+                          )
+                        }
+                        placeholder='Please provide a detailed response...'
+                        className='min-h-40'
+                        disabled={isSupervisor}
+                      />
+                      {currentQuestion &&
+                        answers[currentQuestion.question_code] && (
+                          <p className='flex items-center gap-1 text-xs text-green-600'>
+                            <CheckCircle className='h-3 w-3' /> Answer provided
+                          </p>
+                        )}
+                    </CardContent>
+                  </Card>
+
+                  <div className='flex gap-4'>
+                    <Button
+                      onClick={() =>
+                        setCurrentQuestionIndex(
+                          Math.max(0, currentQuestionIndex - 1)
+                        )
+                      }
+                      disabled={!canGoPrev}
+                      variant='outline'
+                      size='lg'
+                      className='flex-1'
+                    >
+                      <ChevronLeft className='mr-2 h-4 w-4' />
+                      Previous
+                    </Button>
+                    <Button
+                      onClick={() =>
+                        setCurrentQuestionIndex(
+                          Math.min(
+                            questions.length - 1,
+                            currentQuestionIndex + 1
+                          )
+                        )
+                      }
+                      disabled={!canGoNext}
+                      variant='outline'
+                      size='lg'
+                      className='flex-1'
+                    >
+                      Next
+                      <ChevronRight className='ml-2 h-4 w-4' />
+                    </Button>
+                  </div>
                 </>
               ) : (
-                <>
-                  <Eye className='mr-2 h-4 w-4' />
-                  Single View
-                </>
+                /* All Questions View */
+                <Card>
+                  <CardHeader>
+                    <CardTitle>All {questions.length} Questions</CardTitle>
+                  </CardHeader>
+                  <CardContent className='space-y-6'>
+                    {questions.map((q) => {
+                      const isAnswered =
+                        answers[q.question_code] &&
+                        answers[q.question_code].trim();
+                      return (
+                        <div
+                          key={q.question_code}
+                          className='border-l-4 border-gray-200 py-2 pl-4'
+                        >
+                          <div className='mb-2 flex items-start justify-between'>
+                            <h3 className='font-semibold'>
+                              {getQuestionNumber(
+                                q.question_code,
+                                q.k2_category
+                              )}
+                              . {q.question_text_en}
+                            </h3>
+                            <div className='flex gap-2'>
+                              {isAnswered && (
+                                <Badge
+                                  variant='secondary'
+                                  className='flex-shrink-0'
+                                >
+                                  <CheckCircle className='mr-1 h-3 w-3' />
+                                  Answered
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <div className='mb-3 rounded bg-gray-50 p-3 text-sm dark:bg-gray-900'>
+                            {answers[q.question_code] || (
+                              <span className='text-muted-foreground italic'>
+                                No answer provided
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
               )}
-            </Button>
-          </div>
+            </TabsContent>
 
-          {viewMode === 'single' ? (
-            <>
+            {/* All Questions View (Grid) */}
+            <TabsContent value='all-questions' className='space-y-6'>
               <Card>
-                <CardHeader className='pb-3'>
-                  <div className='flex items-start justify-between gap-4'>
-                    <div className='flex-1'>
-                      <div className='text-muted-foreground mb-2 text-sm font-medium'>
-                        Question {currentQuestionIndex + 1} of{' '}
-                        {questions.length}
-                      </div>
-                      <CardTitle className='text-lg'>
-                        {currentQuestion &&
-                          getQuestionNumber(
-                            currentQuestion.question_code,
-                            currentQuestion.k2_category
-                          )}
-                        . {currentQuestion?.question_text_en}
-                      </CardTitle>
-                    </div>
-                    {currentQuestion?.is_required && (
-                      <Badge variant='destructive'>Required</Badge>
-                    )}
-                  </div>
+                <CardHeader>
+                  <CardTitle>All {questions.length} Questions</CardTitle>
+                  <p className='text-muted-foreground mt-2 text-sm'>
+                    {answeredCount} answered
+                  </p>
                 </CardHeader>
-                <CardContent className='space-y-4'>
-                  <Textarea
-                    value={
-                      currentQuestion
-                        ? answers[currentQuestion.question_code] || ''
-                        : ''
-                    }
-                    onChange={(e) =>
-                      currentQuestion &&
-                      handleAnswerChange(
-                        currentQuestion.question_code,
-                        e.target.value
-                      )
-                    }
-                    placeholder='Please provide a detailed response...'
-                    className='min-h-40'
-                    disabled={isSupervisor}
-                  />
-                  {currentQuestion &&
-                    answers[currentQuestion.question_code] && (
-                      <p className='flex items-center gap-1 text-xs text-green-600'>
-                        <CheckCircle className='h-3 w-3' /> Answer provided
-                      </p>
-                    )}
-
-                  {isSupervisor && currentQuestion && (
-                    <div className='space-y-2 border-t pt-4'>
-                      <p className='text-sm font-semibold'>Evaluation Score</p>
-                      <div className='flex gap-2'>
-                        {[0, 3, 6, 9].map((score) => (
-                          <Button
-                            key={score}
-                            variant={
-                              scores[currentQuestion.question_code] === score
-                                ? 'default'
-                                : 'outline'
-                            }
-                            size='sm'
-                            onClick={() =>
-                              handleScoreChange(
-                                currentQuestion.question_code,
-                                score
-                              )
-                            }
-                          >
-                            {score}
-                          </Button>
-                        ))}
-                      </div>
-                      <p className='text-muted-foreground text-xs'>
-                        Selected:{' '}
-                        {scores[currentQuestion.question_code] || 'Not scored'}
-                      </p>
-                    </div>
-                  )}
+                <CardContent>
+                  <div className='grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3'>
+                    {questions.map((q, idx) => {
+                      const isAnswered =
+                        answers[q.question_code] &&
+                        answers[q.question_code].trim();
+                      return (
+                        <button
+                          key={q.question_code}
+                          onClick={() => {
+                            setCurrentQuestionIndex(idx);
+                            setTabValue('questions');
+                            setViewMode('single');
+                          }}
+                          className={`rounded-lg border-2 p-3 text-left transition-colors ${
+                            isAnswered
+                              ? 'text-foreground border-green-600 bg-green-100 hover:bg-green-200 dark:border-green-500 dark:bg-green-900/30 dark:hover:bg-green-900/50'
+                              : 'text-foreground border-gray-300 bg-gray-100 hover:bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700'
+                          }`}
+                        >
+                          <div className='flex items-start justify-between gap-2'>
+                            <div className='flex-1'>
+                              <p className='text-xs font-bold text-gray-700 dark:text-gray-200'>
+                                {getQuestionNumber(
+                                  q.question_code,
+                                  q.k2_category
+                                )}
+                              </p>
+                              <p className='line-clamp-2 text-xs text-gray-700 dark:text-gray-300'>
+                                {q.question_text_en}
+                              </p>
+                            </div>
+                            {isAnswered && (
+                              <CheckCircle className='h-4 w-4 flex-shrink-0 text-green-600 dark:text-green-400' />
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </CardContent>
               </Card>
-
-              <div className='flex gap-4'>
-                <Button
-                  onClick={() =>
-                    setCurrentQuestionIndex(
-                      Math.max(0, currentQuestionIndex - 1)
-                    )
-                  }
-                  disabled={!canGoPrev}
-                  variant='outline'
-                  size='lg'
-                  className='flex-1'
-                >
-                  <ChevronLeft className='mr-2 h-4 w-4' />
-                  Previous
-                </Button>
-                <Button
-                  onClick={() =>
-                    setCurrentQuestionIndex(
-                      Math.min(questions.length - 1, currentQuestionIndex + 1)
-                    )
-                  }
-                  disabled={!canGoNext}
-                  variant='outline'
-                  size='lg'
-                  className='flex-1'
-                >
-                  Next
-                  <ChevronRight className='ml-2 h-4 w-4' />
-                </Button>
-              </div>
-            </>
-          ) : (
-            /* All Questions View */
-            <Card>
-              <CardHeader>
-                <CardTitle>All {questions.length} Questions</CardTitle>
-              </CardHeader>
-              <CardContent className='space-y-6'>
-                {questions.map((q) => {
-                  const isAnswered =
-                    answers[q.question_code] && answers[q.question_code].trim();
-                  const score = scores[q.question_code];
-                  return (
-                    <div
-                      key={q.question_code}
-                      className='border-l-4 border-gray-200 py-2 pl-4'
-                    >
-                      <div className='mb-2 flex items-start justify-between'>
-                        <h3 className='font-semibold'>
-                          {getQuestionNumber(q.question_code, q.k2_category)}.{' '}
-                          {q.question_text_en}
-                        </h3>
-                        <div className='flex gap-2'>
-                          {isAnswered && (
-                            <Badge
-                              variant='secondary'
-                              className='flex-shrink-0'
-                            >
-                              <CheckCircle className='mr-1 h-3 w-3' />
-                              Answered
-                            </Badge>
-                          )}
-                          {score !== undefined && (
-                            <Badge className='flex-shrink-0'>
-                              Score: {score}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      <div className='mb-3 rounded bg-gray-50 p-3 text-sm dark:bg-gray-900'>
-                        {answers[q.question_code] || (
-                          <span className='text-muted-foreground italic'>
-                            No answer provided
-                          </span>
-                        )}
-                      </div>
-                      {isSupervisor && (
-                        <div className='flex gap-2'>
-                          {[0, 3, 6, 9].map((s) => (
-                            <Button
-                              key={s}
-                              variant={score === s ? 'default' : 'outline'}
-                              size='sm'
-                              onClick={() =>
-                                handleScoreChange(q.question_code, s)
-                              }
-                            >
-                              {s}
-                            </Button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        {/* All Questions View (Grid) */}
-        <TabsContent value='all-questions' className='space-y-6'>
-          <Card>
-            <CardHeader>
-              <CardTitle>All {questions.length} Questions</CardTitle>
-              <p className='text-muted-foreground mt-2 text-sm'>
-                {answeredCount} answered
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className='grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3'>
-                {questions.map((q, idx) => {
-                  const isAnswered =
-                    answers[q.question_code] && answers[q.question_code].trim();
-                  return (
-                    <button
-                      key={q.question_code}
-                      onClick={() => {
-                        setCurrentQuestionIndex(idx);
-                        setTabValue('questions');
-                        setViewMode('single');
-                      }}
-                      className={`rounded-lg border-2 p-3 text-left transition-colors ${
-                        isAnswered
-                          ? 'text-foreground border-green-600 bg-green-100 hover:bg-green-200 dark:border-green-500 dark:bg-green-900/30 dark:hover:bg-green-900/50'
-                          : 'text-foreground border-gray-300 bg-gray-100 hover:bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700'
-                      }`}
-                    >
-                      <div className='flex items-start justify-between gap-2'>
-                        <div className='flex-1'>
-                          <p className='text-xs font-bold text-gray-700 dark:text-gray-200'>
-                            {getQuestionNumber(q.question_code, q.k2_category)}
-                          </p>
-                          <p className='line-clamp-2 text-xs text-gray-700 dark:text-gray-300'>
-                            {q.question_text_en}
-                          </p>
-                        </div>
-                        {isAnswered && (
-                          <CheckCircle className='h-4 w-4 flex-shrink-0 text-green-600 dark:text-green-400' />
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </TabsContent>
+          </>
+        )}
 
         {/* Files */}
         <TabsContent value='files' className='space-y-6'>
@@ -1108,6 +1208,7 @@ export default function FRM32Page() {
                     required={req}
                     isUploaded={uploadedFiles[`doc-${num}`] || false}
                     isUploading={uploadingFiles[`doc-${num}`] || false}
+                    fileName={attachmentDetails[`doc-${num}`]?.filename}
                     onFileSelect={(file) =>
                       handleDocumentUpload(`doc-${num}`, file)
                     }
@@ -1120,53 +1221,182 @@ export default function FRM32Page() {
           </Card>
         </TabsContent>
 
-        {/* Summary */}
-        <TabsContent value='summary' className='space-y-6'>
-          <Card>
-            <CardHeader>
-              <CardTitle>Submission Summary</CardTitle>
-            </CardHeader>
-            <CardContent className='space-y-4'>
-              <div className='grid grid-cols-2 gap-4 md:grid-cols-4'>
-                <div className='rounded border p-4 text-center'>
-                  <p className='text-muted-foreground text-sm'>Questions</p>
-                  <p className='text-2xl font-bold'>{questions.length}</p>
-                </div>
-                <div className='rounded border p-4 text-center'>
-                  <p className='text-muted-foreground text-sm'>Answered</p>
-                  <p className='text-2xl font-bold'>{answeredCount}</p>
-                </div>
-                <div className='rounded border p-4 text-center'>
-                  <p className='text-muted-foreground text-sm'>Progress</p>
-                  <p className='text-2xl font-bold'>{progressPercentage}%</p>
-                </div>
-                <div className='rounded border p-4 text-center'>
-                  <p className='text-muted-foreground text-sm'>Total Score</p>
-                  <p className='text-2xl font-bold'>
-                    {totalScore}/{maxScore}
-                  </p>
+        {/* Supervisor Scoring */}
+        {isSupervisor && (
+          <TabsContent value='scores' className='space-y-4'>
+            {isK2Loading ? (
+              <div className='flex items-center justify-center rounded border p-6'>
+                <div className='text-muted-foreground flex items-center gap-2'>
+                  <Loader2 className='h-4 w-4 animate-spin' />
+                  Loading scoring data...
                 </div>
               </div>
+            ) : k2Metrics.length === 0 ? (
+              <div className='text-muted-foreground rounded border border-dashed p-6 text-center text-sm'>
+                No K2 scoring metadata found.
+              </div>
+            ) : (
+              k2Metrics.map((metric) => {
+                const selectedScore = k2Scores[metric.k2_code];
+                const questionsForK2 = questionsByK2[metric.k2_code] || [];
 
-              <div className='mt-6 space-y-2 border-t pt-4'>
-                <h3 className='font-semibold'>File Status</h3>
-                <p className='text-sm'>
-                  Uploaded:{' '}
-                  {Object.values(uploadedFiles).filter(Boolean).length}/18
-                  documents
-                </p>
-                {missingRequiredFiles.length > 0 && (
-                  <Alert variant='destructive'>
-                    <AlertCircle className='h-4 w-4' />
-                    <AlertDescription>
-                      {missingRequiredFiles.length} required document(s) missing
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                return (
+                  <Card key={metric.k2_code}>
+                    <CardHeader>
+                      <div className='flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between'>
+                        <div>
+                          <CardTitle className='text-base'>
+                            {metric.k2_code} • {metric.scope_en}
+                          </CardTitle>
+                          <p className='text-muted-foreground text-sm'>
+                            {metric.scope_tr}
+                          </p>
+                        </div>
+                        <Badge variant='outline'>
+                          {metric.weight_percentage}% weight
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className='grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]'>
+                        <div className='space-y-3'>
+                          <p className='text-sm font-semibold'>Questions</p>
+                          {questionsForK2.length === 0 ? (
+                            <p className='text-muted-foreground text-sm'>
+                              No questions linked to this category.
+                            </p>
+                          ) : (
+                            questionsForK2.map((question) => {
+                              const answerValue =
+                                answers[question.question_code];
+                              return (
+                                <div
+                                  key={question.question_code}
+                                  className='border-border bg-card/70 dark:bg-card/30 rounded border p-3 text-sm shadow-sm'
+                                >
+                                  <p className='font-semibold'>
+                                    {getQuestionNumber(
+                                      question.question_code,
+                                      question.k2_category
+                                    )}
+                                  </p>
+                                  <p className='text-muted-foreground text-xs'>
+                                    {question.question_text_en}
+                                  </p>
+                                  <div className='border-border bg-muted/30 dark:bg-muted/10 mt-2 rounded border border-dashed p-2 text-sm'>
+                                    {answerValue && answerValue.trim() ? (
+                                      answerValue
+                                    ) : (
+                                      <span className='text-muted-foreground italic'>
+                                        No answer provided
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+
+                        <div className='border-border bg-muted/20 dark:bg-muted/10 space-y-3 rounded border p-3'>
+                          {[0, 3, 6, 10].map((value) => {
+                            const comment =
+                              metric.comments[value.toString() as ScoreOption];
+                            const isSelected = selectedScore === value;
+                            return (
+                              <div
+                                key={value}
+                                className={`rounded border p-3 text-sm ${
+                                  isSelected
+                                    ? 'border-primary bg-primary/5'
+                                    : 'border-border bg-card'
+                                }`}
+                              >
+                                <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
+                                  <div className='flex-1'>
+                                    <p className='font-semibold'>
+                                      Score {value}
+                                    </p>
+                                    <p>{comment.en}</p>
+                                    <p className='text-muted-foreground mt-1 text-xs'>
+                                      {comment.tr}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    variant={isSelected ? 'default' : 'outline'}
+                                    size='sm'
+                                    disabled={!!k2Saving[metric.k2_code]}
+                                    onClick={() =>
+                                      handleK2ScoreChange(metric.k2_code, value)
+                                    }
+                                    type='button'
+                                  >
+                                    {isSelected ? 'Selected' : 'Select'}
+                                  </Button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
+          </TabsContent>
+        )}
+
+        {/* Summary */}
+        {isSupervisor && (
+          <TabsContent value='summary' className='space-y-6'>
+            <Card>
+              <CardHeader>
+                <CardTitle>Submission Summary</CardTitle>
+              </CardHeader>
+              <CardContent className='space-y-4'>
+                <div className='grid grid-cols-2 gap-4 md:grid-cols-4'>
+                  <div className='rounded border p-4 text-center'>
+                    <p className='text-muted-foreground text-sm'>Questions</p>
+                    <p className='text-2xl font-bold'>{questions.length}</p>
+                  </div>
+                  <div className='rounded border p-4 text-center'>
+                    <p className='text-muted-foreground text-sm'>Answered</p>
+                    <p className='text-2xl font-bold'>{answeredCount}</p>
+                  </div>
+                  <div className='rounded border p-4 text-center'>
+                    <p className='text-muted-foreground text-sm'>Progress</p>
+                    <p className='text-2xl font-bold'>{progressPercentage}%</p>
+                  </div>
+                  <div className='rounded border p-4 text-center'>
+                    <p className='text-muted-foreground text-sm'>Final Score</p>
+                    <p className='text-2xl font-bold'>
+                      {supervisorScoreDisplay}
+                    </p>
+                  </div>
+                </div>
+
+                <div className='mt-6 space-y-2 border-t pt-4'>
+                  <h3 className='font-semibold'>File Status</h3>
+                  <p className='text-sm'>
+                    Uploaded:{' '}
+                    {Object.values(uploadedFiles).filter(Boolean).length}/18
+                    documents
+                  </p>
+                  {missingRequiredFiles.length > 0 && (
+                    <Alert variant='destructive'>
+                      <AlertCircle className='h-4 w-4' />
+                      <AlertDescription>
+                        {missingRequiredFiles.length} required document(s)
+                        missing
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Submit Section */}
@@ -1224,8 +1454,8 @@ export default function FRM32Page() {
         <Alert className='border-green-300 bg-green-50'>
           <CheckCircle className='h-4 w-4 text-green-600' />
           <AlertDescription className='text-green-800'>
-            Evaluation mode: Review answers and provide scores for each question
-            using the 0/3/6/9 scale.
+            Evaluation mode: Review answers and score each K2 category using the
+            0/3/6/10 scale.
           </AlertDescription>
         </Alert>
       )}

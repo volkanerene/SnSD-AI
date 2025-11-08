@@ -92,17 +92,20 @@ export default function SubmissionsPage() {
       let contractorsList: Contractor[] = [];
 
       if (isSupervisor) {
-        // Supervisors: Show ALL contractors and their SUBMITTED FRM32s only
+        // Supervisors: Show ALL contractors and their latest FRM32 progress
         const contractors = await apiClient.get<Contractor[]>(
           `/contractors?limit=100`,
           { tenantId: tenantId! }
         );
         contractorsList = Array.isArray(contractors) ? contractors : [];
 
-        // Fetch only SUBMITTED submissions for supervisor review
         const allSubmissions = await apiClient.get<FRM32Submission[]>(
-          `/frm32/submissions?limit=100&status=submitted`,
+          `/frm32/submissions?limit=100`,
           { tenantId: tenantId! }
+        );
+        console.log(
+          '[Submissions] Fetched submissions for supervisor:',
+          allSubmissions
         );
         submissionsData = Array.isArray(allSubmissions) ? allSubmissions : [];
       } else if (isContractor && profile?.contractor_id) {
@@ -313,6 +316,23 @@ export default function SubmissionsPage() {
                           )}
 
                         {/* Supervisors: Can only access FRM33/34/35 for SUBMITTED FRM32s */}
+                        {isSupervisor &&
+                          row.frm32?.status === 'submitted' &&
+                          row.frm32?.id && (
+                            <Button
+                              size='sm'
+                              variant='secondary'
+                              onClick={() => {
+                                router.push(
+                                  `/dashboard/evren-gpt/frm32?submission=${row.frm32?.id}`
+                                );
+                              }}
+                            >
+                              <FileText className='mr-1 h-3 w-3' />
+                              View FRM32
+                            </Button>
+                          )}
+
                         {isSupervisor && row.frm32?.status === 'submitted' && (
                           <>
                             <Button
