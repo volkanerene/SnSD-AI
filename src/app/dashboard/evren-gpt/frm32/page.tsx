@@ -322,13 +322,37 @@ export default function FRM32Page() {
       if (!ready || questions.length === 0) return;
       setIsLoading(true);
       try {
-        const existing = await apiClient.get<any[]>(
-          `/frm32/submissions?contractor_id=${contractorId}&evaluation_period=${evaluationPeriod}`,
-          { tenantId: tenantId! }
-        );
-        let sub = existing?.[0];
+        let sub: any;
+
+        // If viewing a specific submission (supervisor mode), fetch by ID
+        if (submissionParam) {
+          const submissionData = await apiClient.get<any>(
+            `/frm32/submissions/${submissionParam}`,
+            { tenantId: tenantId! }
+          );
+          sub = submissionData;
+        } else {
+          // Otherwise, fetch by contractor_id and evaluation_period
+          const existing = await apiClient.get<any[]>(
+            `/frm32/submissions?contractor_id=${contractorId}&evaluation_period=${evaluationPeriod}`,
+            { tenantId: tenantId! }
+          );
+          sub = existing?.[0];
+        }
+
+        // Supervisors should only see submitted FRM32s
+        if (isSupervisor && sub && sub.status !== 'submitted') {
+          throw new Error(
+            'This submission has not been submitted yet. Only submitted forms can be reviewed.'
+          );
+        }
 
         if (!sub) {
+          // Only contractors can create new drafts
+          if (isSupervisor) {
+            throw new Error('No submitted form found for this contractor');
+          }
+
           console.log('[FRM32] Creating new submission with:', {
             contractor_id: contractorId,
             evaluation_period: evaluationPeriod,
@@ -375,12 +399,26 @@ export default function FRM32Page() {
           setUploadedFiles(uploadedFilesMap);
         }
 
-        const firstUnansweredIndex = questions.findIndex(
-          (q) =>
-            !answers[q.question_code] || answers[q.question_code].trim() === ''
-        );
-        if (firstUnansweredIndex >= 0) {
-          setCurrentQuestionIndex(firstUnansweredIndex);
+        // For supervisors, resume from next unscored question; for contractors, next unanswered
+        let initialIndex = 0;
+        if (isSupervisor) {
+          // Find first unscored question
+          initialIndex = questions.findIndex(
+            (q) =>
+              !scores[q.question_code] ||
+              scores[q.question_code] === undefined ||
+              scores[q.question_code] === null
+          );
+        } else {
+          // Find first unanswered question
+          initialIndex = questions.findIndex(
+            (q) =>
+              !answers[q.question_code] ||
+              answers[q.question_code].trim() === ''
+          );
+        }
+        if (initialIndex >= 0) {
+          setCurrentQuestionIndex(initialIndex);
         }
 
         console.log('[FRM32] Bootstrap complete - submission:', id);
@@ -397,7 +435,15 @@ export default function FRM32Page() {
       }
     }
     bootstrap();
-  }, [ready, contractorId, tenantId, evaluationPeriod, questions]);
+  }, [
+    ready,
+    contractorId,
+    tenantId,
+    evaluationPeriod,
+    questions,
+    submissionParam,
+    isSupervisor
+  ]);
 
   const handleAnswerChange = useCallback(
     (questionId: string, value: string) => {

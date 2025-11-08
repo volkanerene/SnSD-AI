@@ -37,6 +37,15 @@ const baseNavItems: NavItem[] = [
     items: []
   },
   {
+    title: 'Submissions',
+    url: '/dashboard/submissions',
+    icon: 'fileCheck',
+    isActive: false,
+    shortcut: ['s', 'u'],
+    requiredPermission: 'modules.access_evren_gpt',
+    items: []
+  },
+  {
     title: 'EvrenGPT',
     url: '#',
     icon: 'bot',
