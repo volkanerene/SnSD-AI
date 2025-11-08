@@ -212,14 +212,48 @@ export default function FRM32Page() {
   const [viewMode, setViewMode] = useState<'single' | 'all'>('single');
 
   // For supervisors, contractor_id can come from URL params, for contractors it's from their profile
+  const submissionParam = searchParams.get('submission');
   const supervisorContractorId = searchParams.get('contractor');
-  const contractorId = supervisorContractorId || profile?.contractor_id;
+  const [resolvedContractorId, setResolvedContractorId] = useState<
+    string | null
+  >(supervisorContractorId || profile?.contractor_id || null);
+  const contractorId = resolvedContractorId;
   const tenantId = profile?.tenant_id;
   const cycle = parseInt(searchParams.get('cycle') || '1', 10);
   const evaluationPeriod = cycleToEvaluationPeriod(cycle);
 
   // Detect supervisor (role_id 5)
   const isSupervisor = profile?.role_id === 5;
+
+  // If submission parameter is provided, fetch it to get contractor_id
+  useEffect(() => {
+    if (
+      submissionParam &&
+      tenantId &&
+      !supervisorContractorId &&
+      !profile?.contractor_id
+    ) {
+      const fetchSubmissionContractor = async () => {
+        try {
+          const submission = await apiClient.get<any>(
+            `/frm32/submissions/${submissionParam}`,
+            { tenantId }
+          );
+          if (submission && submission.contractor_id) {
+            setResolvedContractorId(submission.contractor_id);
+          }
+        } catch (e) {
+          console.error('[FRM32] Failed to fetch submission contractor:', e);
+        }
+      };
+      fetchSubmissionContractor();
+    }
+  }, [
+    submissionParam,
+    tenantId,
+    supervisorContractorId,
+    profile?.contractor_id
+  ]);
 
   const autoSaveTimer = useRef<NodeJS.Timeout | undefined>(undefined);
   const currentQuestion = questions[currentQuestionIndex];
