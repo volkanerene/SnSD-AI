@@ -606,6 +606,11 @@ export default function FRM32Page() {
         tenantId
       });
       const metrics = response.scores || [];
+      console.log('[FRM32] K2 Scores response:', {
+        metricsCount: metrics.length,
+        firstMetric: metrics[0],
+        aiSuggestionsExample: metrics[0]?.ai_suggested_score
+      });
       setK2Metrics(metrics);
       const map: Record<string, number> = {};
       metrics.forEach((metric) => {
