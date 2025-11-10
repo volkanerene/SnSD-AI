@@ -17,7 +17,7 @@ import {
   IconFileUpload,
   IconSparkles,
   IconLoader2,
-  IconCheckCircle
+  IconCircleCheck
 } from '@tabler/icons-react';
 import { toast } from 'sonner';
 import {
@@ -162,7 +162,7 @@ export function EducationScriptForm({
 
                 {selectedFile && (
                   <div className='flex items-center gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-700 dark:bg-green-950 dark:text-green-200'>
-                    <IconCheckCircle className='h-4 w-4' />
+                    <IconCircleCheck className='h-4 w-4' />
                     <span>
                       {selectedFile.name} (
                       {(selectedFile.size / 1024).toFixed(1)} KB)
