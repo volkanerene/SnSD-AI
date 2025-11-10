@@ -584,3 +584,87 @@ export function useGenerateIncidentScript() {
     }
   });
 }
+
+// =========================================================================
+// Photo Avatar Look Generation Hooks
+// =========================================================================
+
+export interface GeneratePhotoAvatarLookPayload {
+  image_url: string;
+  group_id: string;
+  prompt: string;
+  style?:
+    | 'Realistic'
+    | 'Pixar'
+    | 'Cinematic'
+    | 'Vintage'
+    | 'Noir'
+    | 'Cyberpunk'
+    | 'Unspecified';
+  orientation?: 'square' | 'horizontal' | 'vertical';
+  pose?: 'half_body' | 'close_up' | 'full_body';
+}
+
+export interface GeneratePhotoAvatarLookResponse {
+  generation_id: string;
+  status: string;
+  image_keys: string[];
+  message: string;
+}
+
+export function useGeneratePhotoAvatarLook() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    GeneratePhotoAvatarLookResponse,
+    unknown,
+    GeneratePhotoAvatarLookPayload
+  >({
+    mutationFn: async (payload: GeneratePhotoAvatarLookPayload) => {
+      assertMarcelEnabled();
+      return await apiClient.post<GeneratePhotoAvatarLookResponse>(
+        '/marcel-gpt/photo-avatars/looks/generate',
+        payload
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['marcel-gpt', 'photo-avatars', 'looks']
+      });
+    }
+  });
+}
+
+export interface PhotoAvatarGenerationStatus {
+  generation_id: string;
+  status: 'success' | 'processing' | 'failed' | string;
+  image_keys?: string[];
+  image_urls?: string[];
+  message?: string;
+  error_message?: string;
+}
+
+export function usePhotoAvatarGenerationStatus(
+  generationId?: string,
+  enabled = false
+) {
+  return useQuery<PhotoAvatarGenerationStatus>({
+    queryKey: ['marcel-gpt', 'photo-avatar-generation', generationId],
+    queryFn: async () => {
+      assertMarcelEnabled();
+      if (!generationId) throw new Error('Generation ID is required');
+      return await apiClient.get(
+        `/marcel-gpt/photo-avatars/generations/${generationId}`
+      );
+    },
+    enabled: isMarcelEnabled && enabled && !!generationId,
+    refetchInterval: (query) => {
+      // Auto-refresh if generation is still processing
+      const data = query.state.data;
+      if (data && data.status === 'processing') {
+        return 2000; // Poll every 2 seconds
+      }
+      return false;
+    }
+  });
+}
