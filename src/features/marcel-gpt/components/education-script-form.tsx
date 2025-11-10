@@ -32,9 +32,12 @@ interface EducationScriptFormProps {
 export function EducationScriptForm({
   onScriptGenerated
 }: EducationScriptFormProps) {
-  const [activeTab, setActiveTab] = useState<'describe' | 'pdf'>('describe');
+  const [activeTab, setActiveTab] = useState<'describe' | 'pdf' | 'manual'>(
+    'describe'
+  );
   const [topic, setTopic] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [manualScript, setManualScript] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const generateMutation = useGenerateScript();
@@ -85,17 +88,30 @@ export function EducationScriptForm({
     }
   };
 
+  const handleUseManualScript = () => {
+    if (!manualScript.trim()) {
+      toast.error('Please write a script');
+      return;
+    }
+
+    onScriptGenerated(manualScript);
+    toast.success('Script ready to use!');
+  };
+
   return (
     <Card className='border-dashed'>
       <CardContent className='pt-6'>
         <Tabs
           value={activeTab}
-          onValueChange={(v) => setActiveTab(v as 'describe' | 'pdf')}
+          onValueChange={(v) =>
+            setActiveTab(v as 'describe' | 'pdf' | 'manual')
+          }
           className='w-full'
         >
-          <TabsList className='grid w-full grid-cols-2'>
+          <TabsList className='grid w-full grid-cols-3'>
             <TabsTrigger value='describe'>📝 Describe Topic</TabsTrigger>
             <TabsTrigger value='pdf'>📄 Upload PDF</TabsTrigger>
+            <TabsTrigger value='manual'>✍️ Write Script</TabsTrigger>
           </TabsList>
 
           {/* Tab 1: Describe Topic */}
@@ -195,6 +211,35 @@ export function EducationScriptForm({
                   Generate Script from PDF
                 </>
               )}
+            </Button>
+          </TabsContent>
+
+          {/* Tab 3: Write Script Manually */}
+          <TabsContent value='manual' className='space-y-4'>
+            <div className='space-y-2'>
+              <Label htmlFor='manual-script'>Write your video script</Label>
+              <Textarea
+                id='manual-script'
+                placeholder='Type your script here. Write naturally as if someone is speaking. This will be used directly for your video.'
+                value={manualScript}
+                onChange={(e) => setManualScript(e.target.value)}
+                rows={8}
+                className='resize-none'
+              />
+              <div className='text-muted-foreground flex justify-between text-xs'>
+                <span>Write naturally and conversationally</span>
+                <span>{manualScript.length} characters</span>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleUseManualScript}
+              disabled={!manualScript.trim()}
+              className='w-full gap-2'
+              size='lg'
+            >
+              <IconCircleCheck className='h-4 w-4' />
+              Use This Script
             </Button>
           </TabsContent>
         </Tabs>

@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useGenerateVideo, type PhotoAvatarLook } from '@/hooks/useMarcelGPT';
+import { useGenerateVideo, type HeyGenAvatar } from '@/hooks/useMarcelGPT';
 import { VoiceSelector } from './voice-selector';
 import { AvatarGroupBrowser } from './avatar-group-browser';
 import {
@@ -21,7 +21,6 @@ import {
   IconInfoCircle
 } from '@tabler/icons-react';
 import { toast } from 'sonner';
-import { LookSelector } from './look-selector';
 
 interface VideoGenerationFormProps {
   initialScript?: string;
@@ -31,7 +30,7 @@ export function VideoGenerationForm({
   initialScript
 }: VideoGenerationFormProps = {}) {
   const [inputText] = useState(initialScript || '');
-  const [selectedLook, setSelectedLook] = useState<PhotoAvatarLook | null>(
+  const [selectedAvatar, setSelectedAvatar] = useState<HeyGenAvatar | null>(
     null
   );
   const [selectedVoice, setSelectedVoice] = useState<string>('');
@@ -42,43 +41,9 @@ export function VideoGenerationForm({
 
   const generateMutation = useGenerateVideo();
 
-  const selectedAvatar = selectedLook?.avatarId ?? '';
-
-  // Determine engine based on avatar source
-  // Use V2 for standard avatars, AV4 for photo avatars
-  const isPhotoAvatar =
-    selectedLook?.source === 'generated_photo_avatar' || !selectedLook?.source;
-  const engine = isPhotoAvatar ? 'av4' : 'v2';
-
-  const lookResolution = useMemo(() => {
-    if (!selectedLook?.config?.width || !selectedLook?.config?.height)
-      return null;
-    return `${selectedLook.config.width} × ${selectedLook.config.height}`;
-  }, [selectedLook]);
-
-  const lookBackground = useMemo(() => {
-    if (!selectedLook) return null;
-    if (
-      selectedLook.config?.backgroundType === 'image' &&
-      selectedLook.config?.backgroundImageUrl
-    ) {
-      return `Image • ${selectedLook.config.backgroundImageUrl}`;
-    }
-    if (selectedLook.config?.backgroundType === 'green_screen') {
-      return 'Green Screen';
-    }
-    if (selectedLook.config?.backgroundType === 'color') {
-      return `Solid Color ${selectedLook.config.backgroundColor ?? '#ffffff'}`;
-    }
-    return null;
-  }, [selectedLook]);
-
-  const handleLookSelect = (look: PhotoAvatarLook) => {
-    setSelectedLook(look);
-    if (look.voiceId) {
-      setSelectedVoice(look.voiceId);
-    }
-  };
+  // Always use V2 engine for standard avatars
+  const engine = 'v2';
+  const avatarId = selectedAvatar?.avatar_id ?? '';
 
   const handleGroupSelect = (groupId?: string) => {
     setFilteredGroupId(groupId);
@@ -87,9 +52,12 @@ export function VideoGenerationForm({
     }
   };
 
-  const handleAvatarSelect = (groupId: string, avatarId?: string) => {
+  const handleAvatarSelect = (groupId: string, avatar?: HeyGenAvatar) => {
     setFilteredGroupId(groupId || filteredGroupId);
-    setFilteredAvatarId(avatarId);
+    setFilteredAvatarId(avatar?.avatar_id);
+    if (avatar) {
+      setSelectedAvatar(avatar);
+    }
   };
 
   const handleClearFilters = () => {
@@ -100,11 +68,6 @@ export function VideoGenerationForm({
   const handleGenerate = async () => {
     if (!inputText.trim()) {
       toast.error('Please enter text for the video');
-      return;
-    }
-
-    if (!selectedLook) {
-      toast.error('Please choose or create a look first');
       return;
     }
 
@@ -119,59 +82,13 @@ export function VideoGenerationForm({
     }
 
     try {
-      const lookConfig = selectedLook.config || {};
-      const config: any = {
-        speed: lookConfig.speed ?? 1,
-        language: lookConfig.language ?? 'en',
-        width: lookConfig.width ?? 1280,
-        height: lookConfig.height ?? 720,
-        avatar_style: lookConfig.avatarStyle ?? 'normal'
-      };
-
-      if (lookConfig.backgroundType === 'color') {
-        config.background = {
-          type: 'color',
-          value: lookConfig.backgroundColor ?? '#ffffff'
-        };
-      } else if (
-        lookConfig.backgroundType === 'image' &&
-        lookConfig.backgroundImageUrl
-      ) {
-        config.background = {
-          type: 'image',
-          url: lookConfig.backgroundImageUrl
-        };
-      } else if (lookConfig.backgroundType === 'green_screen') {
-        config.background = {
-          type: 'color',
-          value: '#00FF00'
-        };
-      }
-
-      if (lookConfig.enableSubtitles) {
-        config.enable_subtitles = true;
-        config.subtitle_language =
-          lookConfig.subtitleLanguage || lookConfig.language || 'en';
-      }
-
-      const presetId =
-        selectedLook.presetId ?? selectedLook.meta?.brand_preset_id;
-
       const payload: any = {
         engine,
         input_text: inputText,
+        avatar_id: avatarId,
         voice_id: selectedVoice,
-        preset_id: presetId,
-        title: selectedLook.name || 'Video',
-        config
+        title: selectedAvatar.avatar_name || 'Video'
       };
-
-      // Pass image_key for photo avatars, avatar_id for standard avatars
-      if (isPhotoAvatar) {
-        payload.image_key = selectedAvatar;
-      } else {
-        payload.avatar_id = selectedAvatar;
-      }
 
       const response = await generateMutation.mutateAsync(payload);
 
@@ -179,7 +96,7 @@ export function VideoGenerationForm({
         `Job #${response.job_id} has been created and is now processing.`
       );
 
-      setSelectedLook(null);
+      setSelectedAvatar(null);
       setSelectedVoice('');
     } catch (error: any) {
       toast.error(error.message || 'Failed to start video generation');
@@ -232,61 +149,29 @@ export function VideoGenerationForm({
               <CardHeader>
                 <CardTitle className='text-base'>Review Selection</CardTitle>
                 <CardDescription>
-                  Summary of the look and voice that will be used for this
+                  Summary of the avatar and voice that will be used for this
                   video.
                 </CardDescription>
               </CardHeader>
               <CardContent className='space-y-3 text-sm'>
-                {selectedLook ? (
+                {selectedAvatar ? (
                   <>
                     <div className='space-y-1'>
-                      <span className='font-medium'>Look</span>
-                      <p>{selectedLook.name}</p>
-                      {selectedLook.notes && (
-                        <p className='text-muted-foreground text-xs'>
-                          {selectedLook.notes}
-                        </p>
-                      )}
+                      <span className='font-medium'>Avatar</span>
+                      <p>{selectedAvatar.avatar_name}</p>
                     </div>
 
-                    {selectedLook.source && (
-                      <div className='space-y-1'>
-                        <span className='font-medium'>Source</span>
-                        <p className='text-muted-foreground'>
-                          {selectedLook.source === 'existing_avatar'
-                            ? 'Existing HeyGen avatar'
-                            : 'Generated photo avatar'}
-                        </p>
-                      </div>
-                    )}
-
                     <div className='space-y-1'>
-                      <span className='font-medium'>Resolution</span>
+                      <span className='font-medium'>Gender</span>
                       <p className='text-muted-foreground'>
-                        {lookResolution ?? 'Default (1280×720)'}
-                      </p>
-                    </div>
-
-                    {lookBackground && (
-                      <div className='space-y-1'>
-                        <span className='font-medium'>Background</span>
-                        <p className='text-muted-foreground'>
-                          {lookBackground}
-                        </p>
-                      </div>
-                    )}
-
-                    <div className='space-y-1'>
-                      <span className='font-medium'>Avatar Style</span>
-                      <p className='text-muted-foreground'>
-                        {selectedLook.config?.avatarStyle ?? 'normal'}
+                        {selectedAvatar.gender || 'Unknown'}
                       </p>
                     </div>
                   </>
                 ) : (
                   <div className='text-muted-foreground flex items-start gap-2'>
                     <IconInfoCircle className='mt-0.5 h-4 w-4 flex-shrink-0' />
-                    <p>Select or create a look to see its details here.</p>
+                    <p>Select an avatar from the panel on the right.</p>
                   </div>
                 )}
 
@@ -307,7 +192,7 @@ export function VideoGenerationForm({
                 generateMutation.isPending ||
                 isOverLimit ||
                 !inputText.trim() ||
-                !selectedLook ||
+                !selectedAvatar ||
                 !selectedVoice
               }
               className='w-full'
@@ -333,15 +218,6 @@ export function VideoGenerationForm({
           onSelectGroup={handleGroupSelect}
           onSelectAvatar={handleAvatarSelect}
           onClearFilters={handleClearFilters}
-        />
-
-        <LookSelector
-          selectedLookId={selectedLook?.id}
-          activeVoiceId={selectedVoice}
-          filterGroupId={filteredGroupId}
-          filterAvatarId={filteredAvatarId}
-          onClearFilter={handleClearFilters}
-          onSelectLook={handleLookSelect}
         />
 
         <VoiceSelector

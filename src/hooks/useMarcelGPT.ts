@@ -231,13 +231,34 @@ export function useAvatarGroups(includeAvatars = false) {
         () => {
           assertMarcelEnabled();
           const query = includeAvatars ? '?include_avatars=true' : '';
-          return apiClient.get(`/marcel-gpt/avatar-groups${query}`);
+          return apiClient.get(`/marcel-gpt/avatar-groups-v2${query}`);
         },
         { groups: [], count: 0 }
       ),
     staleTime: 6 * 60 * 60 * 1000,
     enabled: isMarcelEnabled
   });
+}
+
+export function useCustomGroupAvatars(groupId?: string, enabled = false) {
+  return useQuery<{ avatars: HeyGenAvatar[]; count: number; group_id: string }>(
+    {
+      queryKey: ['marcel-gpt', 'custom-group', groupId],
+      queryFn: () =>
+        safeMarcelCall(
+          () => {
+            assertMarcelEnabled();
+            if (!groupId) throw new Error('Group ID is required');
+            return apiClient.get(
+              `/marcel-gpt/avatar-groups/${groupId}/avatars`
+            );
+          },
+          { avatars: [], count: 0, group_id: groupId || '' }
+        ),
+      staleTime: 6 * 60 * 60 * 1000,
+      enabled: isMarcelEnabled && enabled && !!groupId
+    }
+  );
 }
 
 // Voices

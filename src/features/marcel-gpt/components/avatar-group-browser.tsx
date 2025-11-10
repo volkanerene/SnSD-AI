@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -11,19 +11,21 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import {
   type HeyGenAvatarGroup,
   type HeyGenAvatar,
-  useAvatarGroups
+  useAvatarGroups,
+  useCustomGroupAvatars
 } from '@/hooks/useMarcelGPT';
-import { IconUserCircle } from '@tabler/icons-react';
+import { IconUserCircle, IconSearch } from '@tabler/icons-react';
 
 interface AvatarGroupBrowserProps {
   selectedGroupId?: string;
   selectedAvatarId?: string;
   onSelectGroup: (groupId?: string) => void;
-  onSelectAvatar: (groupId: string, avatarId?: string) => void;
+  onSelectAvatar: (groupId: string, avatar?: HeyGenAvatar) => void;
   onClearFilters: () => void;
 }
 
@@ -34,13 +36,42 @@ export function AvatarGroupBrowser({
   onSelectAvatar,
   onClearFilters
 }: AvatarGroupBrowserProps) {
+  const [customGroupId, setCustomGroupId] = useState('');
+  const [isSearchingCustom, setIsSearchingCustom] = useState(false);
+
   const { data, isLoading, isFetching } = useAvatarGroups(true);
   const groups = data?.groups ?? [];
 
+  const {
+    data: customGroupData,
+    isLoading: customGroupLoading,
+    error: customGroupError
+  } = useCustomGroupAvatars(
+    isSearchingCustom ? customGroupId : undefined,
+    isSearchingCustom
+  );
+
   const activeGroup = useMemo<HeyGenAvatarGroup | undefined>(() => {
     if (!selectedGroupId) return undefined;
+
+    // Check if it's a custom group
+    if (isSearchingCustom && selectedGroupId === customGroupId) {
+      return {
+        id: customGroupId,
+        name: `Custom Group (${customGroupData?.count ?? 0})`,
+        numLooks: customGroupData?.count ?? 0,
+        avatars: customGroupData?.avatars
+      };
+    }
+
     return groups.find((group) => group.id === selectedGroupId);
-  }, [groups, selectedGroupId]);
+  }, [
+    groups,
+    selectedGroupId,
+    isSearchingCustom,
+    customGroupId,
+    customGroupData
+  ]);
 
   const groupAvatarCount = activeGroup?.avatars?.length ?? 0;
 
@@ -57,7 +88,15 @@ export function AvatarGroupBrowser({
       onSelectAvatar(groupId, undefined);
       return;
     }
-    onSelectAvatar(groupId, avatar.avatar_id);
+    onSelectAvatar(groupId, avatar);
+  };
+
+  const handleSearchCustomGroup = () => {
+    if (!customGroupId.trim()) {
+      return;
+    }
+    setIsSearchingCustom(true);
+    onSelectGroup(customGroupId);
   };
 
   return (
@@ -80,67 +119,111 @@ export function AvatarGroupBrowser({
         </Button>
       </CardHeader>
       <CardContent className='space-y-4'>
-        {isLoading ? (
-          <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
-            {Array.from({ length: 4 }).map((_, idx) => (
-              <Skeleton key={idx} className='h-20 rounded-lg' />
-            ))}
+        <div className='space-y-2'>
+          <div className='text-sm font-medium'>
+            Search Custom Group (Marcel, etc.)
           </div>
-        ) : groups.length === 0 ? (
-          <div className='text-muted-foreground text-sm'>
-            No avatar groups found. Confirm your HeyGen account has access to
-            custom groups.
+          <div className='flex gap-2'>
+            <Input
+              placeholder='Paste custom group ID (e.g., 4280ce1878e74185bdb8471aaa3e13cc)'
+              value={customGroupId}
+              onChange={(e) => setCustomGroupId(e.target.value)}
+              className='flex-1'
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearchCustomGroup();
+                }
+              }}
+            />
+            <Button
+              onClick={handleSearchCustomGroup}
+              disabled={!customGroupId.trim() || customGroupLoading}
+              size='sm'
+              variant='outline'
+              className='gap-2'
+            >
+              <IconSearch className='h-4 w-4' />
+              {customGroupLoading ? 'Loading...' : 'Search'}
+            </Button>
           </div>
-        ) : (
-          <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
-            {groups.map((group) => {
-              const isActive = group.id === selectedGroupId;
-              return (
-                <button
-                  key={group.id}
-                  type='button'
-                  className={cn(
-                    'flex items-center gap-3 rounded-lg border p-3 text-left transition-colors',
-                    isActive
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-primary/50'
-                  )}
-                  onClick={() => handleSelectGroup(group.id)}
-                >
-                  <div className='bg-muted flex h-12 w-12 items-center justify-center overflow-hidden rounded-md'>
-                    {group.previewImage ? (
-                      <img
-                        src={group.previewImage}
-                        alt={group.name || 'Group preview'}
-                        className='h-full w-full object-cover'
-                      />
-                    ) : (
-                      <IconUserCircle className='text-muted-foreground h-6 w-6' />
-                    )}
-                  </div>
-                  <div className='flex flex-1 flex-col gap-1'>
-                    <span className='text-sm font-medium'>
-                      {group.name || 'Unnamed Group'}
-                    </span>
-                    <div className='text-muted-foreground flex items-center gap-2 text-xs'>
-                      <Badge variant='outline'>{group.numLooks} looks</Badge>
-                      {isActive && (
-                        <span className='text-primary font-medium'>
-                          Selected
-                        </span>
+          {customGroupError && (
+            <p className='text-destructive text-xs'>
+              Error loading group. Check the ID and try again.
+            </p>
+          )}
+          {isSearchingCustom && customGroupData && (
+            <p className='text-muted-foreground text-xs'>
+              Found {customGroupData.count} avatars in custom group
+            </p>
+          )}
+        </div>
+        {!isSearchingCustom && (
+          <>
+            {isLoading ? (
+              <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
+                {Array.from({ length: 4 }).map((_, idx) => (
+                  <Skeleton key={idx} className='h-20 rounded-lg' />
+                ))}
+              </div>
+            ) : groups.length === 0 ? (
+              <div className='text-muted-foreground text-sm'>
+                No avatar groups found. Confirm your HeyGen account has access
+                to custom groups.
+              </div>
+            ) : (
+              <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
+                {groups.map((group) => {
+                  const isActive = group.id === selectedGroupId;
+                  return (
+                    <button
+                      key={group.id}
+                      type='button'
+                      className={cn(
+                        'flex items-center gap-3 rounded-lg border p-3 text-left transition-colors',
+                        isActive
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50'
                       )}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
+                      onClick={() => handleSelectGroup(group.id)}
+                    >
+                      <div className='bg-muted flex h-12 w-12 items-center justify-center overflow-hidden rounded-md'>
+                        {group.previewImage ? (
+                          <img
+                            src={group.previewImage}
+                            alt={group.name || 'Group preview'}
+                            className='h-full w-full object-cover'
+                          />
+                        ) : (
+                          <IconUserCircle className='text-muted-foreground h-6 w-6' />
+                        )}
+                      </div>
+                      <div className='flex flex-1 flex-col gap-1'>
+                        <span className='text-sm font-medium'>
+                          {group.name || 'Unnamed Group'}
+                        </span>
+                        <div className='text-muted-foreground flex items-center gap-2 text-xs'>
+                          <Badge variant='outline'>
+                            {group.numLooks} looks
+                          </Badge>
+                          {isActive && (
+                            <span className='text-primary font-medium'>
+                              Selected
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
-        {isFetching && (
-          <p className='text-muted-foreground text-xs'>
-            Refreshing groups from HeyGen…
-          </p>
+            {isFetching && (
+              <p className='text-muted-foreground text-xs'>
+                Refreshing groups from HeyGen…
+              </p>
+            )}
+          </>
         )}
 
         {selectedGroupId && (
