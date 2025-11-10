@@ -500,6 +500,13 @@ export interface RefineScriptPayload {
   refinement_instructions: string;
 }
 
+export interface GenerateIncidentScriptPayload {
+  what_happened: string;
+  why_did_it_happen?: string;
+  what_did_they_learn?: string;
+  ask_yourself_or_crew?: string;
+}
+
 export function useGenerateScript() {
   return useMutation<ScriptResponse, unknown, GenerateScriptPayload>({
     mutationFn: async (payload: GenerateScriptPayload) => {
@@ -538,6 +545,18 @@ export function useRefineScript() {
       assertMarcelEnabled();
       return await apiClient.post<ScriptResponse>(
         '/marcel-gpt/scripts/refine',
+        payload
+      );
+    }
+  });
+}
+
+export function useGenerateIncidentScript() {
+  return useMutation<ScriptResponse, unknown, GenerateIncidentScriptPayload>({
+    mutationFn: async (payload: GenerateIncidentScriptPayload) => {
+      assertMarcelEnabled();
+      return await apiClient.post<ScriptResponse>(
+        '/marcel-gpt/scripts/from-incident',
         payload
       );
     }
