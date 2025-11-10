@@ -11,17 +11,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useGenerateVideo, type PhotoAvatarLook } from '@/hooks/useMarcelGPT';
 import { VoiceSelector } from './voice-selector';
-import { ScriptGenerator } from './script-generator';
 import { AvatarGroupBrowser } from './avatar-group-browser';
 import {
   IconPlayerPlay,
@@ -38,12 +30,11 @@ interface VideoGenerationFormProps {
 export function VideoGenerationForm({
   initialScript
 }: VideoGenerationFormProps = {}) {
-  const [inputText, setInputText] = useState(initialScript || '');
+  const [inputText] = useState(initialScript || '');
   const [selectedLook, setSelectedLook] = useState<PhotoAvatarLook | null>(
     null
   );
   const [selectedVoice, setSelectedVoice] = useState<string>('');
-  const [engine, setEngine] = useState<'v2' | 'av4'>('v2');
   const [filteredGroupId, setFilteredGroupId] = useState<string | undefined>();
   const [filteredAvatarId, setFilteredAvatarId] = useState<
     string | undefined
@@ -52,6 +43,12 @@ export function VideoGenerationForm({
   const generateMutation = useGenerateVideo();
 
   const selectedAvatar = selectedLook?.avatarId ?? '';
+
+  // Determine engine based on avatar source
+  // Use V2 for standard avatars, AV4 for photo avatars
+  const isPhotoAvatar =
+    selectedLook?.source === 'generated_photo_avatar' || !selectedLook?.source;
+  const engine = isPhotoAvatar ? 'av4' : 'v2';
 
   const lookResolution = useMemo(() => {
     if (!selectedLook?.config?.width || !selectedLook?.config?.height)
@@ -160,20 +157,28 @@ export function VideoGenerationForm({
       const presetId =
         selectedLook.presetId ?? selectedLook.meta?.brand_preset_id;
 
-      const response = await generateMutation.mutateAsync({
+      const payload: any = {
         engine,
         input_text: inputText,
-        avatar_id: selectedAvatar,
         voice_id: selectedVoice,
         preset_id: presetId,
+        title: selectedLook.name || 'Video',
         config
-      });
+      };
+
+      // Pass image_key for photo avatars, avatar_id for standard avatars
+      if (isPhotoAvatar) {
+        payload.image_key = selectedAvatar;
+      } else {
+        payload.avatar_id = selectedAvatar;
+      }
+
+      const response = await generateMutation.mutateAsync(payload);
 
       toast.success(
         `Job #${response.job_id} has been created and is now processing.`
       );
 
-      setInputText('');
       setSelectedLook(null);
       setSelectedVoice('');
     } catch (error: any) {
@@ -197,40 +202,18 @@ export function VideoGenerationForm({
           </CardHeader>
           <CardContent className='space-y-4'>
             <div className='space-y-2'>
-              <Label htmlFor='engine'>Video Engine</Label>
-              <Select
-                value={engine}
-                onValueChange={(val) => setEngine(val as 'v2' | 'av4')}
-              >
-                <SelectTrigger id='engine'>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='v2'>V2 (Standard)</SelectItem>
-                  <SelectItem value='av4'>AV4 (Photorealistic)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className='space-y-2'>
-              <div className='flex items-center justify-between'>
-                <Label htmlFor='input-text'>Video Script</Label>
-                <ScriptGenerator value={inputText} onChange={setInputText} />
-              </div>
+              <Label htmlFor='input-text'>Video Script</Label>
               <Textarea
                 id='input-text'
-                placeholder='Enter the text you want the avatar to speak...'
+                placeholder='No script provided'
                 value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                rows={8}
-                className={isOverLimit ? 'border-red-500' : ''}
+                disabled
+                readOnly
+                rows={6}
+                className='bg-muted resize-none'
               />
               <div className='flex justify-between text-sm'>
-                <span
-                  className={
-                    isOverLimit ? 'text-red-500' : 'text-muted-foreground'
-                  }
-                >
+                <span className='text-muted-foreground'>
                   {charCount} / {maxChars} characters
                 </span>
               </div>

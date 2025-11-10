@@ -11,6 +11,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { IconChevronRight } from '@tabler/icons-react';
 import { EducationScriptForm } from './education-script-form';
@@ -36,10 +37,12 @@ export function ScriptGenerationFlow({
     setStep('script-generation');
   };
 
+  const [editingScript, setEditingScript] = useState<string>('');
+
   const handleScriptGenerated = (script: string) => {
     setGeneratedScript(script);
+    setEditingScript(script);
     onScriptGenerated?.(script);
-    setStep('video-generation');
   };
 
   const handleBackToType = () => {
@@ -150,12 +153,54 @@ export function ScriptGenerationFlow({
             </Button>
           </div>
 
-          {scriptType === 'education' && (
-            <EducationScriptForm onScriptGenerated={handleScriptGenerated} />
+          {!generatedScript && (
+            <>
+              {scriptType === 'education' && (
+                <EducationScriptForm
+                  onScriptGenerated={handleScriptGenerated}
+                />
+              )}
+
+              {scriptType === 'incident' && (
+                <IncidentScriptForm onScriptGenerated={handleScriptGenerated} />
+              )}
+            </>
           )}
 
-          {scriptType === 'incident' && (
-            <IncidentScriptForm onScriptGenerated={handleScriptGenerated} />
+          {generatedScript && (
+            <div className='space-y-4'>
+              <Card className='p-4'>
+                <Label className='mb-2 block text-sm font-semibold'>
+                  Script (Editable):
+                </Label>
+                <Textarea
+                  value={editingScript}
+                  onChange={(e) => setEditingScript(e.target.value)}
+                  rows={6}
+                  className='resize-none font-mono text-sm'
+                />
+              </Card>
+              <div className='flex gap-2'>
+                <Button
+                  variant='outline'
+                  onClick={() => {
+                    setGeneratedScript('');
+                    setEditingScript('');
+                  }}
+                >
+                  ← Regenerate
+                </Button>
+                <Button
+                  onClick={() => {
+                    setGeneratedScript(editingScript);
+                    setStep('video-generation');
+                  }}
+                  className='ml-auto gap-2'
+                >
+                  Next → Generate Video <IconChevronRight className='h-4 w-4' />
+                </Button>
+              </div>
+            </div>
           )}
         </div>
       )}

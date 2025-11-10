@@ -251,6 +251,7 @@ export function useVoices(filters?: { language?: string; gender?: string }) {
         () => {
           assertMarcelEnabled();
           const params = new URLSearchParams();
+          params.append('limit', '15'); // Max 15 voices
           if (filters?.language) params.append('language', filters.language);
           if (filters?.gender) params.append('gender', filters.gender);
 
@@ -275,7 +276,7 @@ export function usePhotoAvatarLooks() {
       safeMarcelCall(
         () => {
           assertMarcelEnabled();
-          return apiClient.get('/marcel-gpt/photo-avatars/looks');
+          return apiClient.get('/marcel-gpt/photo-avatars/looks?limit=15');
         },
         { looks: [], count: 0 }
       ),

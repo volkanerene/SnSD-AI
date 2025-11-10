@@ -154,9 +154,7 @@ export function CreateContractorDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value='bireysel'>
-                          Bireysel (Individual)
-                        </SelectItem>
+                        <SelectItem value='bireysel'>Individual</SelectItem>
                         <SelectItem value='limited'>Limited Company</SelectItem>
                       </SelectContent>
                     </Select>
