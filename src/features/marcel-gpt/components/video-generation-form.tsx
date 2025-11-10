@@ -31,8 +31,14 @@ import {
 import { toast } from 'sonner';
 import { LookSelector } from './look-selector';
 
-export function VideoGenerationForm() {
-  const [inputText, setInputText] = useState('');
+interface VideoGenerationFormProps {
+  initialScript?: string;
+}
+
+export function VideoGenerationForm({
+  initialScript
+}: VideoGenerationFormProps = {}) {
+  const [inputText, setInputText] = useState(initialScript || '');
   const [selectedLook, setSelectedLook] = useState<PhotoAvatarLook | null>(
     null
   );
