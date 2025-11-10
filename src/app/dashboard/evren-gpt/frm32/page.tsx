@@ -202,6 +202,8 @@ interface K2Metric {
   score?: number | null;
   selected_comment_en?: string | null;
   selected_comment_tr?: string | null;
+  ai_suggested_score?: number | null;
+  ai_reasoning?: string | null;
 }
 
 export default function FRM32Page() {
@@ -235,6 +237,7 @@ export default function FRM32Page() {
   const [k2Saving, setK2Saving] = useState<Record<string, boolean>>({});
   const [finalScore, setFinalScore] = useState<number | null>(null);
   const [isK2Loading, setIsK2Loading] = useState(false);
+  const [isRegeneratingAI, setIsRegeneratingAI] = useState(false);
 
   // For supervisors, contractor_id can come from URL params, for contractors it's from their profile
   const submissionParam = searchParams.get('submission');
@@ -621,6 +624,33 @@ export default function FRM32Page() {
       setIsK2Loading(false);
     }
   }, [isSupervisor, submissionId, tenantId]);
+
+  const handleRegenerateAISuggestions = async () => {
+    if (!submissionId || !tenantId || !isSupervisor) return;
+    setIsRegeneratingAI(true);
+    try {
+      const response = await apiClient.post(
+        `/frm32/submissions/${submissionId}/regenerate-ai-suggestions`,
+        {},
+        { tenantId }
+      );
+      toast.success(
+        'AI suggestions regeneration started. Please wait a moment and refresh.'
+      );
+      // Reload K2 scores after a short delay
+      setTimeout(() => {
+        loadK2Scores();
+      }, 2000);
+    } catch (e: any) {
+      console.error(
+        '[FRM32] Failed to regenerate AI suggestions:',
+        e?.message || e
+      );
+      toast.error(e?.message || 'Failed to regenerate AI suggestions');
+    } finally {
+      setIsRegeneratingAI(false);
+    }
+  };
 
   const handleK2ScoreChange = async (k2Code: string, score: number) => {
     if (!submissionId || !tenantId || !isSupervisor) return;
@@ -1224,6 +1254,25 @@ export default function FRM32Page() {
         {/* Supervisor Scoring */}
         {isSupervisor && (
           <TabsContent value='scores' className='space-y-4'>
+            {/* Regenerate AI Suggestions Button */}
+            <div className='flex gap-2'>
+              <Button
+                onClick={handleRegenerateAISuggestions}
+                disabled={isRegeneratingAI || isK2Loading || !submissionId}
+                variant='outline'
+                className='ml-auto'
+              >
+                {isRegeneratingAI ? (
+                  <>
+                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                    Regenerating...
+                  </>
+                ) : (
+                  <>✨ Regenerate AI Suggestions</>
+                )}
+              </Button>
+            </div>
+
             {isK2Loading ? (
               <div className='flex items-center justify-center rounded border p-6'>
                 <div className='text-muted-foreground flex items-center gap-2'>
@@ -1303,24 +1352,45 @@ export default function FRM32Page() {
                             const comment =
                               metric.comments[value.toString() as ScoreOption];
                             const isSelected = selectedScore === value;
+                            const isAISuggested =
+                              metric.ai_suggested_score === value;
                             return (
                               <div
                                 key={value}
                                 className={`rounded border p-3 text-sm ${
                                   isSelected
                                     ? 'border-primary bg-primary/5'
-                                    : 'border-border bg-card'
+                                    : isAISuggested
+                                      ? 'border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/30'
+                                      : 'border-border bg-card'
                                 }`}
                               >
                                 <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
                                   <div className='flex-1'>
-                                    <p className='font-semibold'>
-                                      Score {value}
-                                    </p>
+                                    <div className='flex items-center gap-2'>
+                                      <p className='font-semibold'>
+                                        Score {value}
+                                      </p>
+                                      {isAISuggested && (
+                                        <Badge
+                                          variant='secondary'
+                                          className='text-xs'
+                                        >
+                                          AI Suggestion
+                                        </Badge>
+                                      )}
+                                    </div>
                                     <p>{comment.en}</p>
                                     <p className='text-muted-foreground mt-1 text-xs'>
                                       {comment.tr}
                                     </p>
+                                    {isAISuggested && metric.ai_reasoning && (
+                                      <div className='mt-2 rounded bg-amber-100 p-2 text-xs dark:bg-amber-900/50'>
+                                        <p className='font-medium text-amber-900 dark:text-amber-200'>
+                                          Why: {metric.ai_reasoning}
+                                        </p>
+                                      </div>
+                                    )}
                                   </div>
                                   <Button
                                     variant={isSelected ? 'default' : 'outline'}
