@@ -9,7 +9,7 @@ import {
   CardTitle
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { IconPlay, IconDownload, IconTrash } from '@tabler/icons-react';
+import { IconPlayerPlay, IconDownload } from '@tabler/icons-react';
 import { useState } from 'react';
 import { VideoPlayerModal } from './video-player-modal';
 
@@ -35,7 +35,7 @@ export function VideoLibraryGrid({ jobs }: VideoLibraryGridProps) {
                 />
               ) : (
                 <div className='text-muted-foreground flex flex-col items-center gap-2'>
-                  <IconPlay className='h-12 w-12' />
+                  <IconPlayerPlay className='h-12 w-12' />
                   <span className='text-sm'>No thumbnail</span>
                 </div>
               )}
@@ -43,7 +43,7 @@ export function VideoLibraryGrid({ jobs }: VideoLibraryGridProps) {
                 onClick={() => setSelectedJob(job)}
                 className='absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity hover:opacity-100'
               >
-                <IconPlay className='h-12 w-12 text-white' />
+                <IconPlayerPlay className='h-12 w-12 text-white' />
               </button>
             </div>
 
@@ -81,7 +81,7 @@ export function VideoLibraryGrid({ jobs }: VideoLibraryGridProps) {
                   className='flex-1 gap-2'
                   onClick={() => setSelectedJob(job)}
                 >
-                  <IconPlay className='h-4 w-4' />
+                  <IconPlayerPlay className='h-4 w-4' />
                   Play
                 </Button>
                 {job.artifacts?.[0]?.signed_url && (
