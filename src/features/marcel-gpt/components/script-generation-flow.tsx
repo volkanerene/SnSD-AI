@@ -327,7 +327,7 @@ function ManualScriptEditor({
         onClick={handleUseScript}
         disabled={!manualScript.trim()}
         className='w-full gap-2 py-6 text-lg'
-        size='xl'
+        size='lg'
       >
         <IconCircleCheck className='h-5 w-5' />
         Continue to Video Generation

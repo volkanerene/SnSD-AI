@@ -44,13 +44,16 @@ export function useVideoJobs(status?: string | null) {
 
         console.log('[useVideoJobs] Fetching from:', url);
 
-        const response = await apiClient.get(url);
+        const response = await apiClient.get<{
+          jobs?: VideoJob[];
+          count?: number;
+        }>(url);
 
         console.log('[useVideoJobs] Response:', response);
 
         // Backend returns { jobs: [...], count: ... }
         // The API client returns the data directly, not wrapped in a .data property
-        const jobs = response?.jobs || response?.data?.jobs;
+        const jobs = response?.jobs;
 
         if (!Array.isArray(jobs)) {
           console.warn(
@@ -78,15 +81,15 @@ export function useVideoJobDetails(jobId: number) {
   return useQuery<VideoJob>({
     queryKey: ['videoJob', jobId],
     queryFn: async () => {
-      const response = await apiClient.get(`/marcel-gpt/jobs/${jobId}`);
-      return response.data;
+      return await apiClient.get<VideoJob>(`/marcel-gpt/jobs/${jobId}`);
     },
-    refetchInterval: (data) => {
-      // Stop polling if job is completed or failed
+    refetchInterval: (query) => {
+      const job = query.state.data;
+
       if (
-        data?.status === 'completed' ||
-        data?.status === 'failed' ||
-        data?.status === 'cancelled'
+        job?.status === 'completed' ||
+        job?.status === 'failed' ||
+        job?.status === 'cancelled'
       ) {
         return false;
       }

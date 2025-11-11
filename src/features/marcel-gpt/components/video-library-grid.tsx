@@ -90,7 +90,7 @@ export function VideoLibraryGrid({ jobs }: VideoLibraryGridProps) {
                     variant='outline'
                     className='gap-2'
                     onClick={() => {
-                      const url = job.artifacts[0].signed_url;
+                      const url = job.artifacts?.[0]?.signed_url;
                       if (url) {
                         const a = document.createElement('a');
                         a.href = url;

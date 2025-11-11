@@ -141,7 +141,7 @@ export function EducationScriptForm({
               onClick={handleGenerateFromTopic}
               disabled={generateMutation.isPending || !topic.trim()}
               className='w-full gap-2 py-6 text-lg'
-              size='xl'
+              size='lg'
             >
               {generateMutation.isPending ? (
                 <>
@@ -209,7 +209,7 @@ export function EducationScriptForm({
               onClick={handleGenerateFromPDF}
               disabled={pdfMutation.isPending || !selectedFile}
               className='w-full gap-2 py-6 text-lg'
-              size='xl'
+              size='lg'
             >
               {pdfMutation.isPending ? (
                 <>

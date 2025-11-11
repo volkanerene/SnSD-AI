@@ -177,7 +177,7 @@ export function IncidentScriptForm({
               generateMutation.isPending || !incidentDetails.whatHappened.trim()
             }
             className='flex-1 gap-2 py-6 text-lg'
-            size='xl'
+            size='lg'
           >
             {generateMutation.isPending ? (
               <>
