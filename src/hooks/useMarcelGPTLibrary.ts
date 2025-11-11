@@ -49,17 +49,18 @@ export function useVideoJobs(status?: string | null) {
         console.log('[useVideoJobs] Response:', response);
 
         // Backend returns { jobs: [...], count: ... }
-        // Extract the jobs array from the response
-        const jobs = response?.data?.jobs;
+        // The API client returns the data directly, not wrapped in a .data property
+        const jobs = response?.jobs || response?.data?.jobs;
 
         if (!Array.isArray(jobs)) {
           console.warn(
             '[useVideoJobs] Response does not contain jobs array:',
-            response?.data
+            response
           );
           return [];
         }
 
+        console.log('[useVideoJobs] Returning jobs:', jobs.length);
         return jobs;
       } catch (error) {
         console.error('[useVideoJobs] Error fetching jobs:', error);
