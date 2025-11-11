@@ -24,12 +24,15 @@ import { toast } from 'sonner';
 
 interface VideoGenerationFormProps {
   initialScript?: string;
+  initialVideoTitle?: string;
 }
 
 export function VideoGenerationForm({
-  initialScript
+  initialScript,
+  initialVideoTitle
 }: VideoGenerationFormProps = {}) {
   const [inputText] = useState(initialScript || '');
+  const [videoTitle] = useState(initialVideoTitle || '');
   const [selectedAvatar, setSelectedAvatar] = useState<HeyGenAvatar | null>(
     null
   );
@@ -38,12 +41,16 @@ export function VideoGenerationForm({
   const [filteredAvatarId, setFilteredAvatarId] = useState<
     string | undefined
   >();
+  const [selectedImageKey, setSelectedImageKey] = useState<
+    string | undefined
+  >();
 
   const generateMutation = useGenerateVideo();
 
-  // Always use V2 engine for standard avatars
-  const engine = 'v2';
-  const avatarId = selectedAvatar?.avatar_id ?? '';
+  // Determine engine based on whether we're using photo avatar or standard avatar
+  const isPhotoAvatar = !!selectedImageKey;
+  const engine = isPhotoAvatar ? 'av4' : 'v2';
+  const avatarId = selectedImageKey || selectedAvatar?.avatar_id || '';
 
   const handleGroupSelect = (groupId?: string) => {
     setFilteredGroupId(groupId);
@@ -71,8 +78,8 @@ export function VideoGenerationForm({
       return;
     }
 
-    if (!selectedAvatar) {
-      toast.error('Please select an avatar');
+    if (!selectedImageKey && !selectedAvatar) {
+      toast.error('Please select an avatar or photo avatar look');
       return;
     }
 
@@ -85,10 +92,22 @@ export function VideoGenerationForm({
       const payload: any = {
         engine,
         input_text: inputText,
-        avatar_id: avatarId,
         voice_id: selectedVoice,
-        title: selectedAvatar.avatar_name || 'Video'
+        title:
+          videoTitle ||
+          selectedAvatar?.avatar_name ||
+          selectedImageKey ||
+          'Generated Video'
       };
+
+      // For standard avatars, use avatar_id with V2 engine
+      if (selectedAvatar && !selectedImageKey) {
+        payload.avatar_id = selectedAvatar.avatar_id;
+      }
+      // For photo avatars, use image_key with AV4 engine
+      else if (selectedImageKey) {
+        payload.image_key = selectedImageKey;
+      }
 
       const response = await generateMutation.mutateAsync(payload);
 
@@ -98,6 +117,7 @@ export function VideoGenerationForm({
 
       setSelectedAvatar(null);
       setSelectedVoice('');
+      setSelectedImageKey(undefined);
     } catch (error: any) {
       toast.error(error.message || 'Failed to start video generation');
     }
@@ -154,7 +174,15 @@ export function VideoGenerationForm({
                 </CardDescription>
               </CardHeader>
               <CardContent className='space-y-3 text-sm'>
-                {selectedAvatar ? (
+                {selectedImageKey ? (
+                  <div className='space-y-1'>
+                    <span className='font-medium'>Avatar Type</span>
+                    <p>Photo Avatar Look (Generated)</p>
+                    <p className='text-muted-foreground text-xs'>
+                      Image Key: {selectedImageKey.slice(0, 30)}...
+                    </p>
+                  </div>
+                ) : selectedAvatar ? (
                   <>
                     <div className='space-y-1'>
                       <span className='font-medium'>Avatar</span>
@@ -171,7 +199,10 @@ export function VideoGenerationForm({
                 ) : (
                   <div className='text-muted-foreground flex items-start gap-2'>
                     <IconInfoCircle className='mt-0.5 h-4 w-4 flex-shrink-0' />
-                    <p>Select an avatar from the panel on the right.</p>
+                    <p>
+                      Select an avatar or generate a photo avatar look from the
+                      panel on the right.
+                    </p>
                   </div>
                 )}
 
@@ -192,7 +223,7 @@ export function VideoGenerationForm({
                 generateMutation.isPending ||
                 isOverLimit ||
                 !inputText.trim() ||
-                !selectedAvatar ||
+                (!selectedAvatar && !selectedImageKey) ||
                 !selectedVoice
               }
               className='w-full'
@@ -218,6 +249,7 @@ export function VideoGenerationForm({
           onSelectGroup={handleGroupSelect}
           onSelectAvatar={handleAvatarSelect}
           onClearFilters={handleClearFilters}
+          onImageKeySelect={setSelectedImageKey}
         />
 
         <VoiceSelector

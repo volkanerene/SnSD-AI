@@ -51,6 +51,9 @@ export interface HeyGenAvatar {
     width?: number;
     height?: number;
   };
+  // Background detection for photo avatar generation
+  has_transparent_background?: boolean;
+  background_type?: string;
 }
 
 export interface HeyGenAvatarGroup {
@@ -548,14 +551,11 @@ export function useGenerateScriptFromPDF() {
       const formData = new FormData();
       formData.append('file', file);
 
+      // Don't set Content-Type header - let the browser/axios set it automatically
+      // with the correct boundary for multipart/form-data
       return await apiClient.post<ScriptResponse>(
         '/marcel-gpt/scripts/from-pdf',
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        }
+        formData
       );
     }
   });

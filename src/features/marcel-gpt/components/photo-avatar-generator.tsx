@@ -58,12 +58,36 @@ const ORIENTATION_OPTIONS = ['square', 'horizontal', 'vertical'] as const;
 
 const POSE_OPTIONS = ['half_body', 'close_up', 'full_body'] as const;
 
+// Helper function to determine if avatar can generate photo looks
+// Photo avatar generation only works with transparent background avatars
+function canGeneratePhotoLooks(avatar: HeyGenAvatar): boolean {
+  // If explicitly marked as transparent, allow generation
+  if (avatar.has_transparent_background === true) {
+    return true;
+  }
+
+  // If explicitly marked as NOT transparent (false), disallow
+  if (avatar.has_transparent_background === false) {
+    return false;
+  }
+
+  // If background_type is specified, check it
+  if (avatar.background_type) {
+    const transparentTypes = ['transparent', 'none', 'green_screen'];
+    return transparentTypes.includes(avatar.background_type.toLowerCase());
+  }
+
+  // Default to true (allow generation) if unknown
+  return true;
+}
+
 export function PhotoAvatarGenerator({
   avatar,
   groupId,
   onGenerationSuccess,
   onImageKeySelect
 }: PhotoAvatarGeneratorProps) {
+  const canGenerate = canGeneratePhotoLooks(avatar);
   const [isOpen, setIsOpen] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [style, setStyle] =
@@ -188,7 +212,17 @@ export function PhotoAvatarGenerator({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant='outline' size='sm' className='gap-2'>
+        <Button
+          variant='outline'
+          size='sm'
+          className='gap-2'
+          disabled={!canGenerate}
+          title={
+            !canGenerate
+              ? 'Photo look generation only works with transparent background avatars'
+              : 'Generate new photo avatar looks using AI'
+          }
+        >
           <IconWand className='h-4 w-4' />
           Generate Looks
         </Button>

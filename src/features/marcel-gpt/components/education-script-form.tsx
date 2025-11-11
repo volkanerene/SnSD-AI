@@ -26,7 +26,7 @@ import {
 } from '@/hooks/useMarcelGPT';
 
 interface EducationScriptFormProps {
-  onScriptGenerated: (script: string) => void;
+  onScriptGenerated: (script: string, videoTitle?: string) => void;
 }
 
 export function EducationScriptForm({
@@ -38,6 +38,7 @@ export function EducationScriptForm({
   const [topic, setTopic] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [manualScript, setManualScript] = useState('');
+  const [videoTitle, setVideoTitle] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const generateMutation = useGenerateScript();
@@ -52,7 +53,7 @@ export function EducationScriptForm({
     try {
       const result = await generateMutation.mutateAsync({ prompt: topic });
       if (result?.script) {
-        onScriptGenerated(result.script);
+        onScriptGenerated(result.script, videoTitle || undefined);
         toast.success('Script generated successfully!');
       }
     } catch (error: any) {
@@ -80,7 +81,7 @@ export function EducationScriptForm({
     try {
       const result = await pdfMutation.mutateAsync(selectedFile);
       if (result?.script) {
-        onScriptGenerated(result.script);
+        onScriptGenerated(result.script, videoTitle || undefined);
         toast.success('Script generated from PDF successfully!');
       }
     } catch (error: any) {
@@ -94,7 +95,7 @@ export function EducationScriptForm({
       return;
     }
 
-    onScriptGenerated(manualScript);
+    onScriptGenerated(manualScript, videoTitle || undefined);
     toast.success('Script ready to use!');
   };
 
@@ -108,10 +109,9 @@ export function EducationScriptForm({
           }
           className='w-full'
         >
-          <TabsList className='grid w-full grid-cols-3'>
+          <TabsList className='grid w-full grid-cols-2'>
             <TabsTrigger value='describe'>📝 Describe Topic</TabsTrigger>
             <TabsTrigger value='pdf'>📄 Upload PDF</TabsTrigger>
-            <TabsTrigger value='manual'>✍️ Write Script</TabsTrigger>
           </TabsList>
 
           {/* Tab 1: Describe Topic */}
@@ -211,35 +211,6 @@ export function EducationScriptForm({
                   Generate Script from PDF
                 </>
               )}
-            </Button>
-          </TabsContent>
-
-          {/* Tab 3: Write Script Manually */}
-          <TabsContent value='manual' className='space-y-4'>
-            <div className='space-y-2'>
-              <Label htmlFor='manual-script'>Write your video script</Label>
-              <Textarea
-                id='manual-script'
-                placeholder='Type your script here. Write naturally as if someone is speaking. This will be used directly for your video.'
-                value={manualScript}
-                onChange={(e) => setManualScript(e.target.value)}
-                rows={8}
-                className='resize-none'
-              />
-              <div className='text-muted-foreground flex justify-between text-xs'>
-                <span>Write naturally and conversationally</span>
-                <span>{manualScript.length} characters</span>
-              </div>
-            </div>
-
-            <Button
-              onClick={handleUseManualScript}
-              disabled={!manualScript.trim()}
-              className='w-full gap-2'
-              size='lg'
-            >
-              <IconCircleCheck className='h-4 w-4' />
-              Use This Script
             </Button>
           </TabsContent>
         </Tabs>
