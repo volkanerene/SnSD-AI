@@ -41,7 +41,9 @@ export function useVideoJobs(status?: string) {
       const response = await apiClient.get(
         `/marcel-gpt/jobs?${params.toString()}`
       );
-      return response.data;
+      // Backend returns { jobs: [...], count: ... }
+      // Extract the jobs array from the response
+      return response.data.jobs || [];
     },
     refetchInterval: 5000, // Refetch every 5 seconds to check for updates
     staleTime: 2000
