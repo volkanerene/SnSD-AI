@@ -62,9 +62,9 @@ export function ScriptGenerationFlow({
   };
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-8 p-8'>
       {/* Progress indicator */}
-      <div className='flex items-center gap-2'>
+      <div className='flex items-center gap-3'>
         <div
           className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold ${
             step === 'type-select'
@@ -102,50 +102,54 @@ export function ScriptGenerationFlow({
       {step === 'type-select' && (
         <div className='space-y-4'>
           <div>
-            <Label className='text-base font-semibold'>
+            <Label className='text-2xl font-semibold'>
               What type of video do you want to create?
             </Label>
           </div>
-          <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
+          <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
             <Card
-              className='hover:border-primary cursor-pointer border-2 p-6 transition-all hover:shadow-md'
+              className='hover:border-primary min-h-64 cursor-pointer border-2 p-8 transition-all hover:shadow-lg'
               onClick={() => handleScriptTypeSelect('education')}
             >
-              <h3 className='mb-2 text-lg font-semibold'>📚 Education Video</h3>
-              <p className='text-muted-foreground mb-4 text-sm'>
+              <h3 className='mb-4 text-2xl font-semibold'>
+                📚 Education Video
+              </h3>
+              <p className='text-muted-foreground mb-6 text-base'>
                 Create training videos by uploading educational materials or
                 describing a topic
               </p>
-              <Button variant='outline' size='sm' className='gap-2'>
-                Choose <IconChevronRight className='h-4 w-4' />
+              <Button variant='outline' size='lg' className='w-full gap-2'>
+                Choose <IconChevronRight className='h-5 w-5' />
               </Button>
             </Card>
 
             <Card
-              className='hover:border-primary cursor-pointer border-2 p-6 transition-all hover:shadow-md'
+              className='hover:border-primary min-h-64 cursor-pointer border-2 p-8 transition-all hover:shadow-lg'
               onClick={() => handleScriptTypeSelect('incident')}
             >
-              <h3 className='mb-2 text-lg font-semibold'>⚠️ Incident Report</h3>
-              <p className='text-muted-foreground mb-4 text-sm'>
+              <h3 className='mb-4 text-2xl font-semibold'>
+                ⚠️ Incident Report
+              </h3>
+              <p className='text-muted-foreground mb-6 text-base'>
                 Generate safety training from incident reports with lessons
                 learned
               </p>
-              <Button variant='outline' size='sm' className='gap-2'>
-                Choose <IconChevronRight className='h-4 w-4' />
+              <Button variant='outline' size='lg' className='w-full gap-2'>
+                Choose <IconChevronRight className='h-5 w-5' />
               </Button>
             </Card>
 
             <Card
-              className='hover:border-primary cursor-pointer border-2 p-6 transition-all hover:shadow-md'
+              className='hover:border-primary min-h-64 cursor-pointer border-2 p-8 transition-all hover:shadow-lg'
               onClick={() => handleScriptTypeSelect('manual')}
             >
-              <h3 className='mb-2 text-lg font-semibold'>✍️ Write Script</h3>
-              <p className='text-muted-foreground mb-4 text-sm'>
+              <h3 className='mb-4 text-2xl font-semibold'>✍️ Write Script</h3>
+              <p className='text-muted-foreground mb-6 text-base'>
                 Write your video script manually and proceed directly to video
                 generation
               </p>
-              <Button variant='outline' size='sm' className='gap-2'>
-                Choose <IconChevronRight className='h-4 w-4' />
+              <Button variant='outline' size='lg' className='w-full gap-2'>
+                Choose <IconChevronRight className='h-5 w-5' />
               </Button>
             </Card>
           </div>
@@ -154,10 +158,10 @@ export function ScriptGenerationFlow({
 
       {/* Step 2: Generate script */}
       {step === 'script-generation' && scriptType && (
-        <div className='w-full space-y-4'>
+        <div className='w-full space-y-6'>
           <div className='flex items-center justify-between'>
             <div>
-              <Label className='text-base font-semibold'>
+              <Label className='text-2xl font-semibold'>
                 {scriptType === 'education'
                   ? '📚 Generate Education Script'
                   : scriptType === 'incident'
@@ -204,21 +208,22 @@ export function ScriptGenerationFlow({
           )}
 
           {generatedScript && (
-            <div className='space-y-4'>
-              <Card className='p-4'>
-                <Label className='mb-2 block text-sm font-semibold'>
+            <div className='space-y-6'>
+              <Card className='p-6'>
+                <Label className='mb-4 block text-lg font-semibold'>
                   Script (Editable):
                 </Label>
                 <Textarea
                   value={editingScript}
                   onChange={(e) => setEditingScript(e.target.value)}
-                  rows={6}
-                  className='resize-none font-mono text-sm'
+                  rows={12}
+                  className='resize-none p-4 font-mono text-base'
                 />
               </Card>
-              <div className='flex gap-2'>
+              <div className='flex gap-3'>
                 <Button
                   variant='outline'
+                  size='lg'
                   onClick={() => {
                     setGeneratedScript('');
                     setEditingScript('');
@@ -232,8 +237,9 @@ export function ScriptGenerationFlow({
                     setStep('video-generation');
                   }}
                   className='ml-auto gap-2'
+                  size='lg'
                 >
-                  Next → Generate Video <IconChevronRight className='h-4 w-4' />
+                  Next → Generate Video <IconChevronRight className='h-5 w-5' />
                 </Button>
               </div>
             </div>
@@ -243,10 +249,10 @@ export function ScriptGenerationFlow({
 
       {/* Step 3: Generate video */}
       {step === 'video-generation' && generatedScript && (
-        <div className='w-full space-y-4'>
+        <div className='w-full space-y-6'>
           <div className='flex items-center justify-between'>
             <div>
-              <Label className='text-base font-semibold'>
+              <Label className='text-2xl font-semibold'>
                 🎬 Generate Video
               </Label>
             </div>
@@ -294,31 +300,36 @@ function ManualScriptEditor({
   };
 
   return (
-    <div className='space-y-4'>
-      <div className='space-y-2'>
-        <Label htmlFor='video-title-manual'>Video Title (optional)</Label>
+    <div className='space-y-6'>
+      <div className='space-y-3'>
+        <Label htmlFor='video-title-manual' className='text-lg'>
+          Video Title (optional)
+        </Label>
         <Input
           id='video-title-manual'
           placeholder='Enter a title for your video (e.g., "Training Session 2024")'
           value={videoTitle}
           onChange={(e) => setVideoTitle(e.target.value)}
+          className='h-12 text-base'
         />
-        <p className='text-muted-foreground text-xs'>
+        <p className='text-muted-foreground text-sm'>
           If left empty, the avatar name will be used as the title
         </p>
       </div>
 
-      <div className='space-y-2'>
-        <Label htmlFor='manual-script-full'>Write your video script</Label>
+      <div className='space-y-3'>
+        <Label htmlFor='manual-script-full' className='text-lg'>
+          Write your video script
+        </Label>
         <Textarea
           id='manual-script-full'
           placeholder='Type your script here. Write naturally as if someone is speaking. This will be used directly for your video.'
           value={manualScript}
           onChange={(e) => setManualScript(e.target.value)}
-          rows={12}
-          className='resize-none font-mono text-sm'
+          rows={14}
+          className='resize-none p-4 font-mono text-base'
         />
-        <div className='text-muted-foreground flex justify-between text-xs'>
+        <div className='text-muted-foreground flex justify-between text-sm'>
           <span>Write naturally and conversationally</span>
           <span>{manualScript.length} characters</span>
         </div>
@@ -328,9 +339,9 @@ function ManualScriptEditor({
         onClick={handleUseScript}
         disabled={!manualScript.trim()}
         className='w-full gap-2'
-        size='lg'
+        size='xl'
       >
-        <IconCircleCheck className='h-4 w-4' />
+        <IconCircleCheck className='h-5 w-5' />
         Continue to Video Generation
       </Button>
     </div>

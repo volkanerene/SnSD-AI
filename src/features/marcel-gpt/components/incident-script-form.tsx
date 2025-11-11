@@ -68,36 +68,39 @@ export function IncidentScriptForm({
 
   return (
     <Card>
-      <CardContent className='pt-6'>
-        <div className='mb-6 space-y-1'>
-          <h3 className='flex items-center gap-2 text-lg font-semibold'>
-            <IconAlertTriangle className='h-5 w-5 text-orange-500' />
+      <CardContent className='pt-8'>
+        <div className='mb-8 space-y-2'>
+          <h3 className='flex items-center gap-2 text-2xl font-semibold'>
+            <IconAlertTriangle className='h-6 w-6 text-orange-500' />
             Describe the Incident
           </h3>
-          <p className='text-muted-foreground text-sm'>
+          <p className='text-muted-foreground text-base'>
             Provide details about the incident so the AI can create an
             appropriate training script
           </p>
         </div>
 
-        <div className='space-y-6'>
+        <div className='space-y-8'>
           {/* Video Title */}
-          <div className='space-y-2'>
-            <Label htmlFor='video-title'>Video Title (optional)</Label>
+          <div className='space-y-3'>
+            <Label htmlFor='video-title' className='text-lg'>
+              Video Title (optional)
+            </Label>
             <Input
               id='video-title'
               placeholder='Enter a title for your video (e.g., "Safety Incident Report 2024")'
               value={videoTitle}
               onChange={(e) => setVideoTitle(e.target.value)}
+              className='h-12 text-base'
             />
-            <p className='text-muted-foreground text-xs'>
+            <p className='text-muted-foreground text-sm'>
               If left empty, a title will be generated from the incident
             </p>
           </div>
 
           {/* What happened */}
-          <div className='space-y-2'>
-            <Label htmlFor='what-happened' className='font-semibold'>
+          <div className='space-y-3'>
+            <Label htmlFor='what-happened' className='text-lg font-semibold'>
               What happened?
             </Label>
             <Textarea
@@ -107,14 +110,14 @@ export function IncidentScriptForm({
               onChange={(e) =>
                 handleInputChange('whatHappened', e.target.value)
               }
-              rows={4}
-              className='resize-none'
+              rows={5}
+              className='resize-none p-4 text-base'
             />
           </div>
 
           {/* Why did it happen */}
-          <div className='space-y-2'>
-            <Label htmlFor='why-happened' className='font-semibold'>
+          <div className='space-y-3'>
+            <Label htmlFor='why-happened' className='text-lg font-semibold'>
               Why did it happen?
             </Label>
             <Textarea
@@ -124,15 +127,15 @@ export function IncidentScriptForm({
               onChange={(e) =>
                 handleInputChange('whyDidItHappen', e.target.value)
               }
-              rows={3}
-              className='resize-none'
+              rows={4}
+              className='resize-none p-4 text-base'
             />
-            <p className='text-muted-foreground text-xs'>Optional</p>
+            <p className='text-muted-foreground text-sm'>Optional</p>
           </div>
 
           {/* What did they learn */}
-          <div className='space-y-2'>
-            <Label htmlFor='lessons-learned' className='font-semibold'>
+          <div className='space-y-3'>
+            <Label htmlFor='lessons-learned' className='text-lg font-semibold'>
               What did they learn? (Key takeaways)
             </Label>
             <Textarea
@@ -142,15 +145,15 @@ export function IncidentScriptForm({
               onChange={(e) =>
                 handleInputChange('whatDidTheyLearn', e.target.value)
               }
-              rows={3}
-              className='resize-none'
+              rows={4}
+              className='resize-none p-4 text-base'
             />
-            <p className='text-muted-foreground text-xs'>Optional</p>
+            <p className='text-muted-foreground text-sm'>Optional</p>
           </div>
 
           {/* Ask yourself or crew */}
-          <div className='space-y-2'>
-            <Label htmlFor='ask-yourself' className='font-semibold'>
+          <div className='space-y-3'>
+            <Label htmlFor='ask-yourself' className='text-lg font-semibold'>
               Ask yourself or your crew
             </Label>
             <Textarea
@@ -160,30 +163,30 @@ export function IncidentScriptForm({
               onChange={(e) =>
                 handleInputChange('askYourselfOrCrew', e.target.value)
               }
-              rows={2}
-              className='resize-none'
+              rows={3}
+              className='resize-none p-4 text-base'
             />
-            <p className='text-muted-foreground text-xs'>Optional</p>
+            <p className='text-muted-foreground text-sm'>Optional</p>
           </div>
         </div>
 
-        <div className='mt-6 flex gap-2'>
+        <div className='mt-8 flex gap-2'>
           <Button
             onClick={handleGenerateScript}
             disabled={
               generateMutation.isPending || !incidentDetails.whatHappened.trim()
             }
             className='flex-1 gap-2'
-            size='lg'
+            size='xl'
           >
             {generateMutation.isPending ? (
               <>
-                <IconLoader2 className='h-4 w-4 animate-spin' />
+                <IconLoader2 className='h-5 w-5 animate-spin' />
                 Generating Script...
               </>
             ) : (
               <>
-                <IconSparkles className='h-4 w-4' />
+                <IconSparkles className='h-5 w-5' />
                 Generate Script
               </>
             )}

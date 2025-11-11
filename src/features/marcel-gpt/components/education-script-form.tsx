@@ -101,7 +101,7 @@ export function EducationScriptForm({
 
   return (
     <Card className='border-dashed'>
-      <CardContent className='pt-6'>
+      <CardContent className='pt-8'>
         <Tabs
           value={activeTab}
           onValueChange={(v) =>
@@ -109,24 +109,30 @@ export function EducationScriptForm({
           }
           className='w-full'
         >
-          <TabsList className='grid w-full grid-cols-2'>
-            <TabsTrigger value='describe'>📝 Describe Topic</TabsTrigger>
-            <TabsTrigger value='pdf'>📄 Upload PDF</TabsTrigger>
+          <TabsList className='mb-8 grid h-12 w-full grid-cols-2'>
+            <TabsTrigger value='describe' className='text-base'>
+              📝 Describe Topic
+            </TabsTrigger>
+            <TabsTrigger value='pdf' className='text-base'>
+              📄 Upload PDF
+            </TabsTrigger>
           </TabsList>
 
           {/* Tab 1: Describe Topic */}
-          <TabsContent value='describe' className='space-y-4'>
-            <div className='space-y-2'>
-              <Label htmlFor='topic'>What topic do you want to teach?</Label>
+          <TabsContent value='describe' className='space-y-6'>
+            <div className='space-y-3'>
+              <Label htmlFor='topic' className='text-lg'>
+                What topic do you want to teach?
+              </Label>
               <Textarea
                 id='topic'
                 placeholder='Enter the educational topic, learning objectives, key points, etc. The AI will generate a script based on your description.'
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
-                rows={6}
-                className='resize-none'
+                rows={10}
+                className='resize-none p-4 text-base'
               />
-              <p className='text-muted-foreground text-xs'>
+              <p className='text-muted-foreground text-sm'>
                 Be as detailed as possible to get better script results
               </p>
             </div>
@@ -135,16 +141,16 @@ export function EducationScriptForm({
               onClick={handleGenerateFromTopic}
               disabled={generateMutation.isPending || !topic.trim()}
               className='w-full gap-2'
-              size='lg'
+              size='xl'
             >
               {generateMutation.isPending ? (
                 <>
-                  <IconLoader2 className='h-4 w-4 animate-spin' />
+                  <IconLoader2 className='h-5 w-5 animate-spin' />
                   Generating Script...
                 </>
               ) : (
                 <>
-                  <IconSparkles className='h-4 w-4' />
+                  <IconSparkles className='h-5 w-5' />
                   Generate Script with AI
                 </>
               )}
@@ -152,9 +158,11 @@ export function EducationScriptForm({
           </TabsContent>
 
           {/* Tab 2: Upload PDF */}
-          <TabsContent value='pdf' className='space-y-4'>
-            <div className='space-y-2'>
-              <Label htmlFor='pdf-upload'>Select PDF file</Label>
+          <TabsContent value='pdf' className='space-y-6'>
+            <div className='space-y-3'>
+              <Label htmlFor='pdf-upload' className='text-lg'>
+                Select PDF file
+              </Label>
               <div className='flex flex-col gap-4'>
                 <div className='relative'>
                   <Input
@@ -169,10 +177,13 @@ export function EducationScriptForm({
                     type='button'
                     variant='outline'
                     className='w-full'
+                    size='lg'
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    <IconFileUpload className='mr-2 h-4 w-4' />
-                    {selectedFile ? selectedFile.name : 'Choose PDF file...'}
+                    <IconFileUpload className='mr-2 h-5 w-5' />
+                    <span className='text-base'>
+                      {selectedFile ? selectedFile.name : 'Choose PDF file...'}
+                    </span>
                   </Button>
                 </div>
 
@@ -186,7 +197,7 @@ export function EducationScriptForm({
                   </div>
                 )}
 
-                <p className='text-muted-foreground text-xs'>
+                <p className='text-muted-foreground text-sm'>
                   Upload a PDF with educational content (training materials,
                   course notes, etc.) and the AI will extract key information to
                   create a video script.
@@ -198,16 +209,16 @@ export function EducationScriptForm({
               onClick={handleGenerateFromPDF}
               disabled={pdfMutation.isPending || !selectedFile}
               className='w-full gap-2'
-              size='lg'
+              size='xl'
             >
               {pdfMutation.isPending ? (
                 <>
-                  <IconLoader2 className='h-4 w-4 animate-spin' />
+                  <IconLoader2 className='h-5 w-5 animate-spin' />
                   Processing PDF...
                 </>
               ) : (
                 <>
-                  <IconSparkles className='h-4 w-4' />
+                  <IconSparkles className='h-5 w-5' />
                   Generate Script from PDF
                 </>
               )}
