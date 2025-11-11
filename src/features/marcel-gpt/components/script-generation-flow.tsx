@@ -154,7 +154,7 @@ export function ScriptGenerationFlow({
 
       {/* Step 2: Generate script */}
       {step === 'script-generation' && scriptType && (
-        <div className='space-y-4'>
+        <div className='w-full space-y-4'>
           <div className='flex items-center justify-between'>
             <div>
               <Label className='text-base font-semibold'>
@@ -243,7 +243,7 @@ export function ScriptGenerationFlow({
 
       {/* Step 3: Generate video */}
       {step === 'video-generation' && generatedScript && (
-        <div className='space-y-4'>
+        <div className='w-full space-y-4'>
           <div className='flex items-center justify-between'>
             <div>
               <Label className='text-base font-semibold'>
