@@ -61,7 +61,8 @@ const POSE_OPTIONS = ['half_body', 'close_up', 'full_body'] as const;
 export function PhotoAvatarGenerator({
   avatar,
   groupId,
-  onGenerationSuccess
+  onGenerationSuccess,
+  onImageKeySelect
 }: PhotoAvatarGeneratorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [prompt, setPrompt] = useState('');
