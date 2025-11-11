@@ -23,7 +23,11 @@ import { VideoJobsList } from '@/features/marcel-gpt/components/video-jobs-list'
 
 export default function MarcelGPTLibraryPage() {
   const featureEnabled = process.env.NEXT_PUBLIC_ENABLE_MARCEL_GPT === 'true';
-  const { data: allJobs, isLoading } = useVideoJobs();
+  const { data: allJobs, isLoading, error } = useVideoJobs();
+
+  if (error) {
+    console.error('[LibraryPage] Error loading jobs:', error);
+  }
 
   if (!featureEnabled) {
     return (

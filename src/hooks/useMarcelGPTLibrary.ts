@@ -30,23 +30,46 @@ export interface VideoArtifact {
   created_at: string;
 }
 
-export function useVideoJobs(status?: string) {
+export function useVideoJobs(status?: string | null) {
   return useQuery<VideoJob[]>({
-    queryKey: ['videoJobs', status],
+    queryKey: ['videoJobs', status || 'all'],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (status) {
-        params.append('status', status);
+      try {
+        const params = new URLSearchParams();
+        if (status && status !== 'all') {
+          params.append('status', status);
+        }
+        const queryStr = params.toString();
+        const url = `/marcel-gpt/jobs${queryStr ? '?' + queryStr : ''}`;
+
+        console.log('[useVideoJobs] Fetching from:', url);
+
+        const response = await apiClient.get(url);
+
+        console.log('[useVideoJobs] Response:', response);
+
+        // Backend returns { jobs: [...], count: ... }
+        // Extract the jobs array from the response
+        const jobs = response?.data?.jobs;
+
+        if (!Array.isArray(jobs)) {
+          console.warn(
+            '[useVideoJobs] Response does not contain jobs array:',
+            response?.data
+          );
+          return [];
+        }
+
+        return jobs;
+      } catch (error) {
+        console.error('[useVideoJobs] Error fetching jobs:', error);
+        throw error;
       }
-      const response = await apiClient.get(
-        `/marcel-gpt/jobs?${params.toString()}`
-      );
-      // Backend returns { jobs: [...], count: ... }
-      // Extract the jobs array from the response
-      return response.data.jobs || [];
     },
     refetchInterval: 5000, // Refetch every 5 seconds to check for updates
-    staleTime: 2000
+    staleTime: 2000,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
   });
 }
 
