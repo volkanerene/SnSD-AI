@@ -159,24 +159,17 @@ export function ScriptGenerationFlow({
       {/* Step 2: Generate script */}
       {step === 'script-generation' && scriptType && (
         <div className='w-full space-y-6'>
-          <div className='flex items-center justify-between'>
-            <div>
-              <Label className='text-2xl font-semibold'>
-                {scriptType === 'education'
-                  ? '📚 Generate Education Script'
-                  : scriptType === 'incident'
-                    ? '⚠️ Generate Incident Report Script'
-                    : '✍️ Write Your Script'}
-              </Label>
-            </div>
-            <Button
-              variant='ghost'
-              size='sm'
-              onClick={handleBackToType}
-              className='text-xs'
-            >
+          <div className='flex items-center gap-4'>
+            <Button onClick={handleBackToType} size='lg' className='gap-2 px-6'>
               ← Change type
             </Button>
+            <Label className='text-2xl font-semibold'>
+              {scriptType === 'education'
+                ? '📚 Generate Education Script'
+                : scriptType === 'incident'
+                  ? '⚠️ Generate Incident Report Script'
+                  : '✍️ Write Your Script'}
+            </Label>
           </div>
 
           {!generatedScript && (
@@ -250,20 +243,15 @@ export function ScriptGenerationFlow({
       {/* Step 3: Generate video */}
       {step === 'video-generation' && generatedScript && (
         <div className='w-full space-y-6'>
-          <div className='flex items-center justify-between'>
-            <div>
-              <Label className='text-2xl font-semibold'>
-                🎬 Generate Video
-              </Label>
-            </div>
+          <div className='flex items-center gap-4'>
             <Button
-              variant='ghost'
-              size='sm'
               onClick={handleBackToScript}
-              className='text-xs'
+              size='lg'
+              className='gap-2 px-6'
             >
               ← Edit script
             </Button>
+            <Label className='text-2xl font-semibold'>🎬 Generate Video</Label>
           </div>
 
           <VideoGenerationForm
@@ -338,7 +326,7 @@ function ManualScriptEditor({
       <Button
         onClick={handleUseScript}
         disabled={!manualScript.trim()}
-        className='w-full gap-2'
+        className='w-full gap-2 py-6 text-lg'
         size='xl'
       >
         <IconCircleCheck className='h-5 w-5' />
