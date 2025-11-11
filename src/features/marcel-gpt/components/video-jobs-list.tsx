@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   IconLoader2,
   IconAlertCircle,
-  IconCheckCircle
+  IconCircleCheck
 } from '@tabler/icons-react';
 
 interface VideoJobsListProps {
@@ -107,7 +107,7 @@ function StatusBadge({
     },
     completed: {
       label: 'Completed',
-      icon: IconCheckCircle,
+      icon: IconCircleCheck,
       variant: 'default' as const
     },
     failed: {
